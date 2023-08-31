@@ -270,7 +270,7 @@ section {
 .about-containers {
   gap: 2rem;
   margin-bottom: 2rem;
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 .about-details-container {
@@ -348,6 +348,9 @@ article {
   justify-content: space-around;
   gap: 0.5rem;
 }
+.info {
+    width: 100%;
+  }
 
 article .icon {
   cursor: default;
