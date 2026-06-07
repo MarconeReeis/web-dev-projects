@@ -1,0 +1,50 @@
+<ion-content [fullscreen]="true" class="booking-content">
+  <div class="booking">
+    <app-booking-header
+      [stepLabel]="stepLabel()"
+      [isLightTheme]="isLightTheme"
+      (back)="onBack()"
+      (toggleTheme)="toggleTheme()"
+    />
+
+    @if (showProgress()) {
+      <app-booking-progress [currentStep]="flow.currentStep()" [totalSteps]="flow.stepsTotal" />
+    }
+
+    @for (step of [flow.currentStep()]; track step) {
+      <div class="booking__step" [@bookingStep]="animationState()">
+        @switch (step) {
+          @case (1) {
+            <app-step-professional />
+          }
+          @case (2) {
+            <app-step-service />
+          }
+          @case (3) {
+            <app-step-schedule />
+          }
+          @case (4) {
+            <app-step-confirm />
+          }
+          @case (5) {
+            <app-step-success />
+          }
+        }
+      </div>
+    }
+    @if (flow.currentStep() === 3 && flow.canProceed()) {
+      <button type="button" class="booking__continue" (click)="flow.goToStep(4)">
+        Continuar
+      </button>
+    }
+  </div>
+</ion-content>
+
+@if (showBottomNav()) {
+  <app-bottom-nav
+    activeTab="home"
+    (homeTab)="goHome()"
+    (appointmentsTab)="goToAppointments()"
+    (book)="onBookFromNav()"
+  />
+}

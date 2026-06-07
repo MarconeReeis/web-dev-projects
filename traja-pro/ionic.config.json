@@ -1,0 +1,7 @@
+{
+  "name": "traja-pro",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

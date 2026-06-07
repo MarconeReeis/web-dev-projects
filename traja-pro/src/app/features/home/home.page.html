@@ -1,0 +1,97 @@
+<ion-content [fullscreen]="true" class="home-content">
+  <div class="home">
+    <!-- Header -->
+    <header class="home__header">
+      <div class="home__brand">
+        <app-avatar [initials]="business.initials" size="lg" />
+        <div class="home__brand-text">
+          <span class="home__category">{{ business.category }}</span>
+          <h1 class="home__name">{{ business.name }}</h1>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="home__theme-toggle"
+        (click)="toggleTheme()"
+        [attr.aria-label]="isLightTheme ? 'Ativar tema escuro' : 'Ativar tema claro'"
+      >
+        <ion-icon [name]="isLightTheme ? 'moon-outline' : 'sunny-outline'" />
+      </button>
+    </header>
+
+    <!-- Hero -->
+    <section class="home__hero">
+      <h2 class="home__headline">
+        Escolha seu profissional e agende seu horário em
+        <span class="home__highlight">poucos segundos.</span>
+      </h2>
+
+      <button type="button" class="home__cta" (click)="startBooking()">
+        Começar agendamento
+        <ion-icon name="arrow-forward" />
+      </button>
+    </section>
+
+    <!-- Informações do negócio -->
+    <section class="home__info" aria-label="Informações do estabelecimento">
+      <div class="home__info-item">
+        <ion-icon name="location-outline" />
+        <span>{{ business.address }}</span>
+      </div>
+      <div class="home__info-item">
+        <ion-icon name="time-outline" />
+        <span>{{ business.hours }}</span>
+      </div>
+      <div class="home__info-item home__info-item--contact">
+        <a [href]="'https://instagram.com/' + business.instagram.replace('@', '')" target="_blank" rel="noopener">
+          <ion-icon name="logo-instagram" />
+          {{ business.instagram }}
+        </a>
+        <a [href]="'https://wa.me/5511999990000'" target="_blank" rel="noopener">
+          <ion-icon name="logo-whatsapp" />
+          {{ business.phone }}
+        </a>
+      </div>
+    </section>
+
+    <!-- Próximos horários -->
+    <section class="home__appointments">
+      <div class="home__section-header">
+        <h2 class="home__section-title">Seus próximos horários</h2>
+        <button type="button" class="home__link" (click)="goToAppointments()">Ver todos</button>
+      </div>
+
+      @if (upcomingAppointments().length === 0) {
+        <p class="home__empty">Nenhum agendamento próximo.</p>
+      } @else {
+        @for (appointment of upcomingAppointments().slice(0, 1); track appointment.id) {
+          <app-appointment-card
+            [appointment]="appointment"
+            (reschedule)="onReschedule($event)"
+            (cancel)="onCancel($event)"
+          />
+        }
+      }
+    </section>
+
+    <!-- Banner promocional -->
+    <section class="home__promo">
+      <h3 class="home__promo-title">Pronto para um novo visual?</h3>
+      <p class="home__promo-text">
+        Profissionais selecionados, agenda em tempo real, sem fila.
+      </p>
+      <button type="button" class="home__promo-cta" (click)="startBooking()">
+        Agendar horário
+        <ion-icon name="arrow-forward" />
+      </button>
+    </section>
+  </div>
+</ion-content>
+
+<app-bottom-nav
+  activeTab="home"
+  (homeTab)="goHome()"
+  (appointmentsTab)="goToAppointments()"
+  (book)="startBooking()"
+/>
