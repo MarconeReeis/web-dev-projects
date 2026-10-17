@@ -1,0 +1,17 @@
+/**
+ * Folha de estilo do app do cliente.
+ *
+ * Mesmo design system do admin — mas aqui as primitivas de marca
+ * (--atr-brand-*) são sobrescritas em tempo de execução pelo BrandingService
+ * conforme a barbearia. Ver @atrio/core/branding.
+ */
+
+@import 'tailwindcss';
+
+/* Posicionamento do overlay do CDK (backdrop e container). O visual é nosso,
+   em shared/ui/src/styles/overlay.css. */
+@import '../../../node_modules/@angular/cdk/overlay-prebuilt.css';
+@import '../../shared/ui/src/styles/index.css';
+
+@source './app';
+@source '../../shared/ui/src/lib';
