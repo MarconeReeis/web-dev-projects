@@ -60,6 +60,8 @@ durante o desenvolvimento.
 - **Componente não conhece backend.** As telas dependem dos contratos em
   `@atrio/data/repositories`. Trocar demonstração por Firebase é mudar
   `provideDemoData()` por `provideFirebaseData()` no `app.config.ts`.
+- **Quem faz o quê mora só em `Professional.serviceIds`.** A relação com
+  serviços tem um lado só, de propósito — ver docs/ARQUITETURA.md.
 - **Componente não escreve cor crua.** Sempre um token semântico
   (`bg-primary`, `text-muted-foreground`). É o que faz o white-label funcionar.
 - **Conflito de horário é problema do servidor.** A validação local do modo
@@ -73,9 +75,10 @@ Pronto: workspace, design system, camada de domínio, modo demonstração, shell
 do admin, Dashboard, PWA nos dois apps, motor de disponibilidade, a tela de
 Agenda — grade diária e semanal, bloqueio de horário, painel de detalhes com
 as ações do atendimento e o cadastro de agendamento com horários livres
-calculados — e a tela de Profissionais, com cadastro, edição, jornada,
-serviços realizados, foto e bloqueios.
+calculados — a tela de Profissionais, com cadastro, edição, jornada, serviços
+realizados, foto e bloqueios, e a tela de Serviços e preços, com catálogo,
+duração, valores e profissionais habilitados.
 
 A seguir: tela de Financeiro (lista de movimentações, despesas, registro de
-pagamento fora da Agenda), cadastro de Serviços e preços, Configurações, o app
-do cliente além da vitrine, autenticação e Firebase.
+pagamento fora da Agenda), Configurações, o app do cliente além da vitrine,
+autenticação e Firebase.

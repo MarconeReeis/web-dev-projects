@@ -1,46 +1,152 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ServiceRepository, formatMoney } from '@atrio/data';
-import { AtrBadge, AtrCard, AtrPageHeading } from '@atrio/ui';
+import {
+  Appointment,
+  AppointmentRepository,
+  Id,
+  Professional,
+  ProfessionalRepository,
+  Service,
+  ServiceRepository,
+  startOfDay,
+} from '@atrio/data';
+import {
+  AtrButton,
+  AtrCard,
+  AtrEmptyState,
+  AtrIcon,
+  AtrOverlay,
+  AtrPageHeading,
+} from '@atrio/ui';
+import { ServiceCard } from './components/service-card';
+import { ServiceDialog, ServiceDialogData } from './components/service-dialog';
 
+const HORIZON_DAYS = 365;
+
+/** Só estes status seguram o horário e contam como compromisso futuro. */
+const STANDING: readonly Appointment['status'][] = ['agendado', 'em_atendimento'];
+
+/**
+ * Catálogo de serviços.
+ *
+ * Preço único por serviço nesta versão — não há tabela por profissional. A
+ * alteração vale só para agendamentos novos, porque o atendimento congela o
+ * preço praticado na marcação.
+ *
+ * Ordem de catálogo (por cadastro), não alfabética: o dono pensa nisso como
+ * "a tabela", e a tabela tem uma ordem que ele definiu. Inativos vão para o
+ * fim.
+ */
 @Component({
   selector: 'adm-services-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AtrPageHeading, AtrCard, AtrBadge],
+  imports: [AtrPageHeading, AtrButton, AtrIcon, AtrCard, AtrEmptyState, ServiceCard],
   host: { class: 'mx-auto block w-full max-w-[1600px]' },
   template: `
     <atr-page-heading
       heading="Serviços e preços"
-      description="A tabela da barbearia. Reajuste vale só para agendamentos novos."
-    />
+      description="Preço único por serviço. Alterações valem apenas para novos agendamentos."
+    >
+      <button type="button" atrButton (click)="openDialog(null)">
+        <atr-icon name="plus" [size]="16" />
+        Novo serviço
+      </button>
+    </atr-page-heading>
 
-    <atr-card class="mt-6">
-      <ul class="flex flex-col gap-2">
+    @if (services().length === 0) {
+      <atr-card class="mt-6">
+        <atr-empty-state
+          icon="scissors"
+          heading="Nenhum serviço cadastrado"
+          description="Cadastre o que a barbearia faz, com duração e preço, para que a agenda consiga marcar atendimentos."
+        >
+          <button type="button" atrButton class="mt-2" (click)="openDialog(null)">
+            <atr-icon name="plus" [size]="16" />
+            Novo serviço
+          </button>
+        </atr-empty-state>
+      </atr-card>
+    } @else {
+      <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         @for (service of services(); track service.id) {
-          <li
-            class="flex items-center gap-4 rounded-2xl border border-transparent p-3 hover:bg-accent"
-          >
-            <span class="min-w-0 flex-1">
-              <span class="block truncate font-bold">{{ service.name }}</span>
-              <span class="block truncate text-sm text-muted-foreground">
-                {{ service.description }}
-              </span>
-            </span>
-            <atr-badge tone="neutral">{{ service.durationMinutes }} min</atr-badge>
-            <span class="tabular w-24 text-right font-extrabold">
-              {{ money(service.price) }}
-            </span>
-          </li>
+          <adm-service-card
+            [service]="service"
+            [professionals]="professionalsOf(service.id)"
+            (edited)="openDialog(service)"
+          />
         }
-      </ul>
-    </atr-card>
+      </div>
+    }
   `,
 })
 export class ServicesPage {
-  private readonly repository = inject(ServiceRepository);
+  private readonly servicesRepo = inject(ServiceRepository);
+  private readonly professionalsRepo = inject(ProfessionalRepository);
+  private readonly appointmentsRepo = inject(AppointmentRepository);
+  private readonly overlay = inject(AtrOverlay);
 
-  protected money = formatMoney;
-  protected readonly services = toSignal(this.repository.watchAll(true), {
-    initialValue: [],
+  private readonly horizon = (() => {
+    const from = startOfDay(new Date());
+    const to = new Date(from);
+    to.setDate(to.getDate() + HORIZON_DAYS);
+    return { from: from.toISOString(), to: to.toISOString() };
+  })();
+
+  private readonly allServices = toSignal(this.servicesRepo.watchAll(true), {
+    initialValue: [] as readonly Service[],
   });
+
+  private readonly allProfessionals = toSignal(this.professionalsRepo.watchAll(true), {
+    initialValue: [] as readonly Professional[],
+  });
+
+  private readonly upcoming = toSignal(
+    this.appointmentsRepo.watch({ range: this.horizon }),
+    { initialValue: [] as readonly Appointment[] },
+  );
+
+  protected readonly services = computed(() =>
+    [...this.allServices()].sort((a, b) => {
+      if (a.active !== b.active) return a.active ? -1 : 1;
+      return a.createdAt.localeCompare(b.createdAt);
+    }),
+  );
+
+  /** Quem realiza cada serviço — o vínculo mora em Professional.serviceIds. */
+  private readonly byService = computed(() => {
+    const grouped = new Map<Id, Professional[]>();
+
+    for (const professional of this.allProfessionals()) {
+      for (const serviceId of professional.serviceIds) {
+        grouped.set(serviceId, [...(grouped.get(serviceId) ?? []), professional]);
+      }
+    }
+    return grouped;
+  });
+
+  private readonly futureCounts = computed(() => {
+    const counts = new Map<Id, number>();
+    const now = Date.now();
+
+    for (const appointment of this.upcoming()) {
+      if (!STANDING.includes(appointment.status)) continue;
+      if (new Date(appointment.startsAt).getTime() < now) continue;
+      counts.set(appointment.serviceId, (counts.get(appointment.serviceId) ?? 0) + 1);
+    }
+    return counts;
+  });
+
+  protected professionalsOf(serviceId: Id): readonly Professional[] {
+    return this.byService().get(serviceId) ?? [];
+  }
+
+  protected openDialog(service: Service | null): void {
+    this.overlay.openDialog<ServiceDialog, ServiceDialogData, boolean>(ServiceDialog, {
+      service,
+      professionalIds: service
+        ? this.professionalsOf(service.id).map((professional) => professional.id)
+        : [],
+      futureAppointments: service ? (this.futureCounts().get(service.id) ?? 0) : 0,
+    });
+  }
 }

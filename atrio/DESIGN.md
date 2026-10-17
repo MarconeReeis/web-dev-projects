@@ -214,7 +214,16 @@ tem horários diferentes por dia, aparece um aviso antes de salvar.
 
 **Desativar com agendamentos futuros pede confirmação**, dizendo quantos são e
 que eles continuam de pé. Não existe excluir profissional, só desativar: o
-histórico e o financeiro apontam para o cadastro.
+histórico e o financeiro apontam para o cadastro. O mesmo vale para serviço.
+
+**O aviso de preço só aparece quando o preço muda.** A referência mostrava o
+aviso o tempo todo no formulário de serviço. Aviso permanente vira parte do
+cenário e deixa de ser lido justamente na vez em que importa — então ele
+aparece na alteração, e diz o valor antigo e o novo.
+
+**O catálogo de serviços fica em ordem de cadastro, não alfabética.** O dono
+pensa nisso como "a tabela", e a tabela tem a ordem que ele definiu. Inativos
+vão para o fim.
 
 ---
 
