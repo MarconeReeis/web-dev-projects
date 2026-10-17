@@ -1,0 +1,20 @@
+/**
+ * Folha de estilo do painel administrativo.
+ *
+ * Ordem obrigatória: Tailwind primeiro (ele registra as camadas), depois o
+ * design system do Átrio, que define os tokens e as utilities próprias.
+ *
+ * `@source` aponta os arquivos que o Tailwind precisa varrer para saber quais
+ * classes gerar. Sem a linha da lib, as classes usadas dentro dos componentes
+ * de @atrio/ui sairiam de fora do CSS final.
+ */
+
+@import 'tailwindcss';
+
+/* Posicionamento do overlay do CDK (backdrop e container). O visual é nosso,
+   em shared/ui/src/styles/overlay.css. */
+@import '../../../node_modules/@angular/cdk/overlay-prebuilt.css';
+@import '../../shared/ui/src/styles/index.css';
+
+@source './app';
+@source '../../shared/ui/src/lib';
