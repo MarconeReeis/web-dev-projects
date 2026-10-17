@@ -79,6 +79,19 @@ export abstract class ProfessionalRepository {
   abstract save(professional: Professional): Promise<void>;
   /** Desativa; nunca exclui. O histórico aponta para este registro. */
   abstract setActive(id: Id, active: boolean): Promise<void>;
+
+  /**
+   * Define quem realiza um serviço, substituindo o vínculo atual.
+   *
+   * Existe porque o vínculo mora em `Professional.serviceIds` e a tela de
+   * Serviços edita o outro lado dele. Como mexe em vários profissionais de
+   * uma vez, é UMA operação: metade dos profissionais atualizados deixaria o
+   * catálogo discordando da equipe. Em Firestore, um batch.
+   */
+  abstract setServiceAssignment(
+    serviceId: Id,
+    professionalIds: readonly Id[],
+  ): Promise<void>;
 }
 
 export abstract class ServiceRepository {

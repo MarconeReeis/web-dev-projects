@@ -199,6 +199,29 @@ export class DemoProfessionalRepository extends ProfessionalRepository {
         .professionals.map((p) => (p.id === id ? { ...p, active } : p)),
     );
   }
+
+  async setServiceAssignment(
+    serviceId: Id,
+    professionalIds: readonly Id[],
+  ): Promise<void> {
+    const stamp = new Date().toISOString();
+
+    this.store.setProfessionals(
+      this.store.snapshot().professionals.map((professional) => {
+        const shouldHave = professionalIds.includes(professional.id);
+        const has = professional.serviceIds.includes(serviceId);
+        if (shouldHave === has) return professional;
+
+        return {
+          ...professional,
+          serviceIds: shouldHave
+            ? [...professional.serviceIds, serviceId]
+            : professional.serviceIds.filter((id) => id !== serviceId),
+          updatedAt: stamp,
+        };
+      }),
+    );
+  }
 }
 
 @Injectable()

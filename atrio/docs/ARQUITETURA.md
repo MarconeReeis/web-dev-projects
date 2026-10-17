@@ -77,6 +77,26 @@ passado nem reabrir buracos em agendas já fechadas.
 
 ---
 
+## Quem faz o quê: um lado só
+
+O vínculo entre profissional e serviço mora **apenas** em
+`Professional.serviceIds`. `Service.professionalIds` existiu por um tempo e
+foi removido.
+
+Guardar a relação dos dois lados parece conveniente — cada consulta lê o
+documento que já tem em mãos — e é a origem garantida de divergência: a tela
+de Profissionais editava um lado, a de Serviços editaria o outro, e nada
+avisaria quando discordassem. O bug só apareceria no agendamento, como um
+profissional que some da lista de um serviço que ele faz.
+
+O custo de ter um lado só é varrer os profissionais para descobrir quem
+realiza um serviço. São poucos por barbearia, então é irrelevante — e a tela
+de Serviços escreve o vínculo por `ProfessionalRepository.setServiceAssignment`,
+que altera vários profissionais numa operação só. Metade deles atualizados
+deixaria o catálogo discordando da equipe, então em Firestore isso é um batch.
+
+---
+
 ## Financeiro
 
 Regras que a modelagem existe para garantir:

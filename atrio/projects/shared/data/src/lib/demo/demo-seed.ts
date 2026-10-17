@@ -316,7 +316,6 @@ export function buildDemoDataset(now: Date): DemoDataset {
       description,
       durationMinutes,
       price,
-      professionalIds: [],
       active: true,
       createdAt: ts,
       updatedAt: ts,

@@ -57,7 +57,6 @@ function service(durationMinutes: number): Service {
     description: null,
     durationMinutes,
     price: 4500,
-    professionalIds: [PRO_ID],
     active: true,
     ...AUDIT,
   };

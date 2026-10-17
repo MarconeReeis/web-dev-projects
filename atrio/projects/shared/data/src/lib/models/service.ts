@@ -1,5 +1,17 @@
 import { Audited, Cents, Id, TenantScoped } from './common';
 
+/**
+ * Serviço do catálogo.
+ *
+ * Quem realiza o quê fica SÓ em `Professional.serviceIds`. Guardar a mesma
+ * relação dos dois lados pareceria conveniente para consultar, e seria a
+ * origem garantida de divergência: duas telas editando lados diferentes do
+ * mesmo vínculo acabam discordando, e nada avisa.
+ *
+ * O custo de ter um lado só é varrer os profissionais para descobrir quem faz
+ * um serviço. São poucos por barbearia — e a tela de Serviços escreve o
+ * vínculo por ProfessionalRepository.setServiceAssignment.
+ */
 export interface Service extends TenantScoped, Audited {
   readonly id: Id;
   readonly name: string;
@@ -13,6 +25,5 @@ export interface Service extends TenantScoped, Audited {
    * reescreveria o faturamento do mês passado.
    */
   readonly price: Cents;
-  readonly professionalIds: readonly Id[];
   readonly active: boolean;
 }
