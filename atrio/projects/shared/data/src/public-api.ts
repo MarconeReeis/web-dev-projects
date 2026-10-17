@@ -23,6 +23,7 @@ export * from './lib/models/money';
 
 export * from './lib/period';
 export * from './lib/availability/availability';
+export * from './lib/availability/open-slots';
 
 export * from './lib/repositories/repositories';
 

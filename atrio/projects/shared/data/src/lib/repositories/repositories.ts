@@ -40,6 +40,22 @@ export abstract class AppointmentRepository {
   abstract watchById(id: Id): Observable<Appointment | null>;
 
   /**
+   * Agendamentos de um cliente, identificado pelo telefone.
+   *
+   * O telefone é a chave porque o cliente da barbearia existe sem conta: ele
+   * é digitado no balcão. Enquanto não há autenticação, é também como o app
+   * do cliente reencontra o que a pessoa marcou.
+   *
+   * Em Firestore isto exige índice em `client.phone` + `startsAt`. E, quando
+   * a autenticação entrar, a consulta passa a ser por `client.clientId` —
+   * telefone é identificador fraco, duas pessoas trocam de número.
+   */
+  abstract watchByClientPhone(
+    phone: string,
+    range: DateRange,
+  ): Observable<readonly Appointment[]>;
+
+  /**
    * Cria o agendamento.
    *
    * ATENÇÃO para a implementação Firebase: esta operação NÃO pode validar

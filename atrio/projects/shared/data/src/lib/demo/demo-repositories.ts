@@ -34,6 +34,20 @@ import {
 } from './demo-store';
 
 /**
+ * Compara telefones só pelos dígitos.
+ *
+ * "(11) 99100-2201" e "11991002201" são a mesma pessoa. Guardar formatado é
+ * melhor para ler na tela; comparar formatado faria o cliente não encontrar
+ * os próprios agendamentos por causa de um parêntese.
+ *
+ * Na implementação Firebase isso precisa virar um campo normalizado gravado
+ * junto, já que a consulta acontece no servidor.
+ */
+function digitsOf(phone: string | null): string {
+  return phone ? phone.replace(/\D/g, '') : '';
+}
+
+/**
  * Implementações de demonstração dos repositórios.
  *
  * Mesma assinatura da futura implementação Firebase — é isso que permite
@@ -63,6 +77,23 @@ export class DemoAppointmentRepository extends AppointmentRepository {
     return this.store
       .appointments$()
       .pipe(map((all) => all.find((a) => a.id === id) ?? null));
+  }
+
+  watchByClientPhone(
+    phone: string,
+    range: { from: IsoDateTime; to: IsoDateTime },
+  ): Observable<readonly Appointment[]> {
+    const wanted = digitsOf(phone);
+    if (!wanted) return this.store.appointments$().pipe(map(() => []));
+
+    return this.store.appointments$().pipe(
+      map((all) =>
+        all
+          .filter((appointment) => digitsOf(appointment.client.phone) === wanted)
+          .filter((appointment) => withinRange(appointment.startsAt, range))
+          .sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+      ),
+    );
   }
 
   async create(input: NewAppointment): Promise<Appointment> {
