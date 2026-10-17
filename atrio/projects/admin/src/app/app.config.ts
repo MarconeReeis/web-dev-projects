@@ -1,5 +1,5 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, isDevMode } from '@angular/core';
-import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideAtrioConfig } from '@atrio/core';
 import { provideDemoData } from '@atrio/data';
 import { routes } from './app.routes';
@@ -12,8 +12,17 @@ export const appConfig: ApplicationConfig = {
       routes,
       // Parâmetros de rota chegam como inputs do componente, sem ActivatedRoute.
       withComponentInputBinding(),
-      // Transição discreta entre seções; o navegador ignora onde não há suporte.
-      withViewTransitions(),
+      //
+      // NÃO use withViewTransitions() aqui.
+      //
+      // Ele faz a navegação esperar a promessa de document.startViewTransition().
+      // Em ambientes onde essa promessa não resolve — webview embutido, página
+      // em segundo plano, compositor sem produzir quadros — a rota nunca ativa
+      // e o painel fica em branco, sem erro que explique.
+      //
+      // Aconteceu de verdade: clicar no menu deixava de navegar e a tela
+      // esvaziava. O ganho era um cross-fade decorativo; a perda, um painel
+      // inutilizável no tablet do balcão. Troca ruim.
     ),
 
     provideAtrioConfig({
