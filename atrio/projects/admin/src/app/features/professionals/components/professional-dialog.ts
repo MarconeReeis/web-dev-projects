@@ -25,7 +25,7 @@ import {
   AtrSurfaceShell,
   AtrSwitch,
 } from '@atrio/ui';
-import { readSquareAvatar } from './photo';
+import { readSquareAvatar } from '../../../shared/photo';
 
 const WEEKDAYS: readonly Weekday[] = [0, 1, 2, 3, 4, 5, 6];
 

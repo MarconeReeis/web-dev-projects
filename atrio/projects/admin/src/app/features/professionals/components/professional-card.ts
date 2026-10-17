@@ -9,6 +9,7 @@ import {
   formatTime,
 } from '@atrio/data';
 import { AtrAvatar, AtrBadge, AtrButton, AtrIcon } from '@atrio/ui';
+import { daysLabel } from '../../../shared/week-summary';
 
 const WEEKDAYS: readonly Weekday[] = [0, 1, 2, 3, 4, 5, 6];
 
@@ -290,35 +291,3 @@ function breakOf(day: DaySchedule): string {
   return day.breaks.map((item) => `${item.start} – ${item.end}`).join(', ');
 }
 
-const WEEKDAY_SHORT: Readonly<Record<Weekday, string>> = {
-  0: 'Dom',
-  1: 'Seg',
-  2: 'Ter',
-  3: 'Qua',
-  4: 'Qui',
-  5: 'Sex',
-  6: 'Sáb',
-};
-
-/**
- * Comprime dias contíguos: [1,2,3,4] vira "Seg-Qui", [1,3,5] vira
- * "Seg, Qua, Sex". Dois dias seguidos ficam separados por vírgula, porque
- * "Seg-Ter" ocupa o mesmo espaço de "Seg, Ter" e lê pior.
- */
-function daysLabel(days: readonly Weekday[]): string {
-  const runs: Weekday[][] = [];
-
-  for (const day of [...days].sort((a, b) => a - b)) {
-    const last = runs[runs.length - 1];
-    if (last && day === last[last.length - 1] + 1) last.push(day);
-    else runs.push([day]);
-  }
-
-  return runs
-    .map((run) =>
-      run.length > 2
-        ? `${WEEKDAY_SHORT[run[0]]}–${WEEKDAY_SHORT[run[run.length - 1]]}`
-        : run.map((day) => WEEKDAY_SHORT[day]).join(', '),
-    )
-    .join(', ');
-}
