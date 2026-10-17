@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map } from 'rxjs';
 import { TenantContext } from '@atrio/core';
 import { AtrAvatar, AtrIcon } from '@atrio/ui';
 import { ClientIdentity } from '../shared/client-identity';
@@ -22,7 +24,7 @@ import { ClientIdentity } from '../shared/client-identity';
 @Component({
   selector: 'bkg-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, AtrAvatar, AtrIcon],
+  imports: [RouterOutlet, RouterLink, AtrAvatar, AtrIcon],
   host: { class: 'flex min-h-dvh flex-col bg-background' },
   template: `
     <header class="mx-auto w-full max-w-2xl px-4 pt-5">
@@ -73,14 +75,17 @@ import { ClientIdentity } from '../shared/client-identity';
         <div class="floating flex items-center gap-1 rounded-full bg-card p-1.5">
           @for (item of navItems; track item.path) {
             <a
-              #rla="routerLinkActive"
               [routerLink]="item.path"
-              [routerLinkActiveOptions]="{ exact: item.exact }"
-              routerLinkActive="bg-primary-soft! text-primary-soft-foreground!"
-              class="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full text-sm font-semibold text-muted-foreground transition-colors"
+              class="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full text-sm font-semibold transition-colors"
+              [class]="
+                isActive(item.section)
+                  ? 'bg-primary-soft text-primary-soft-foreground'
+                  : 'text-muted-foreground'
+              "
+              [attr.aria-current]="isActive(item.section) ? 'page' : null"
             >
               <atr-icon [name]="item.icon" [size]="20" />
-              @if (rla.isActive) {
+              @if (isActive(item.section)) {
                 {{ item.label }}
               }
             </a>
@@ -94,15 +99,39 @@ export class Shell {
   protected readonly tenant = inject(TenantContext);
   protected readonly identity = inject(ClientIdentity);
 
+  private readonly router = inject(Router);
+
   protected readonly navItems = [
-    { path: './', label: 'Início', icon: 'store' as const, exact: true },
+    { path: './', label: 'Início', icon: 'store' as const, section: 'inicio' as const },
     {
       path: './meus-horarios',
       label: 'Meus horários',
       icon: 'calendar-days' as const,
-      exact: false,
+      section: 'horarios' as const,
     },
   ];
+
+  /**
+   * URL atual, como signal.
+   *
+   * `router.url` sozinho não é reativo, e `routerLinkActive` não dá conta
+   * aqui: a tela de profissionais é alcançada a partir do Início e precisa
+   * manter esse item aceso, mas o caminho dela não casa com "./" nem em modo
+   * exato nem em prefixo — sem isso a barra fica sem nenhum item ativo e
+   * parece morta.
+   */
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  protected isActive(section: 'inicio' | 'horarios'): boolean {
+    const onSchedule = this.url().includes('/meus-horarios');
+    return section === 'horarios' ? onSchedule : !onSchedule;
+  }
 
   protected readonly period = computed(() => {
     const hour = new Date().getHours();

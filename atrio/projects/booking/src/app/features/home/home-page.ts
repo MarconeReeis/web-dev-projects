@@ -126,18 +126,33 @@ const HORIZON_DAYS = 120;
 
     <!-- Equipe -->
     @if (professionals().length > 0) {
-      <atr-card heading="Quem atende" class="mt-4">
+      <atr-card
+        heading="Quem atende"
+        subheading="Toque para agendar com quem você prefere."
+        class="mt-4"
+      >
+        <a atrButton="outline" size="sm" routerLink="../profissionais" card-action>
+          Ver todos
+          <atr-icon name="chevron-right" [size]="15" />
+        </a>
+
         <ul class="flex flex-wrap gap-4">
           @for (professional of professionals(); track professional.id) {
-            <li class="flex w-20 flex-col items-center gap-2 text-center">
-              <atr-avatar
-                [name]="professional.name"
-                [photoUrl]="professional.photoUrl"
-                size="lg"
-              />
-              <span class="text-xs leading-tight font-semibold">
-                {{ professional.name }}
-              </span>
+            <li>
+              <a
+                class="flex w-20 flex-col items-center gap-2 rounded-2xl p-1 text-center transition-colors hover:bg-accent"
+                [routerLink]="['../agendar']"
+                [queryParams]="{ profissional: professional.id }"
+              >
+                <atr-avatar
+                  [name]="professional.name"
+                  [photoUrl]="professional.photoUrl"
+                  size="lg"
+                />
+                <span class="text-xs leading-tight font-semibold">
+                  {{ professional.name }}
+                </span>
+              </a>
             </li>
           }
         </ul>

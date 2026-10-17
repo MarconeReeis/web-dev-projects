@@ -100,7 +100,7 @@ const TITLES: Readonly<Record<Step, string>> = {
           <span class="min-w-0 flex-1">
             <span class="block truncate font-bold">{{ title() }}</span>
             <span class="block text-xs text-muted-foreground">
-              Passo {{ stepNumber() }} de {{ total }}
+              Passo {{ stepNumber() }} de {{ total() }}
             </span>
           </span>
         }
@@ -110,7 +110,7 @@ const TITLES: Readonly<Record<Step, string>> = {
         <div class="h-1 bg-muted">
           <div
             class="h-full bg-primary transition-[width] duration-300"
-            [style.width.%]="(stepNumber() / total) * 100"
+            [style.width.%]="(stepNumber() / total()) * 100"
           ></div>
         </div>
       }
@@ -121,7 +121,7 @@ const TITLES: Readonly<Record<Step, string>> = {
         <!-- 1. Serviço -->
         @case ('servico') {
           <ul class="flex flex-col gap-2">
-            @for (service of services(); track service.id) {
+            @for (service of visibleServices(); track service.id) {
               <li>
                 <button
                   type="button"
@@ -350,13 +350,22 @@ export class BookingPage {
   private readonly router = inject(Router);
   protected readonly tenant = inject(TenantContext);
 
-  /** Atalho vindo da tela inicial: /agendar?servico=svc-corte */
+  /**
+   * Atalhos vindos da tela inicial.
+   *
+   *   ?servico=svc-corte       abre já no passo do profissional
+   *   ?profissional=pro-caio   trava a pessoa e pula esse passo
+   *
+   * O segundo atende quem já tem barbeiro: o fluxo canônico continua
+   * começando pelo serviço, mas quem entrou pela pessoa não precisa
+   * escolhê-la de novo.
+   */
   readonly servico = input<string | undefined>(undefined);
+  readonly profissional = input<string | undefined>(undefined);
   readonly slug = input<string | undefined>(undefined);
 
   protected money = formatMoney;
   protected time = formatTime;
-  protected readonly total = ORDER.length;
 
   protected readonly step = signal<Step>('servico');
   protected readonly serviceId = signal<Id | null>(null);
@@ -380,6 +389,9 @@ export class BookingPage {
     initialValue: [] as readonly Professional[],
   });
 
+  /** Profissional travado pela URL: o passo de escolher pessoa some. */
+  protected readonly lockedProfessional = signal<Id | null>(null);
+
   constructor() {
     // Chegando pelo atalho da tela inicial, o serviço já está escolhido e o
     // fluxo abre no passo seguinte — repetir a escolha seria um toque morto.
@@ -391,6 +403,17 @@ export class BookingPage {
         if (this.serviceId() !== null) return;
         this.serviceId.set(fromQuery);
         this.step.set('profissional');
+      });
+    });
+
+    effect(() => {
+      const fromQuery = this.profissional();
+      if (!fromQuery) return;
+
+      untracked(() => {
+        if (this.lockedProfessional() !== null) return;
+        this.lockedProfessional.set(fromQuery);
+        this.professionalId.set(fromQuery);
       });
     });
   }
@@ -482,9 +505,37 @@ export class BookingPage {
 
   protected readonly title = computed(() => TITLES[this.step()]);
 
+  /**
+   * Passos desta sessão.
+   *
+   * Entrando pelo profissional, "Com quem?" sai da lista — e sai também da
+   * contagem: mostrar "Passo 2 de 4" num fluxo de três passos faz o cliente
+   * esperar uma tela que não vem.
+   */
+  protected readonly steps = computed<readonly Step[]>(() =>
+    this.lockedProfessional()
+      ? ORDER.filter((step) => step !== 'profissional')
+      : ORDER,
+  );
+
+  protected readonly total = computed(() => this.steps().length);
+
   protected readonly stepNumber = computed(() => {
-    const index = ORDER.indexOf(this.step());
-    return index < 0 ? ORDER.length : index + 1;
+    const index = this.steps().indexOf(this.step());
+    return index < 0 ? this.steps().length : index + 1;
+  });
+
+  /** No passo do serviço, só o que o profissional travado realiza. */
+  protected readonly visibleServices = computed(() => {
+    const locked = this.lockedProfessional();
+    if (!locked) return this.services();
+
+    const professional = this.professionals().find((item) => item.id === locked);
+    if (!professional) return this.services();
+
+    return this.services().filter((service) =>
+      professional.serviceIds.includes(service.id),
+    );
   });
 
   protected readonly dateLabel = computed(() => {
@@ -526,13 +577,13 @@ export class BookingPage {
 
   protected chooseService(id: Id): void {
     if (this.serviceId() !== id) {
-      // Trocar de serviço invalida profissional e horário: a duração mudou e
-      // quem realiza pode ser outro.
-      this.professionalId.set(null);
+      // Trocar de serviço invalida horário, e também o profissional quando
+      // ele não veio travado: a duração mudou e quem realiza pode ser outro.
+      if (!this.lockedProfessional()) this.professionalId.set(null);
       this.startsAt.set(null);
     }
     this.serviceId.set(id);
-    this.step.set('profissional');
+    this.step.set(this.lockedProfessional() ? 'horario' : 'profissional');
   }
 
   protected chooseProfessional(id: Id | null): void {
@@ -547,19 +598,19 @@ export class BookingPage {
   }
 
   protected back(): void {
-    const index = ORDER.indexOf(this.step());
+    const index = this.steps().indexOf(this.step());
     // No primeiro passo, voltar sai do fluxo e devolve à vitrine.
     if (index <= 0) {
       void this.router.navigate(['/b', this.slug() ?? '']);
       return;
     }
-    this.step.set(ORDER[index - 1]);
+    this.step.set(this.steps()[index - 1]);
   }
 
   protected async advance(): Promise<void> {
     if (this.step() !== 'confirmar') {
-      const index = ORDER.indexOf(this.step());
-      this.step.set(ORDER[index + 1]);
+      const index = this.steps().indexOf(this.step());
+      this.step.set(this.steps()[index + 1]);
       return;
     }
 

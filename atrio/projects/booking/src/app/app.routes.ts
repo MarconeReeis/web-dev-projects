@@ -31,6 +31,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/home/home-page').then((m) => m.HomePage),
       },
       {
+        path: 'profissionais',
+        title: 'Profissionais',
+        loadComponent: () =>
+          import('./features/professionals/professionals-page').then(
+            (m) => m.ProfessionalsPage,
+          ),
+      },
+      {
         path: 'meus-horarios',
         title: 'Meus horários',
         loadComponent: () =>

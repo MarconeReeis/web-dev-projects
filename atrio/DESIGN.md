@@ -295,6 +295,36 @@ leva a becos.
 preferência, e obrigar a escolher esconde horários: o cliente vê a agenda de
 um barbeiro lotada e desiste, sem saber que o outro tinha a mesma hora livre.
 
+### Três portas para o mesmo fluxo
+
+A ordem canônica não muda; o que muda é por onde se entra nela. Quem é fiel
+ao barbeiro pensa primeiro na pessoa, e obrigá-lo a passar pelo catálogo
+antes seria atrito à toa.
+
+| Entrada | Caminho | Passos |
+| --- | --- | --- |
+| "Agendar horário" | serviço → profissional → horário | 4 |
+| Card de serviço | profissional → horário | 4, abrindo no 2º |
+| Card de profissional | serviço (filtrado) → horário | 3 |
+
+Entrando pelo profissional, o passo "Com quem?" sai da lista **e da
+contagem**: mostrar "Passo 2 de 4" num fluxo de três faz o cliente esperar
+uma tela que não vem. E o passo do serviço mostra só o que aquela pessoa
+realiza — o beco do "ele não faz barba" não chega a existir.
+
+### Tela de profissionais
+
+Cards de duas colunas com foto, nome e **especialidade** — "Degradê e
+freestyle". É a especialidade que decide a escolha: a lista de serviços diz o
+que o profissional *pode* fazer, não o que ele faz bem. Sem especialidade
+cadastrada, cai na lista de serviços, melhor que espaço em branco. A foto vem
+do cadastro no painel; sem ela, iniciais num bloco lilás, como nos cards de
+serviço.
+
+O item "Início" da barra inferior fica aceso aqui: a tela é alcançada a
+partir dele, e o estado ativo é decidido pela URL em vez de `routerLinkActive`
+— que não casaria com nenhum item e deixaria a barra parecendo morta.
+
 ### Tela inicial
 
 Ordem: cabeçalho com saudação → destaque → próximo agendamento (quando há) →
