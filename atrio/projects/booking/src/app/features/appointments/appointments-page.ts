@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { switchMap } from 'rxjs';
@@ -223,6 +231,24 @@ export class AppointmentsPage {
     ),
     { initialValue: [] as readonly Appointment[] },
   );
+
+  constructor() {
+    // Quem se reencontra digitando o telefone não informa o nome — e o
+    // cabeçalho passava a dizer "Olá!" para alguém que o app já conhece. Os
+    // próprios agendamentos carregam o nome, então aproveitamos o primeiro
+    // que aparecer.
+    effect(() => {
+      const encontrados = this.appointments();
+      if (encontrados.length === 0) return;
+
+      untracked(() => {
+        if (this.identity.name()) return;
+
+        const nome = encontrados[encontrados.length - 1].client.name;
+        if (nome) this.identity.remember(nome, this.identity.phone());
+      });
+    });
+  }
 
   protected readonly upcoming = computed(() => {
     const now = Date.now();
