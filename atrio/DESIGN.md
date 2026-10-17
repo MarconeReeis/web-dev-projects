@@ -225,6 +225,23 @@ aparece na alteração, e diz o valor antigo e o novo.
 pensa nisso como "a tabela", e a tabela tem a ordem que ele definiu. Inativos
 vão para o fim.
 
+**No Financeiro, "Pendentes" não é uma movimentação.** Enquanto o pagamento
+não é registrado, não houve dinheiro e não existe lançamento. A aba continua
+— é trabalho de balcão saber o que falta cobrar —, mas quando está ativa a
+tabela troca de cabeçalho, perde a coluna "Forma" (não há forma de pagamento
+ainda) e ganha a ação de registrar. Misturar as duas coisas na mesma lista
+convidaria a somar pendência com recebimento.
+
+**"Período personalizado" abre um seletor de datas.** Na referência era um
+botão que não fazia nada — aqui e na Dashboard, onde escolher o período
+personalizado caía silenciosamente no dia de hoje. Escolhido o período, a
+cápsula passa a mostrá-lo ("01/10 a 10/10") em vez do rótulo genérico, senão
+o usuário perde de vista qual recorte está olhando.
+
+**Registrar pagamento abre direto na escolha da forma.** Quem clicou em
+"Registrar" já decidiu o que quer fazer; mostrar os detalhes antes seria um
+toque a mais para chegar no mesmo lugar.
+
 ---
 
 ## 7. PWA

@@ -22,9 +22,10 @@ npm run start:booking  # booking em http://localhost:4300
 Requer **Node 22.22.3+, 24.15+ ou 26+** (exigência do Angular 22).
 
 Nenhum backend é necessário: o app sobe em **modo demonstração**, com dados
-fictícios gerados para o dia corrente e guardados no `localStorage`. A grade de
-atendimentos se ajusta ao horário em que você abre, então a Dashboard sempre
-mostra atendimentos concluídos, um em andamento e os próximos.
+fictícios guardados no `localStorage`. A grade de atendimentos se ajusta ao
+horário em que você abre, então a Dashboard sempre mostra atendimentos
+concluídos, um em andamento e os próximos. São gerados também 30 dias de
+histórico, para os filtros de semana e mês e o Financeiro mostrarem algo real.
 
 ```bash
 npm run build          # compila os dois apps
@@ -76,9 +77,10 @@ do admin, Dashboard, PWA nos dois apps, motor de disponibilidade, a tela de
 Agenda — grade diária e semanal, bloqueio de horário, painel de detalhes com
 as ações do atendimento e o cadastro de agendamento com horários livres
 calculados — a tela de Profissionais, com cadastro, edição, jornada, serviços
-realizados, foto e bloqueios, e a tela de Serviços e preços, com catálogo,
-duração, valores e profissionais habilitados.
+realizados, foto e bloqueios, a tela de Serviços e preços, com catálogo,
+duração, valores e profissionais habilitados, e a tela de Financeiro, com
+indicadores do período, movimentações, pendências, despesas e registro de
+pagamento.
 
-A seguir: tela de Financeiro (lista de movimentações, despesas, registro de
-pagamento fora da Agenda), Configurações, o app do cliente além da vitrine,
-autenticação e Firebase.
+A seguir: Configurações, o app do cliente além da vitrine, autenticação e
+Firebase.
