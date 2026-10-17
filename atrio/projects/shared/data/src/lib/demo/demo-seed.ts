@@ -12,6 +12,7 @@ import {
   TimeBlock,
   TimeWindow,
   WeeklySchedule,
+  Weekday,
   workingDay,
 } from '../models/schedule';
 import { clockToMinutes, minutesToClock } from '../availability/availability';
@@ -134,6 +135,174 @@ function shiftSchedule(schedule: WeeklySchedule, minutes: number): WeeklySchedul
 
 function clamp(minutes: number): number {
   return Math.max(0, Math.min(24 * 60, minutes));
+}
+
+
+/** Dias de histórico gerados antes de hoje. */
+const HISTORY_DAYS = 30;
+
+/**
+ * Gerador pseudoaleatório com semente.
+ *
+ * Determinístico de propósito: o histórico precisa ser o mesmo entre recargas
+ * do mesmo dia, senão o faturamento do mês muda a cada F5 e a demonstração
+ * perde credibilidade na frente do cliente.
+ */
+function seededRandom(seed: number): () => number {
+  let state = seed % 2147483647;
+  if (state <= 0) state += 2147483646;
+  return () => {
+    state = (state * 16807) % 2147483647;
+    return (state - 1) / 2147483646;
+  };
+}
+
+/**
+ * Histórico dos dias anteriores.
+ *
+ * Sem ele, "Esta semana" e "Este mês" mostram exatamente o mesmo que "Hoje",
+ * e o Financeiro parece quebrado — justamente a tela que se usa para mostrar
+ * o valor do sistema a quem vai assinar.
+ *
+ * Todo atendimento passado está resolvido: pago, cancelado ou não comparecido.
+ * Pendência de um mês atrás não existe em barbearia, e inflaria o indicador
+ * de pagamentos pendentes a ponto de torná-lo inútil.
+ */
+function buildHistory(
+  now: Date,
+  services: readonly Service[],
+  professionals: readonly Professional[],
+  schedule: WeeklySchedule,
+): { appointments: Appointment[]; entries: FinanceEntry[] } {
+  const appointments: Appointment[] = [];
+  const entries: FinanceEntry[] = [];
+  const methods: PaymentMethod[] = ['pix', 'dinheiro', 'cartao'];
+  const active = professionals.filter((professional) => professional.active);
+
+  const clients = [
+    'Anderson Melo', 'Breno Carvalho', 'Cristiano Dias', 'Davi Moreira',
+    'Emerson Pires', 'Fábio Nogueira', 'Geraldo Pinto', 'Hugo Barreto',
+    'Ivan Salgado', 'Joel Marques', 'Kleber Rangel', 'Lucas Teixeira',
+    'Moacir Fontes', 'Nelson Prado', 'Osmar Vieira', 'Patrick Lemos',
+  ];
+
+  for (let back = HISTORY_DAYS; back >= 1; back--) {
+    const day = new Date(now);
+    day.setDate(day.getDate() - back);
+    day.setHours(0, 0, 0, 0);
+
+    const weekday = day.getDay() as Weekday;
+    const daySchedule = schedule[weekday];
+    if (!daySchedule.working || daySchedule.windows.length === 0) continue;
+
+    const random = seededRandom(day.getFullYear() * 10000 + (day.getMonth() + 1) * 100 + day.getDate());
+    const open = clockToMinutes(daySchedule.windows[0].start);
+    const close = clockToMinutes(daySchedule.windows[daySchedule.windows.length - 1].end);
+
+    // Sábado lota; no resto da semana o movimento é mais fraco.
+    const perProfessional = weekday === 6 ? 6 : 3 + Math.floor(random() * 3);
+
+    active.forEach((professional, proIndex) => {
+      for (let slot = 0; slot < perProfessional; slot++) {
+        const service = services[Math.floor(random() * services.length)];
+        const offset = open + 30 * proIndex + slot * 90 + Math.floor(random() * 30);
+        if (offset + service.durationMinutes > close) continue;
+
+        const startsAt = new Date(day);
+        startsAt.setHours(0, offset, 0, 0);
+        const endsAt = plusMinutes(startsAt, service.durationMinutes);
+
+        const roll = random();
+        const status: AppointmentStatus =
+          roll < 0.06 ? 'cancelado' : roll < 0.12 ? 'nao_compareceu' : 'concluido';
+        const paid = status === 'concluido';
+        const method = methods[Math.floor(random() * methods.length)];
+        const paidAt = paid ? iso(endsAt) : null;
+        const id = `apt-h${back}-${professional.id}-${slot}`;
+
+        appointments.push({
+          id,
+          tenantId: DEMO_TENANT_ID,
+          professionalId: professional.id,
+          serviceId: service.id,
+          serviceName: service.name,
+          client: {
+            clientId: null,
+            name: clients[Math.floor(random() * clients.length)],
+            phone: null,
+          },
+          startsAt: iso(startsAt),
+          endsAt: iso(endsAt),
+          durationMinutes: service.durationMinutes,
+          price: service.price,
+          status,
+          payment: {
+            status: paid ? 'pago' : 'pendente',
+            method: paid ? method : null,
+            paidAt,
+          },
+          notes: null,
+          createdAt: iso(startsAt),
+          updatedAt: iso(endsAt),
+        });
+
+        if (paid && paidAt) {
+          entries.push({
+            id: `fin-${id}`,
+            tenantId: DEMO_TENANT_ID,
+            kind: 'recebimento',
+            description: `${service.name} — ${appointments[appointments.length - 1].client.name}`,
+            amount: service.price,
+            occurredAt: paidAt,
+            method,
+            appointmentId: id,
+            professionalId: professional.id,
+            category: null,
+            createdAt: paidAt,
+            updatedAt: paidAt,
+          });
+        }
+      }
+    });
+
+    // Uma despesa de loja a cada poucos dias, mais o aluguel no dia 5.
+    if (day.getDate() === 5) {
+      entries.push(historyExpense(`fin-exp-rent-${back}`, 'Aluguel do ponto', 280000, day, 10, 'aluguel'));
+    } else if (back % 4 === 0) {
+      const amount = 6000 + Math.floor(random() * 18000);
+      entries.push(historyExpense(`fin-exp-h${back}`, 'Reposição de produtos', amount, day, 11, 'produtos'));
+    }
+  }
+
+  return { appointments, entries };
+}
+
+function historyExpense(
+  id: Id,
+  description: string,
+  amount: Cents,
+  day: Date,
+  hour: number,
+  category: FinanceEntry['category'],
+): FinanceEntry {
+  const when = new Date(day);
+  when.setHours(hour, 0, 0, 0);
+  const stamp = iso(when);
+
+  return {
+    id,
+    tenantId: DEMO_TENANT_ID,
+    kind: 'despesa',
+    description,
+    amount,
+    occurredAt: stamp,
+    method: null,
+    appointmentId: null,
+    professionalId: null,
+    category,
+    createdAt: stamp,
+    updatedAt: stamp,
+  };
 }
 
 export function todayKey(now: Date): string {
@@ -291,12 +460,14 @@ export function buildDemoDataset(now: Date): DemoDataset {
     },
   ];
 
+  const history = buildHistory(now, services, professionals, schedule);
+
   return {
     tenant,
     professionals,
     services,
-    appointments,
-    entries,
+    appointments: [...history.appointments, ...appointments],
+    entries: [...history.entries, ...entries],
     blocks,
     seededFor: todayKey(now),
   };
