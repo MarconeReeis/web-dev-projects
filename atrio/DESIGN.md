@@ -295,6 +295,29 @@ leva a becos.
 preferência, e obrigar a escolher esconde horários: o cliente vê a agenda de
 um barbeiro lotada e desiste, sem saber que o outro tinha a mesma hora livre.
 
+### Tela inicial
+
+Ordem: cabeçalho com saudação → destaque → próximo agendamento (quando há) →
+agendar → serviços em cards → equipe → a barbearia → instalar.
+
+**O cabeçalho não tem borda.** Ele se dissolve no conteúdo, como na
+referência; uma linha separando saudação de conteúdo dividiria a tela em duas
+sem que haja duas coisas. À esquerda, avatar e saudação; à direita, o logo da
+barbearia — que é assinatura, não botão.
+
+**Sem login, a saudação é "Olá!".** Quando o aparelho já guarda um nome de um
+agendamento anterior, mostra o nome. Com autenticação, entram nome e foto da
+conta.
+
+**O destaque é editável pela barbearia** (Configurações → Destaque no app do
+cliente) e some quando desligado. Banner que só o desenvolvedor muda não serve
+para promoção: a data passa e ele fica mentindo na tela do cliente. Espaço
+vazio é melhor que anúncio genérico ocupando o topo.
+
+**Serviços em cards de duas colunas**, com bloco lilás e ícone no lugar da
+foto. Foto por serviço é o próximo passo natural — exige campo no modelo e
+upload no painel.
+
 ---
 
 ## 7. PWA

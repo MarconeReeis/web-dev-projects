@@ -22,9 +22,9 @@ const HORIZON_DAYS = 120;
 /**
  * Vitrine da barbearia e ponto de partida do agendamento.
  *
- * A ordem responde ao que a pessoa abriu o app para fazer: primeiro o que já
- * está marcado (se houver), depois marcar de novo, depois o catálogo. Quem
- * abre sem agendamento cai direto no botão de agendar.
+ * Ordem da tela: destaque da barbearia, o que já está marcado (quando há),
+ * a ação de agendar e o catálogo. A saudação subiu para o cabeçalho — ver
+ * o shell.
  */
 @Component({
   selector: 'bkg-home-page',
@@ -32,78 +32,97 @@ const HORIZON_DAYS = 120;
   imports: [RouterLink, AtrCard, AtrButton, AtrIcon, AtrAvatar],
   host: { class: 'block' },
   template: `
-    <!-- Saudação -->
-    <h1 class="text-2xl font-extrabold tracking-tight">
-      {{ greeting() }}
-    </h1>
-    <p class="mt-1 text-sm text-muted-foreground">
-      {{ tenant.name() }} · {{ cityLabel() }}
-    </p>
+    <!-- Destaque da barbearia -->
+    @if (highlight(); as promo) {
+      <section class="rounded-surface relative overflow-hidden bg-ink p-5 text-ink-foreground">
+        <!-- Brilho decorativo: dá profundidade sem imagem, que a barbearia
+             não tem como cadastrar ainda. -->
+        <span
+          class="pointer-events-none absolute -top-16 -right-10 size-44 rounded-full bg-primary/30 blur-2xl"
+          aria-hidden="true"
+        ></span>
+
+        <div class="relative">
+          <h2 class="text-xl font-extrabold text-balance">{{ promo.title }}</h2>
+          @if (promo.subtitle) {
+            <p class="mt-1.5 text-sm text-balance text-ink-muted">{{ promo.subtitle }}</p>
+          }
+          @if (promo.ctaLabel) {
+            <a atrButton size="sm" class="mt-4" [routerLink]="['../agendar']">
+              {{ promo.ctaLabel }}
+            </a>
+          }
+        </div>
+      </section>
+    }
 
     <!-- Próximo agendamento -->
     @if (nextAppointment(); as next) {
-      <div class="mt-5 rounded-surface bg-ink p-5 text-ink-foreground">
-        <p class="text-sm text-ink-muted">Seu próximo horário</p>
-        <p class="mt-1 text-xl font-extrabold">{{ next.serviceName }}</p>
-        <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-          <span class="inline-flex items-center gap-2">
-            <atr-icon name="calendar-days" [size]="16" class="text-ink-muted" />
-            {{ dateLabel(next.startsAt) }}
-          </span>
-          <span class="tabular inline-flex items-center gap-2">
-            <atr-icon name="clock" [size]="16" class="text-ink-muted" />
-            {{ time(next.startsAt) }}
-          </span>
-          <span class="inline-flex items-center gap-2">
-            <atr-icon name="user-round" [size]="16" class="text-ink-muted" />
-            {{ professionalName(next.professionalId) }}
-          </span>
-        </div>
-        <a
-          atrButton="soft"
-          size="sm"
-          class="mt-4"
-          routerLink="../meus-horarios"
+      <a
+        class="mt-4 flex items-center gap-4 rounded-surface border border-primary bg-primary-soft p-4 transition-colors hover:brightness-97"
+        routerLink="../meus-horarios"
+      >
+        <span
+          class="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
         >
-          Ver meus horários
-        </a>
-      </div>
+          <atr-icon name="calendar-check" [size]="20" />
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block text-sm text-primary-soft-foreground">Seu próximo horário</span>
+          <span class="block truncate font-bold text-primary-soft-foreground">
+            {{ dateLabel(next.startsAt) }} · {{ time(next.startsAt) }}
+          </span>
+        </span>
+        <atr-icon name="chevron-right" [size]="18" class="shrink-0 text-primary-soft-foreground" />
+      </a>
     }
 
-    <!-- Ação principal -->
-    <a atrButton size="lg" class="mt-5 w-full" [routerLink]="['../agendar']">
+    <!-- Agendar -->
+    <a atrButton size="lg" class="mt-4 w-full" [routerLink]="['../agendar']">
       <atr-icon name="plus" [size]="18" />
       Agendar horário
     </a>
 
     <!-- Serviços -->
-    <atr-card heading="Serviços" subheading="Toque para agendar." class="mt-5">
-      <ul class="flex flex-col gap-2">
-        @for (service of services(); track service.id) {
-          <li>
-            <a
-              class="flex w-full items-center gap-4 rounded-2xl border border-border p-4 transition-colors hover:border-primary"
-              [routerLink]="['../agendar']"
-              [queryParams]="{ servico: service.id }"
+    <div class="mt-7 flex items-baseline justify-between gap-3">
+      <h2 class="text-lg font-bold">Serviços</h2>
+      <a class="text-sm font-semibold text-primary" [routerLink]="['../agendar']">Ver todos</a>
+    </div>
+
+    <ul class="mt-3 grid grid-cols-2 gap-3">
+      @for (service of services(); track service.id) {
+        <li>
+          <a
+            class="surface flex h-full flex-col overflow-hidden transition-colors hover:border-primary"
+            [routerLink]="['../agendar']"
+            [queryParams]="{ servico: service.id }"
+          >
+            <span
+              class="flex h-24 items-center justify-center bg-primary-soft text-primary-soft-foreground"
             >
-              <span class="min-w-0 flex-1">
-                <span class="block font-bold">{{ service.name }}</span>
-                <span class="block text-sm text-balance text-muted-foreground">
-                  {{ service.durationMinutes }} min
-                  @if (service.description) {
-                    · {{ service.description }}
-                  }
+              <atr-icon name="scissors" [size]="30" />
+            </span>
+
+            <span class="flex flex-1 flex-col p-3.5">
+              <span class="font-bold text-balance">{{ service.name }}</span>
+              <span class="tabular mt-0.5 text-sm text-muted-foreground">
+                {{ service.durationMinutes }} min
+              </span>
+
+              <span class="mt-3 flex items-center justify-between gap-2">
+                <span class="tabular font-extrabold">{{ money(service.price) }}</span>
+                <span
+                  class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
+                  aria-hidden="true"
+                >
+                  <atr-icon name="plus" [size]="16" />
                 </span>
               </span>
-              <span class="tabular shrink-0 font-extrabold">
-                {{ money(service.price) }}
-              </span>
-              <atr-icon name="chevron-right" [size]="18" class="shrink-0 text-muted-foreground" />
-            </a>
-          </li>
-        }
-      </ul>
-    </atr-card>
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
 
     <!-- Equipe -->
     @if (professionals().length > 0) {
@@ -203,6 +222,12 @@ export class HomePage {
     { initialValue: [] as readonly Appointment[] },
   );
 
+  /** Banner só aparece quando a barbearia tem algo a dizer. */
+  protected readonly highlight = computed(() => {
+    const promo = this.tenant.tenant()?.highlight;
+    return promo?.active ? promo : null;
+  });
+
   protected readonly nextAppointment = computed(() => {
     const now = Date.now();
     return (
@@ -212,24 +237,6 @@ export class HomePage {
           new Date(appointment.startsAt).getTime() >= now,
       ) ?? null
     );
-  });
-
-  /**
-   * Saudação pela hora do aparelho.
-   *
-   * Com nome quando já conhecemos a pessoa de um agendamento anterior — é o
-   * único uso que o app faz dessa lembrança antes de ela pedir algo.
-   */
-  protected readonly greeting = computed(() => {
-    const hour = new Date().getHours();
-    const period = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-    const name = this.identity.name().split(' ')[0];
-    return name ? `${period}, ${name}` : period;
-  });
-
-  protected readonly cityLabel = computed(() => {
-    const address = this.tenant.tenant()?.address;
-    return address?.city ? `${address.district}, ${address.city}` : 'Barbearia';
   });
 
   protected readonly addressLabel = computed(() => {
@@ -242,10 +249,6 @@ export class HomePage {
 
     return [line, extra, city].filter(Boolean).join(' — ');
   });
-
-  protected professionalName(id: string): string {
-    return this.professionals().find((p) => p.id === id)?.name ?? 'Profissional';
-  }
 
   protected dateLabel(instant: string): string {
     const label = formatLongDate(instant);

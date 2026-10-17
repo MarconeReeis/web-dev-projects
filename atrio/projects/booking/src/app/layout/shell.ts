@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TenantContext } from '@atrio/core';
-import { AtrIcon } from '@atrio/ui';
+import { AtrAvatar, AtrIcon } from '@atrio/ui';
+import { ClientIdentity } from '../shared/client-identity';
 
 /**
  * Moldura do app do cliente.
@@ -13,27 +14,45 @@ import { AtrIcon } from '@atrio/ui';
  * Só duas seções. Um app de barbearia tem exatamente dois assuntos — marcar e
  * acompanhar —, e uma barra com cinco ícones (como nas referências de
  * e-commerce) inventaria seções para preencher.
+ *
+ * O cabeçalho não tem borda nem fundo próprio: ele se dissolve no conteúdo,
+ * como nas referências. Uma linha separando saudação de conteúdo dividiria a
+ * tela em duas sem que haja duas coisas.
  */
 @Component({
   selector: 'bkg-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, AtrIcon],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, AtrAvatar, AtrIcon],
   host: { class: 'flex min-h-dvh flex-col bg-background' },
   template: `
-    <header
-      class="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur-sm"
-    >
-      <div class="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3">
-        @if (tenant.branding()?.logoUrl; as logo) {
-          <img [src]="logo" alt="" class="size-10 rounded-full object-cover" />
+    <header class="mx-auto w-full max-w-2xl px-4 pt-5">
+      <div class="flex items-center gap-3">
+        @if (identity.known() && identity.name()) {
+          <atr-avatar [name]="identity.name()" size="lg" />
         } @else {
           <span
-            class="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground"
+            class="flex size-12 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground"
           >
-            <atr-icon name="scissors" [size]="18" />
+            <atr-icon name="user-round" [size]="22" />
           </span>
         }
-        <span class="min-w-0 flex-1 truncate font-bold">{{ tenant.name() }}</span>
+
+        <div class="min-w-0 flex-1">
+          <p class="text-sm text-muted-foreground">{{ period() }}</p>
+          <p class="truncate text-lg font-bold">{{ who() }}</p>
+        </div>
+
+        <!-- A marca da barbearia, sempre visível. Não é botão: é assinatura. -->
+        @if (tenant.branding()?.logoUrl; as logo) {
+          <img [src]="logo" [alt]="tenant.name()" class="size-11 rounded-full object-cover" />
+        } @else {
+          <span
+            class="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
+            [attr.aria-label]="tenant.name()"
+          >
+            <atr-icon name="scissors" [size]="20" />
+          </span>
+        }
       </div>
     </header>
 
@@ -65,6 +84,7 @@ import { AtrIcon } from '@atrio/ui';
 })
 export class Shell {
   protected readonly tenant = inject(TenantContext);
+  protected readonly identity = inject(ClientIdentity);
 
   protected readonly navItems = [
     { path: './', label: 'Início', icon: 'store' as const, exact: true },
@@ -75,4 +95,18 @@ export class Shell {
       exact: false,
     },
   ];
+
+  protected readonly period = computed(() => {
+    const hour = new Date().getHours();
+    return hour < 12 ? 'Bom dia!' : hour < 18 ? 'Boa tarde!' : 'Boa noite!';
+  });
+
+  /**
+   * Quem está usando o app.
+   *
+   * Enquanto não há autenticação, o nome vem do último agendamento feito
+   * neste aparelho. Sem nome, uma saudação genérica — melhor do que um campo
+   * vazio ou um "visitante", que soa a cadastro faltando.
+   */
+  protected readonly who = computed(() => this.identity.name() || 'Olá!');
 }
