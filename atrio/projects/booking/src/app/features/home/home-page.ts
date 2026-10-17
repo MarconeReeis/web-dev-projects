@@ -83,6 +83,48 @@ const HORIZON_DAYS = 120;
       Agendar horário
     </a>
 
+    <!-- Profissionais: primeiro passo do agendamento, então vêm primeiro -->
+    @if (professionals().length > 0) {
+      <div class="mt-7 flex items-baseline justify-between gap-3">
+        <h2 class="text-lg font-bold">Quem atende</h2>
+        <a
+          class="text-sm font-semibold text-primary"
+          [routerLink]="['/b', slug(), 'profissionais']"
+          >Ver todos</a
+        >
+      </div>
+
+      <!-- Faixa rolável: cabe numa linha e não empurra os serviços para baixo
+           da dobra. -->
+      <div class="-mx-4 mt-3 overflow-x-auto px-4">
+        <ul class="flex gap-3 pb-1">
+          @for (professional of professionals(); track professional.id) {
+            <li>
+              <a
+                class="surface flex w-36 flex-col items-center gap-2 p-4 text-center transition-colors hover:border-primary"
+                [routerLink]="['/b', slug(), 'agendar']"
+                [queryParams]="{ profissional: professional.id }"
+              >
+                <atr-avatar
+                  [name]="professional.name"
+                  [photoUrl]="professional.photoUrl"
+                  size="lg"
+                />
+                <span class="w-full truncate text-sm font-bold">
+                  {{ professional.name }}
+                </span>
+                @if (professional.bio) {
+                  <span class="line-clamp-2 text-xs leading-tight font-semibold text-primary">
+                    {{ professional.bio }}
+                  </span>
+                }
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
     <!-- Serviços -->
     <div class="mt-7 flex items-baseline justify-between gap-3">
       <h2 class="text-lg font-bold">Serviços</h2>
@@ -123,41 +165,6 @@ const HORIZON_DAYS = 120;
         </li>
       }
     </ul>
-
-    <!-- Equipe -->
-    @if (professionals().length > 0) {
-      <atr-card
-        heading="Quem atende"
-        subheading="Toque para agendar com quem você prefere."
-        class="mt-4"
-      >
-        <a atrButton="outline" size="sm" [routerLink]="['/b', slug(), 'profissionais']" card-action>
-          Ver todos
-          <atr-icon name="chevron-right" [size]="15" />
-        </a>
-
-        <ul class="flex flex-wrap gap-4">
-          @for (professional of professionals(); track professional.id) {
-            <li>
-              <a
-                class="flex w-20 flex-col items-center gap-2 rounded-2xl p-1 text-center transition-colors hover:bg-accent"
-                [routerLink]="['/b', slug(), 'agendar']"
-                [queryParams]="{ profissional: professional.id }"
-              >
-                <atr-avatar
-                  [name]="professional.name"
-                  [photoUrl]="professional.photoUrl"
-                  size="lg"
-                />
-                <span class="text-xs leading-tight font-semibold">
-                  {{ professional.name }}
-                </span>
-              </a>
-            </li>
-          }
-        </ul>
-      </atr-card>
-    }
 
     <!-- Onde e quando -->
     <atr-card heading="A barbearia" class="mt-4">

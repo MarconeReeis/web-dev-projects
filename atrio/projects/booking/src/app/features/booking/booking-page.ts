@@ -8,10 +8,10 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { switchMap } from 'rxjs';
-import { TenantContext } from '@atrio/core';
 import {
   Appointment,
   AppointmentRepository,
@@ -34,37 +34,39 @@ import { AtrAvatar, AtrButton, AtrField, AtrIcon, AtrInput } from '@atrio/ui';
 import { ClientIdentity } from '../../shared/client-identity';
 import { ScheduleStep } from './components/schedule-step';
 
-type Step = 'servico' | 'profissional' | 'horario' | 'confirmar' | 'pronto';
+type Step = 'profissional' | 'servico' | 'horario' | 'confirmar' | 'pronto';
 
-const ORDER: readonly Step[] = ['servico', 'profissional', 'horario', 'confirmar'];
+/**
+ * Ordem canônica, única.
+ *
+ * Profissional primeiro porque a lista de serviços do passo seguinte sai
+ * filtrada pelo que aquela pessoa realiza — o beco do "ele não faz barba"
+ * deixa de existir. Numa barbearia a fidelidade ao barbeiro pesa mais que a
+ * preferência por serviço, e quem não tem preferência escolhe "qualquer".
+ *
+ * Os atalhos da tela inicial apenas PRÉ-SELECIONAM; nenhum encurta o fluxo.
+ * Antes havia três caminhos com contagens de passo diferentes, e manter isso
+ * coerente custava mais do que valia.
+ */
+const ORDER: readonly Step[] = ['profissional', 'servico', 'horario', 'confirmar'];
 
 const TITLES: Readonly<Record<Step, string>> = {
-  servico: 'O que você vai fazer?',
-  profissional: 'Com quem?',
-  horario: 'Quando?',
-  confirmar: 'Confirmar',
+  profissional: 'Escolha o profissional',
+  servico: 'Escolha o serviço',
+  horario: 'Escolha o horário',
+  confirmar: 'Confirme o agendamento',
   pronto: 'Agendado',
 };
 
-/**
- * Agendamento em quatro passos.
- *
- * A ordem é serviço → profissional → horário → confirmação, e não começa pelo
- * profissional como pareceria natural. Dois motivos: o serviço define a
- * duração, que define quais horários realmente cabem; e nem todo profissional
- * faz todo serviço, então escolher a pessoa primeiro leva a becos — o cliente
- * escolhe o barbeiro, pede barba e descobre que ele não faz.
- *
- * "Qualquer profissional" existe porque boa parte das pessoas não tem
- * preferência, e obrigar a escolher esconde horários livres.
- *
- * Tela cheia, fora da barra inferior: durante o fluxo não há para onde
- * navegar senão adiante ou para trás.
- */
+/** Sentinela de "sem preferência", distinta de "ainda não escolheu". */
+const ANY = 'qualquer';
+type ProfessionalChoice = Id | typeof ANY | null;
+
 @Component({
   selector: 'bkg-booking-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    NgTemplateOutlet,
     RouterLink,
     AtrButton,
     AtrIcon,
@@ -75,8 +77,20 @@ const TITLES: Readonly<Record<Step, string>> = {
   ],
   host: { class: 'flex min-h-dvh flex-col bg-background' },
   template: `
-    <!-- Cabeçalho. Sem linha: a barra de progresso logo abaixo já separa, e
-         no passo final não há nada de que separar. -->
+    <!-- Marcador de seleção, compartilhado pelos passos 1 e 2 -->
+    <ng-template #radio let-marcado>
+      <span
+        class="flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
+        [class]="marcado ? 'border-primary bg-primary text-primary-foreground' : 'border-input'"
+        aria-hidden="true"
+      >
+        @if (marcado) {
+          <atr-icon name="check" [size]="14" [strokeWidth]="3" />
+        }
+      </span>
+    </ng-template>
+
+    <!-- Cabeçalho -->
     <header class="sticky top-0 z-20 bg-background">
       <div class="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3">
         @if (step() === 'pronto') {
@@ -84,86 +98,54 @@ const TITLES: Readonly<Record<Step, string>> = {
           <a
             class="inline-flex size-11 items-center justify-center rounded-full text-muted-foreground"
             aria-label="Fechar"
-            routerLink="../"
+            [routerLink]="['/b', slug()]"
           >
             <atr-icon name="x" [size]="20" />
           </a>
         } @else {
           <button
             type="button"
-            class="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent"
+            class="floating inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-card text-foreground transition-colors hover:bg-accent"
             aria-label="Voltar"
             (click)="back()"
           >
             <atr-icon name="chevron-left" [size]="20" />
           </button>
-          <span class="min-w-0 flex-1">
+          <span class="min-w-0 flex-1 text-center">
             <span class="block truncate font-bold">{{ title() }}</span>
             <span class="block text-xs text-muted-foreground">
-              Passo {{ stepNumber() }} de {{ total() }}
+              Etapa {{ stepNumber() }} de {{ total }}
             </span>
           </span>
+          <span class="size-11 shrink-0"></span>
         }
       </div>
 
+      <!-- Progresso em segmentos: diz quantas etapas faltam, não só quanto já
+           andou — uma barra contínua não informa isso. -->
       @if (step() !== 'pronto') {
-        <div class="h-1 bg-muted">
-          <div
-            class="h-full bg-primary transition-[width] duration-300"
-            [style.width.%]="(stepNumber() / total()) * 100"
-          ></div>
+        <div class="mx-auto flex w-full max-w-2xl gap-1.5 px-4 pb-3">
+          @for (item of order; track item) {
+            <span
+              class="h-1.5 flex-1 rounded-full transition-colors"
+              [class]="isDone(item) ? 'bg-primary' : 'bg-muted'"
+            ></span>
+          }
         </div>
       }
     </header>
 
-    <main class="mx-auto w-full max-w-2xl flex-1 px-4 py-5 pb-32">
+    <main class="mx-auto w-full max-w-2xl flex-1 px-4 pt-2 pb-36">
       @switch (step()) {
-        <!-- 1. Serviço -->
-        @case ('servico') {
-          <ul class="flex flex-col gap-2">
-            @for (service of visibleServices(); track service.id) {
-              <li>
-                <button
-                  type="button"
-                  class="flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition-colors"
-                  [class]="
-                    service.id === serviceId()
-                      ? 'border-primary bg-primary-soft'
-                      : 'border-border bg-card hover:border-primary'
-                  "
-                  (click)="chooseService(service.id)"
-                >
-                  <span class="min-w-0 flex-1">
-                    <span class="block font-bold">{{ service.name }}</span>
-                    <span class="block text-sm text-balance text-muted-foreground">
-                      {{ service.durationMinutes }} min
-                      @if (service.description) {
-                        · {{ service.description }}
-                      }
-                    </span>
-                  </span>
-                  <span class="tabular shrink-0 font-extrabold">
-                    {{ money(service.price) }}
-                  </span>
-                </button>
-              </li>
-            }
-          </ul>
-        }
-
-        <!-- 2. Profissional -->
+        <!-- 1. Profissional -->
         @case ('profissional') {
           <ul class="flex flex-col gap-2">
             <li>
               <button
                 type="button"
                 class="flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition-colors"
-                [class]="
-                  professionalId() === null
-                    ? 'border-primary bg-primary-soft'
-                    : 'border-border bg-card hover:border-primary'
-                "
-                (click)="chooseProfessional(null)"
+                [class]="cardClass(choice() === ANY)"
+                (click)="choose(ANY)"
               >
                 <span
                   class="flex size-12 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground"
@@ -176,31 +158,123 @@ const TITLES: Readonly<Record<Step, string>> = {
                     Mostra todos os horários livres
                   </span>
                 </span>
+                <ng-container
+                  *ngTemplateOutlet="radio; context: { $implicit: choice() === ANY }"
+                />
               </button>
             </li>
 
-            @for (professional of eligible(); track professional.id) {
+            @for (professional of professionals(); track professional.id) {
               <li>
                 <button
                   type="button"
                   class="flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition-colors"
-                  [class]="
-                    professional.id === professionalId()
-                      ? 'border-primary bg-primary-soft'
-                      : 'border-border bg-card hover:border-primary'
-                  "
-                  (click)="chooseProfessional(professional.id)"
+                  [class]="cardClass(choice() === professional.id)"
+                  (click)="choose(professional.id)"
                 >
                   <atr-avatar
                     [name]="professional.name"
                     [photoUrl]="professional.photoUrl"
                     size="lg"
                   />
-                  <span class="min-w-0 flex-1 font-bold">{{ professional.name }}</span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block font-bold">{{ professional.name }}</span>
+                    @if (professional.bio) {
+                      <span class="block text-sm font-semibold text-primary">
+                        {{ professional.bio }}
+                      </span>
+                    }
+                  </span>
+                  <ng-container
+                    *ngTemplateOutlet="
+                      radio;
+                      context: { $implicit: choice() === professional.id }
+                    "
+                  />
                 </button>
               </li>
             }
           </ul>
+        }
+
+        <!-- 2. Serviço -->
+        @case ('servico') {
+          <!-- Contexto: lembra com quem o cliente vai. Sem isso, mudar de
+               passo apaga da tela a escolha anterior. -->
+          <div class="surface mb-5 flex items-center gap-4 p-4">
+            @if (chosenProfessional(); as professional) {
+              <atr-avatar
+                [name]="professional.name"
+                [photoUrl]="professional.photoUrl"
+                size="lg"
+              />
+              <span class="min-w-0">
+                <span class="block truncate text-lg font-bold">{{ professional.name }}</span>
+                @if (professional.bio) {
+                  <span class="block truncate text-sm font-semibold text-primary">
+                    {{ professional.bio }}
+                  </span>
+                }
+              </span>
+            } @else {
+              <span
+                class="flex size-12 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground"
+              >
+                <atr-icon name="users" [size]="20" />
+              </span>
+              <span class="min-w-0">
+                <span class="block text-lg font-bold">Qualquer profissional</span>
+                <span class="block text-sm text-muted-foreground">
+                  Todos os serviços da casa
+                </span>
+              </span>
+            }
+          </div>
+
+          <h2 class="mb-3 font-bold">Serviços</h2>
+
+          @if (visibleServices().length === 0) {
+            <p class="rounded-xl bg-warning-soft px-4 py-3.5 text-sm text-warning-soft-foreground">
+              Este profissional ainda não tem serviços cadastrados.
+            </p>
+          } @else {
+            <ul class="flex flex-col gap-2">
+              @for (service of visibleServices(); track service.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition-colors"
+                    [class]="cardClass(service.id === serviceId())"
+                    (click)="serviceId.set(service.id)"
+                  >
+                    <span class="min-w-0 flex-1">
+                      <span class="block font-bold">{{ service.name }}</span>
+                      @if (service.description) {
+                        <span class="block text-sm text-balance text-muted-foreground">
+                          {{ service.description }}
+                        </span>
+                      }
+                      <span
+                        class="tabular mt-1.5 inline-flex items-center gap-1.5 text-sm text-muted-foreground"
+                      >
+                        <atr-icon name="clock" [size]="14" />
+                        {{ service.durationMinutes }} min
+                      </span>
+                    </span>
+                    <span class="tabular shrink-0 font-extrabold">
+                      {{ money(service.price) }}
+                    </span>
+                    <ng-container
+                      *ngTemplateOutlet="
+                        radio;
+                        context: { $implicit: service.id === serviceId() }
+                      "
+                    />
+                  </button>
+                </li>
+              }
+            </ul>
+          }
         }
 
         <!-- 3. Dia e horário -->
@@ -308,10 +382,10 @@ const TITLES: Readonly<Record<Step, string>> = {
             </p>
 
             <div class="mt-4 flex w-full flex-col gap-2">
-              <a atrButton class="w-full" routerLink="../meus-horarios">
+              <a atrButton class="w-full" [routerLink]="['/b', slug(), 'meus-horarios']">
                 Ver meus horários
               </a>
-              <a atrButton="ghost" class="w-full" routerLink="../">
+              <a atrButton="ghost" class="w-full" [routerLink]="['/b', slug()]">
                 Voltar ao início
               </a>
             </div>
@@ -320,21 +394,23 @@ const TITLES: Readonly<Record<Step, string>> = {
       }
     </main>
 
-    <!-- Ação -->
+    <!-- Rodapé: resumo da escolha + ação -->
     @if (step() !== 'pronto') {
-      <div
-        class="edge-top fixed inset-x-0 bottom-0 z-20 bg-card pb-[env(safe-area-inset-bottom)]"
-      >
-        <div class="mx-auto w-full max-w-2xl px-4 py-3">
+      <div class="edge-top fixed inset-x-0 bottom-0 z-20 bg-card pb-[env(safe-area-inset-bottom)]">
+        <div class="mx-auto flex w-full max-w-2xl items-center gap-4 px-4 py-3">
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm text-muted-foreground">{{ summaryLabel() }}</p>
+            <p class="tabular truncate font-extrabold">{{ summaryValue() }}</p>
+          </div>
           <button
             type="button"
             atrButton
             size="lg"
-            class="w-full"
+            class="shrink-0"
             [disabled]="!canAdvance() || busy()"
             (click)="advance()"
           >
-            {{ step() === 'confirmar' ? 'Confirmar agendamento' : 'Continuar' }}
+            {{ ctaLabel() }}
           </button>
         </div>
       </div>
@@ -348,28 +424,26 @@ export class BookingPage {
   private readonly blocksRepo = inject(TimeBlockRepository);
   private readonly identity = inject(ClientIdentity);
   private readonly router = inject(Router);
-  protected readonly tenant = inject(TenantContext);
 
   /**
-   * Atalhos vindos da tela inicial.
+   * Atalhos da tela inicial. Ambos só pré-selecionam; dá para voltar e trocar.
    *
-   *   ?servico=svc-corte       abre já no passo do profissional
-   *   ?profissional=pro-caio   trava a pessoa e pula esse passo
-   *
-   * O segundo atende quem já tem barbeiro: o fluxo canônico continua
-   * começando pelo serviço, mas quem entrou pela pessoa não precisa
-   * escolhê-la de novo.
+   *   ?profissional=pro-caio   escolhe a pessoa e abre no serviço
+   *   ?servico=svc-corte       deixa o serviço marcado para a etapa 2
    */
-  readonly servico = input<string | undefined>(undefined);
   readonly profissional = input<string | undefined>(undefined);
-  readonly slug = input<string | undefined>(undefined);
+  readonly servico = input<string | undefined>(undefined);
+  readonly slug = input<string>('');
 
   protected money = formatMoney;
   protected time = formatTime;
+  protected readonly order = ORDER;
+  protected readonly total = ORDER.length;
+  protected readonly ANY = ANY;
 
-  protected readonly step = signal<Step>('servico');
+  protected readonly step = signal<Step>('profissional');
+  protected readonly choice = signal<ProfessionalChoice>(null);
   protected readonly serviceId = signal<Id | null>(null);
-  protected readonly professionalId = signal<Id | null>(null);
   protected readonly date = signal(startOfDay(new Date()));
   protected readonly startsAt = signal<IsoDateTime | null>(null);
 
@@ -381,63 +455,71 @@ export class BookingPage {
   protected readonly showErrors = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  protected readonly services = toSignal(this.servicesRepo.watchAll(), {
-    initialValue: [] as readonly Service[],
-  });
-
-  private readonly professionals = toSignal(this.professionalsRepo.watchAll(), {
+  protected readonly professionals = toSignal(this.professionalsRepo.watchAll(), {
     initialValue: [] as readonly Professional[],
   });
 
-  /** Profissional travado pela URL: o passo de escolher pessoa some. */
-  protected readonly lockedProfessional = signal<Id | null>(null);
+  private readonly services = toSignal(this.servicesRepo.watchAll(), {
+    initialValue: [] as readonly Service[],
+  });
 
   constructor() {
-    // Chegando pelo atalho da tela inicial, o serviço já está escolhido e o
-    // fluxo abre no passo seguinte — repetir a escolha seria um toque morto.
-    effect(() => {
-      const fromQuery = this.servico();
-      if (!fromQuery) return;
-
-      untracked(() => {
-        if (this.serviceId() !== null) return;
-        this.serviceId.set(fromQuery);
-        this.step.set('profissional');
-      });
-    });
-
     effect(() => {
       const fromQuery = this.profissional();
       if (!fromQuery) return;
 
       untracked(() => {
-        if (this.lockedProfessional() !== null) return;
-        this.lockedProfessional.set(fromQuery);
-        this.professionalId.set(fromQuery);
+        if (this.choice() !== null) return;
+        this.choice.set(fromQuery);
+        this.step.set('servico');
+      });
+    });
+
+    effect(() => {
+      const fromQuery = this.servico();
+      if (!fromQuery) return;
+
+      untracked(() => {
+        if (this.serviceId() === null) this.serviceId.set(fromQuery);
       });
     });
   }
 
   // ─── derivados ────────────────────────────────────────────────────────
 
-  protected readonly service = computed(
-    () => this.services().find((item) => item.id === this.serviceId()) ?? null,
+  /** Nulo quando o cliente escolheu "qualquer profissional". */
+  private readonly professionalId = computed<Id | null>(() => {
+    const value = this.choice();
+    return value === null || value === ANY ? null : value;
+  });
+
+  protected readonly chosenProfessional = computed(
+    () => this.professionals().find((item) => item.id === this.professionalId()) ?? null,
   );
 
-  /** Quem realiza o serviço escolhido. */
-  protected readonly eligible = computed(() => {
-    const service = this.service();
-    if (!service) return [];
-    return this.professionals().filter((professional) =>
+  /** Só o que o profissional escolhido realiza; tudo, se não há preferência. */
+  protected readonly visibleServices = computed(() => {
+    const professional = this.chosenProfessional();
+    if (!professional) return this.services();
+
+    return this.services().filter((service) =>
       professional.serviceIds.includes(service.id),
     );
   });
 
-  /** Candidatos para o cálculo de horários: o escolhido, ou todos. */
+  protected readonly service = computed(
+    () => this.services().find((item) => item.id === this.serviceId()) ?? null,
+  );
+
+  /** Candidatos para o cálculo de horários. */
   protected readonly slotCandidates = computed(() => {
-    const chosen = this.professionalId();
-    if (!chosen) return this.eligible();
-    return this.eligible().filter((professional) => professional.id === chosen);
+    const service = this.service();
+    if (!service) return [];
+
+    const professional = this.chosenProfessional();
+    if (professional) return [professional];
+
+    return this.professionals().filter((item) => item.serviceIds.includes(service.id));
   });
 
   private readonly dayRange = computed(() => {
@@ -459,18 +541,12 @@ export class BookingPage {
     { initialValue: [] as readonly TimeBlock[] },
   );
 
-  /**
-   * Quem vai atender.
-   *
-   * Com "qualquer profissional", escolhe entre os livres naquele horário o
-   * que tem menos atendimentos no dia — distribui o movimento em vez de
-   * empilhar tudo no primeiro da lista.
-   */
-  protected readonly assigned = computed<Professional | null>(() => {
-    const chosen = this.professionalId();
-    if (chosen) {
-      return this.eligible().find((professional) => professional.id === chosen) ?? null;
-    }
+  /** Congelado na confirmação — ver o comentário em confirm(). */
+  private readonly confirmedWith = signal<Professional | null>(null);
+
+  private readonly assigned = computed<Professional | null>(() => {
+    const chosen = this.chosenProfessional();
+    if (chosen) return chosen;
 
     const service = this.service();
     const startsAt = this.startsAt();
@@ -479,7 +555,7 @@ export class BookingPage {
     const slot = openSlots({
       date: this.date(),
       service,
-      professionals: this.eligible(),
+      professionals: this.slotCandidates(),
       existing: this.dayAppointments(),
       blocks: this.dayBlocks(),
       now: new Date(),
@@ -488,61 +564,85 @@ export class BookingPage {
     return slot ? leastBusy(slot.professionals, this.dayAppointments()) : null;
   });
 
-  /**
-   * Quem efetivamente ficou com o atendimento, congelado na confirmação.
-   *
-   * `assigned` é um computed e recalcula `leastBusy` assim que o novo
-   * agendamento entra na lista do dia: a carga de quem acabou de ser
-   * escolhido sobe e o cálculo passa a preferir outro. Sem congelar, a tela
-   * de sucesso anunciava um profissional diferente do que foi gravado — o
-   * dado certo, a tela mentindo.
-   */
-  private readonly confirmedWith = signal<Professional | null>(null);
-
   protected readonly assignedLabel = computed(
     () => (this.confirmedWith() ?? this.assigned())?.name ?? 'a definir',
   );
 
+  // ─── cabeçalho e rodapé ───────────────────────────────────────────────
+
   protected readonly title = computed(() => TITLES[this.step()]);
 
-  /**
-   * Passos desta sessão.
-   *
-   * Entrando pelo profissional, "Com quem?" sai da lista — e sai também da
-   * contagem: mostrar "Passo 2 de 4" num fluxo de três passos faz o cliente
-   * esperar uma tela que não vem.
-   */
-  protected readonly steps = computed<readonly Step[]>(() =>
-    this.lockedProfessional()
-      ? ORDER.filter((step) => step !== 'profissional')
-      : ORDER,
-  );
-
-  protected readonly total = computed(() => this.steps().length);
-
   protected readonly stepNumber = computed(() => {
-    const index = this.steps().indexOf(this.step());
-    return index < 0 ? this.steps().length : index + 1;
+    const index = ORDER.indexOf(this.step());
+    return index < 0 ? ORDER.length : index + 1;
   });
 
-  /** No passo do serviço, só o que o profissional travado realiza. */
-  protected readonly visibleServices = computed(() => {
-    const locked = this.lockedProfessional();
-    if (!locked) return this.services();
-
-    const professional = this.professionals().find((item) => item.id === locked);
-    if (!professional) return this.services();
-
-    return this.services().filter((service) =>
-      professional.serviceIds.includes(service.id),
-    );
-  });
+  protected isDone(item: Step): boolean {
+    return ORDER.indexOf(item) <= ORDER.indexOf(this.step());
+  }
 
   protected readonly dateLabel = computed(() => {
     const instant = this.startsAt() ?? this.date().toISOString();
     const label = formatLongDate(instant);
     return label.charAt(0).toUpperCase() + label.slice(1);
   });
+
+  /**
+   * Resumo no rodapé, ao lado do botão que leva adiante.
+   *
+   * Num fluxo de quatro etapas é o que evita chegar na confirmação sem
+   * lembrar o que foi marcado três telas atrás.
+   */
+  protected readonly summaryLabel = computed(() => {
+    switch (this.step()) {
+      case 'profissional':
+        return this.choice() === null ? 'Nenhum profissional escolhido' : 'Profissional';
+      case 'servico':
+        return this.service() ? 'Serviço' : 'Nenhum serviço selecionado';
+      case 'horario':
+        return this.startsAt() ? 'Horário' : 'Escolha um horário livre';
+      default:
+        return this.service()?.name ?? '';
+    }
+  });
+
+  protected readonly summaryValue = computed(() => {
+    switch (this.step()) {
+      case 'profissional':
+        return this.choice() === null
+          ? '—'
+          : (this.chosenProfessional()?.name ?? 'Qualquer profissional');
+      case 'servico': {
+        const service = this.service();
+        return service ? `${service.name} · ${formatMoney(service.price)}` : '—';
+      }
+      case 'horario': {
+        const startsAt = this.startsAt();
+        return startsAt ? `${this.dateLabel()} · ${formatTime(startsAt)}` : '—';
+      }
+      default:
+        return formatMoney(this.service()?.price ?? 0);
+    }
+  });
+
+  protected readonly ctaLabel = computed(() => {
+    switch (this.step()) {
+      case 'profissional':
+        return 'Ver serviços';
+      case 'servico':
+        return 'Escolher horário';
+      case 'horario':
+        return 'Continuar';
+      default:
+        return 'Confirmar';
+    }
+  });
+
+  protected cardClass(selected: boolean): string {
+    return selected
+      ? 'border-primary bg-primary-soft'
+      : 'border-border bg-card hover:border-primary';
+  }
 
   // ─── validação ────────────────────────────────────────────────────────
 
@@ -554,42 +654,32 @@ export class BookingPage {
     const digits = this.phone().replace(/\D/g, '');
     // 10 dígitos cobre fixo com DDD; 11, celular. Sem exigir formatação:
     // quem digita sem parênteses não deve ser barrado.
-    if (digits.length < 10) return 'Informe um telefone com DDD.';
-    return null;
+    return digits.length < 10 ? 'Informe um telefone com DDD.' : null;
   });
 
   protected readonly canAdvance = computed(() => {
     switch (this.step()) {
+      case 'profissional':
+        return this.choice() !== null;
       case 'servico':
         return this.serviceId() !== null;
-      case 'profissional':
-        return true;
       case 'horario':
         return this.startsAt() !== null;
-      case 'confirmar':
-        return true;
       default:
-        return false;
+        return true;
     }
   });
 
   // ─── navegação ────────────────────────────────────────────────────────
 
-  protected chooseService(id: Id): void {
-    if (this.serviceId() !== id) {
-      // Trocar de serviço invalida horário, e também o profissional quando
-      // ele não veio travado: a duração mudou e quem realiza pode ser outro.
-      if (!this.lockedProfessional()) this.professionalId.set(null);
+  protected choose(value: ProfessionalChoice): void {
+    if (this.choice() !== value) {
+      // Trocar de profissional pode invalidar o serviço: nem todos realizam
+      // os mesmos. O horário cai junto, porque depende dos dois.
+      this.serviceId.set(null);
       this.startsAt.set(null);
     }
-    this.serviceId.set(id);
-    this.step.set(this.lockedProfessional() ? 'horario' : 'profissional');
-  }
-
-  protected chooseProfessional(id: Id | null): void {
-    if (this.professionalId() !== id) this.startsAt.set(null);
-    this.professionalId.set(id);
-    this.step.set('horario');
+    this.choice.set(value);
   }
 
   protected chooseDate(date: Date): void {
@@ -598,22 +688,22 @@ export class BookingPage {
   }
 
   protected back(): void {
-    const index = this.steps().indexOf(this.step());
+    const index = ORDER.indexOf(this.step());
+
     // No primeiro passo, voltar sai do fluxo e devolve à vitrine.
     if (index <= 0) {
-      void this.router.navigate(['/b', this.slug() ?? '']);
+      void this.router.navigate(['/b', this.slug()]);
       return;
     }
-    this.step.set(this.steps()[index - 1]);
+    this.step.set(ORDER[index - 1]);
   }
 
   protected async advance(): Promise<void> {
     if (this.step() !== 'confirmar') {
-      const index = this.steps().indexOf(this.step());
-      this.step.set(this.steps()[index + 1]);
+      const index = ORDER.indexOf(this.step());
+      this.step.set(ORDER[index + 1]);
       return;
     }
-
     await this.confirm();
   }
 
@@ -648,12 +738,14 @@ export class BookingPage {
         notes: this.notes().trim() || null,
       });
 
+      // `assigned` recalcula leastBusy assim que o novo agendamento entra na
+      // lista do dia e passaria a apontar outra pessoa. A tela de sucesso
+      // precisa dizer quem de fato ficou com o atendimento.
       this.confirmedWith.set(professional);
       this.identity.remember(this.name(), this.phone());
       this.step.set('pronto');
     } catch (cause) {
-      // Entre escolher o horário e confirmar, alguém pode ter marcado. A
-      // mensagem precisa dizer o que fazer, não só que falhou.
+      // Entre escolher o horário e confirmar, alguém pode ter marcado.
       this.error.set(
         cause instanceof Error
           ? cause.message

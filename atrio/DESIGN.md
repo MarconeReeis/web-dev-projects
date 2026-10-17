@@ -286,49 +286,49 @@ favoritos porque têm catálogo; aqui inventariam seções para preencher.
 onde navegar senão adiante ou para trás, e a barra roubaria espaço do polegar
 na tela com mais toques.
 
-**Ordem: serviço → profissional → horário.** Não começa pelo profissional,
-que seria o natural: o serviço define a duração, que define quais horários
-cabem, e nem todo profissional faz todo serviço — escolher a pessoa primeiro
-leva a becos.
+**Ordem: profissional → serviço → horário → confirmação.**
+
+A escolha do profissional vem primeiro porque a lista de serviços do passo
+seguinte sai **filtrada** pelo que aquela pessoa realiza — o beco do "ele não
+faz barba" deixa de existir. Numa barbearia a fidelidade ao barbeiro pesa mais
+que a preferência por serviço.
+
+> Isto inverte a ordem que o projeto usou primeiro (serviço → profissional). O
+> argumento original era justamente evitar o beco, mas filtrar a lista resolve
+> melhor: o beco só trocava de lado. A inversão também acabou com três
+> caminhos de contagens diferentes — hoje o fluxo tem **sempre quatro
+> etapas**, e os atalhos da tela inicial apenas pré-selecionam.
 
 **"Qualquer profissional" é a primeira opção.** Boa parte das pessoas não tem
 preferência, e obrigar a escolher esconde horários: o cliente vê a agenda de
 um barbeiro lotada e desiste, sem saber que o outro tinha a mesma hora livre.
+Escolhendo essa opção, o passo de serviço mostra o catálogo inteiro.
 
-### Três portas para o mesmo fluxo
+### Passos do agendamento
 
-A ordem canônica não muda; o que muda é por onde se entra nela. Quem é fiel
-ao barbeiro pensa primeiro na pessoa, e obrigá-lo a passar pelo catálogo
-antes seria atrito à toa.
-
-| Entrada | Caminho | Passos |
+| Etapa | Tela | Rodapé mostra |
 | --- | --- | --- |
-| "Agendar horário" | serviço → profissional → horário | 4 |
-| Card de serviço | profissional → horário | 4, abrindo no 2º |
-| Card de profissional | serviço (filtrado) → horário | 3 |
+| 1 | Escolha o profissional | o profissional escolhido |
+| 2 | Escolha o serviço | serviço e preço |
+| 3 | Escolha o horário | dia e hora |
+| 4 | Confirme o agendamento | preço total |
 
-Entrando pelo profissional, o passo "Com quem?" sai da lista **e da
-contagem**: mostrar "Passo 2 de 4" num fluxo de três faz o cliente esperar
-uma tela que não vem. E o passo do serviço mostra só o que aquela pessoa
-realiza — o beco do "ele não faz barba" não chega a existir.
+O passo de serviço repete o profissional num cartão de contexto no topo: mudar
+de etapa apaga da tela a escolha anterior, e na etapa 4 o cliente não deveria
+precisar lembrar o que marcou três telas atrás. O rodapé fixo tem a mesma
+função — resumo à esquerda, ação à direita.
 
-### Tela de profissionais
-
-Cards de duas colunas com foto, nome e **especialidade** — "Degradê e
-freestyle". É a especialidade que decide a escolha: a lista de serviços diz o
-que o profissional *pode* fazer, não o que ele faz bem. Sem especialidade
-cadastrada, cai na lista de serviços, melhor que espaço em branco. A foto vem
-do cadastro no painel; sem ela, iniciais num bloco lilás, como nos cards de
-serviço.
-
-O item "Início" da barra inferior fica aceso aqui: a tela é alcançada a
-partir dele, e o estado ativo é decidido pela URL em vez de `routerLinkActive`
-— que não casaria com nenhum item e deixaria a barra parecendo morta.
+**O progresso é segmentado, não contínuo.** Quatro barras dizem quantas etapas
+faltam; uma barra única só diz quanto já andou.
 
 ### Tela inicial
 
 Ordem: cabeçalho com saudação → destaque → próximo agendamento (quando há) →
-agendar → serviços em cards → equipe → a barbearia → instalar.
+agendar → **profissionais** → serviços → a barbearia → instalar.
+
+Profissionais vêm antes dos serviços porque são o primeiro passo do
+agendamento. Ficam numa faixa rolável de uma linha: cabe sem empurrar os
+serviços para baixo da dobra.
 
 **O cabeçalho não tem borda.** Ele se dissolve no conteúdo, como na
 referência; uma linha separando saudação de conteúdo dividiria a tela em duas

@@ -86,10 +86,9 @@ pagamento, e as Configurações, com dados da barbearia, contato da conta,
 horário derivado e instalação do PWA.
 
 No app do cliente: vitrine da barbearia com banner de destaque editável pelo
-painel, lista de profissionais com especialidade, agendamento em quatro passos
-(serviço, profissional, dia e horário, confirmação) com "qualquer profissional
-disponível" — ou em três, entrando pelo profissional —, e "Meus horários" com
-cancelamento.
+painel, lista de profissionais com especialidade, agendamento em quatro etapas
+(profissional, serviço, dia e horário, confirmação) com "qualquer profissional
+disponível", e "Meus horários" com cancelamento.
 
 **O painel administrativo e o fluxo do cliente estão completos.** A seguir:
 autenticação (e, com ela, a identificação do cliente — ver
