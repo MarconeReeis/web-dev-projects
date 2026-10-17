@@ -1,0 +1,75 @@
+/** Camada base: o que vale para o documento inteiro, antes de qualquer componente. */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* iOS: evita o zoom automático ao focar input, ruim num tablet de balcão */
+    touch-action: manipulation;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    /* tnum: cifras tabulares — colunas de valores financeiros alinham */
+    font-feature-settings: 'tnum' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Foco visível e consistente. Nunca removemos outline sem substituir. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  /* Dentro do menu grafite o anel roxo some; usa o claro. */
+  .on-ink :focus-visible {
+    outline-color: var(--ink-foreground);
+  }
+
+  button,
+  [role='button'] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
+  /* Tipografia: sem serifa em lugar nenhum, hierarquia por peso e tamanho. */
+  h1, h2, h3, h4 {
+    margin: 0;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  p {
+    margin: 0;
+    text-wrap: pretty;
+  }
+
+  /* Barra de rolagem discreta — o app vive em tela cheia num tablet. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--input) transparent;
+  }
+
+  .on-ink * {
+    scrollbar-color: var(--ink-elevated) transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

@@ -1,0 +1,118 @@
+/**
+ * Átrio — tokens de design
+ *
+ * Duas camadas, de propósito:
+ *   1. PRIMITIVAS (--atr-*): a paleta crua. É só aqui que existe uma cor literal.
+ *   2. SEMÂNTICAS (--primary, --background, ...): o que os componentes usam.
+ *
+ * Trocar a identidade de uma barbearia no app do cliente = sobrescrever as
+ * primitivas de marca (--atr-brand-*) no :root. Toda a camada semântica segue
+ * junto, sem tocar em componente nenhum. Ver BrandingService em @atrio/core.
+ *
+ * Cores em oklch: a clareza (L) é perceptual, então derivar hover/soft a partir
+ * da cor da marca dá resultado previsível — o que hex não garante.
+ */
+
+:root {
+  /* ─── 1. Primitivas ──────────────────────────────────────────────── */
+
+  /* Marca (sobrescrevível por tenant no app do cliente) */
+  --atr-brand-soft: oklch(0.9461 0.0271 295.05);        /* #EEEAFE */
+  --atr-brand: oklch(0.5573 0.2379 283.96);             /* #6C4DF6 */
+  --atr-brand-strong: oklch(0.5077 0.2422 281.92);      /* #5B3BE8 — hover */
+  --atr-brand-deep: oklch(0.4561 0.2365 279.83);        /* #4A2BD4 — texto sobre soft */
+  --atr-brand-contrast: oklch(1 0 0);                   /* #FFFFFF — texto sobre a marca */
+
+  /* Grafite — menu lateral e superfícies escuras */
+  --atr-ink: oklch(0.2512 0.0189 280.46);               /* #20212B */
+  --atr-ink-elevated: oklch(0.3043 0.0218 277.60);      /* #2C2E3A */
+  --atr-ink-dim: oklch(0.6692 0.0269 275.70);           /* #9094A6 */
+
+  /* Neutros */
+  --atr-n-0: oklch(1 0 0);                              /* #FFFFFF */
+  --atr-n-50: oklch(0.9713 0.0053 286.30);              /* #F5F5F9 */
+  --atr-n-100: oklch(0.9536 0.0067 286.27);             /* #EFEFF4 */
+  --atr-n-200: oklch(0.9212 0.0108 286.19);             /* #E4E4EC */
+  --atr-n-300: oklch(0.8783 0.0137 281.54);             /* #D5D6E0 */
+  --atr-n-600: oklch(0.4883 0.0242 276.52);             /* #5C5F6E */
+
+  /* Status — uso restrito, sempre acompanhado de texto */
+  --atr-green: oklch(0.5273 0.1371 150.07);             /* #15803D */
+  --atr-green-soft: oklch(0.9624 0.0434 156.74);        /* #DCFCE7 */
+  --atr-green-deep: oklch(0.3925 0.0896 152.54);        /* #14532D */
+  --atr-amber: oklch(0.5553 0.1455 49.00);              /* #B45309 */
+  --atr-amber-soft: oklch(0.9597 0.0361 82.18);         /* #FEF0D7 */
+  --atr-amber-deep: oklch(0.4280 0.1080 50.89);         /* #7C3A06 */
+  --atr-red: oklch(0.5771 0.2152 27.33);                /* #DC2626 */
+  --atr-red-soft: oklch(0.9356 0.0309 17.72);           /* #FEE2E2 */
+  --atr-red-deep: oklch(0.4437 0.1613 26.90);           /* #991B1B */
+
+  /* Séries de gráfico */
+  --atr-chart-a: oklch(0.5573 0.2379 283.96);           /* roxo */
+  --atr-chart-b: oklch(0.7266 0.1458 291.82);           /* roxo claro */
+  --atr-chart-c: oklch(0.6271 0.1699 149.21);           /* verde */
+  --atr-chart-d: oklch(0.7686 0.1647 70.08);            /* laranja */
+  --atr-chart-e: oklch(0.2512 0.0189 280.46);           /* grafite */
+
+  /* ─── 2. Semânticas ──────────────────────────────────────────────── */
+
+  --background: var(--atr-n-50);
+  --foreground: var(--atr-ink);
+
+  --card: var(--atr-n-0);
+  --card-foreground: var(--atr-ink);
+
+  --primary: var(--atr-brand);
+  --primary-foreground: var(--atr-brand-contrast);
+  --primary-hover: var(--atr-brand-strong);
+  --primary-soft: var(--atr-brand-soft);
+  --primary-soft-foreground: var(--atr-brand-deep);
+
+  --ink: var(--atr-ink);
+  --ink-foreground: var(--atr-n-50);
+  --ink-elevated: var(--atr-ink-elevated);
+  --ink-muted: var(--atr-ink-dim);
+
+  --secondary: var(--atr-n-100);
+  --secondary-foreground: var(--atr-ink);
+  --muted: var(--atr-n-100);
+  --muted-foreground: var(--atr-n-600);
+  --accent: var(--atr-brand-soft);
+  --accent-foreground: var(--atr-brand-deep);
+
+  --border: var(--atr-n-200);
+  --input: var(--atr-n-300);
+  --ring: var(--atr-brand);
+
+  --success: var(--atr-green);
+  --success-foreground: var(--atr-n-0);
+  --success-soft: var(--atr-green-soft);
+  --success-soft-foreground: var(--atr-green-deep);
+
+  --warning: var(--atr-amber);
+  --warning-foreground: var(--atr-n-0);
+  --warning-soft: var(--atr-amber-soft);
+  --warning-soft-foreground: var(--atr-amber-deep);
+
+  --destructive: var(--atr-red);
+  --destructive-foreground: var(--atr-n-0);
+  --destructive-soft: var(--atr-red-soft);
+  --destructive-soft-foreground: var(--atr-red-deep);
+
+  --chart-1: var(--atr-chart-a);
+  --chart-2: var(--atr-chart-b);
+  --chart-3: var(--atr-chart-c);
+  --chart-4: var(--atr-chart-d);
+  --chart-5: var(--atr-chart-e);
+
+  /* ─── 3. Forma e elevação ────────────────────────────────────────── */
+
+  --radius-base: 1rem;
+  --surface-radius: calc(var(--radius-base) + 0.5rem);
+  --control-height: 2.75rem;          /* 44px — alvo mínimo de toque */
+
+  --shadow-soft: 0 1px 2px oklch(0.2512 0.0189 280.46 / 0.05),
+                 0 8px 24px oklch(0.2512 0.0189 280.46 / 0.06);
+  --shadow-strong: 0 8px 16px oklch(0.2512 0.0189 280.46 / 0.08),
+                   0 24px 48px oklch(0.2512 0.0189 280.46 / 0.16);
+}

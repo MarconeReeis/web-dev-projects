@@ -1,0 +1,72 @@
+/**
+ * Ponte entre os tokens do Átrio e as utilities do Tailwind.
+ *
+ * `@theme inline` faz a utility gerada apontar para `var(--token)` em vez de
+ * copiar o valor. É isso que permite trocar a cor da marca em tempo de execução
+ * (white-label) sem recompilar o CSS.
+ *
+ * Consequência prática: `bg-primary`, `text-muted-foreground`, `border-border`,
+ * `rounded-surface`, `shadow-card` passam a existir. Componente nunca escreve
+ * cor crua — a regra de ouro do DESIGN.md.
+ */
+
+@theme inline {
+  --font-sans: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-foreground: var(--primary-soft-foreground);
+
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-ink-elevated: var(--ink-elevated);
+  --color-ink-muted: var(--ink-muted);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-success-soft-foreground: var(--success-soft-foreground);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-soft-foreground: var(--warning-soft-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-destructive-soft-foreground: var(--destructive-soft-foreground);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-surface: var(--surface-radius);
+  --radius-base: var(--radius-base);
+
+  --shadow-card: var(--shadow-soft);
+  --shadow-pop: var(--shadow-strong);
+
+  --height-control: var(--control-height);
+}

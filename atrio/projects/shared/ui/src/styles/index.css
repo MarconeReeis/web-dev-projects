@@ -1,0 +1,13 @@
+/**
+ * Design system do Átrio — ponto de entrada único.
+ *
+ * Os apps importam só este arquivo, logo depois do `@import 'tailwindcss'`.
+ * A ordem importa: tokens definem as variáveis, theme as expõe ao Tailwind,
+ * base aplica ao documento, utilities acrescentam as classes próprias.
+ */
+
+@import './tokens.css';
+@import './theme.css';
+@import './base.css';
+@import './utilities.css';
+@import './overlay.css';

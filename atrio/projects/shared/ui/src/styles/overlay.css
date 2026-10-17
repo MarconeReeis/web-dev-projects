@@ -1,0 +1,32 @@
+/**
+ * Estilo dos overlays do CDK.
+ *
+ * Precisa ser global: o CDK monta o painel em `cdk-overlay-container`, fora
+ * da árvore do componente que abriu, então CSS com escopo de componente não
+ * alcança. Os nomes das classes vêm de AtrOverlay (lib/overlay/overlay.ts).
+ */
+
+.atr-overlay-backdrop {
+  background-color: oklch(0.2512 0.0189 280.46 / 0.45);
+}
+
+/* Diálogo centralizado */
+.atr-overlay-panel {
+  border-radius: var(--surface-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-strong);
+}
+
+/* Painel lateral colado à direita */
+.atr-overlay-sheet {
+  box-shadow: var(--shadow-strong);
+}
+
+@media (min-width: 641px) {
+  /* Arredonda só as quinas que ficam soltas; as da direita encostam na borda. */
+  .atr-overlay-sheet {
+    border-start-start-radius: var(--surface-radius);
+    border-end-start-radius: var(--surface-radius);
+    overflow: hidden;
+  }
+}

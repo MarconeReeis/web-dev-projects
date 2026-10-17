@@ -1,0 +1,74 @@
+/**
+ * Utilities próprias do Átrio.
+ *
+ * `@utility` (Tailwind v4) em vez de `.classe` solta: assim aceitam variantes
+ * (`hover:`, `sm:`, `data-[...]:`) e entram na ordem correta da cascata.
+ */
+
+/* Card padrão: o retângulo branco de todo o app. */
+@utility surface {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Filtro/aba em cápsula. Ativo = grafite, como no filtro "Hoje" da Dashboard. */
+@utility pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: var(--control-height);
+  padding-inline: 1.125rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  &[data-active='true'] {
+    background-color: var(--ink);
+    border-color: var(--ink);
+    color: var(--ink-foreground);
+  }
+
+  &[data-active='true']:hover {
+    background-color: var(--ink-elevated);
+    border-color: var(--ink-elevated);
+    color: var(--ink-foreground);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+/* Listras diagonais: horário bloqueado, fora do expediente, área vazia. */
+@utility hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--border) 0 1px,
+    transparent 1px 8px
+  );
+}
+
+/* Marca um bloco como "sobre fundo grafite" — ajusta foco e scrollbar. */
+@utility on-ink {
+  color: var(--ink-foreground);
+}
+
+/* Números que precisam alinhar em coluna (tabelas, totais). */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
