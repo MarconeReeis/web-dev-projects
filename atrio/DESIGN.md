@@ -242,6 +242,25 @@ o usuário perde de vista qual recorte está olhando.
 "Registrar" já decidiu o que quer fazer; mostrar os detalhes antes seria um
 toque a mais para chegar no mesmo lugar.
 
+**Nas Configurações, o endereço é estruturado.** A referência usava um campo
+de texto livre. O app do cliente vai precisar da cidade e do CEP separados
+para exibir e abrir no mapa, e extrair isso de uma string digitada à mão não
+funciona.
+
+**O horário de funcionamento é exibido, não editado.** Ele é a união das
+jornadas dos profissionais — ver docs/ARQUITETURA.md. Um campo editável seria
+uma segunda fonte de verdade.
+
+**"Instalar como aplicativo" instala de verdade quando dá.** O Chromium avisa
+que o app é instalável; guardamos esse aviso e oferecemos um botão. As
+instruções por plataforma continuam, mas só quando o navegador não oferece o
+caminho direto — Safari, por exemplo. Quem está configurando o tablet da
+barbearia não deveria precisar seguir instruções de menu.
+
+**O botão de salvar diz o estado.** "Salvar alterações" quando há mudança,
+"Tudo salvo" desabilitado quando não há. Botão sempre habilitado não informa
+se o que foi digitado chegou a ser gravado.
+
 ---
 
 ## 7. PWA

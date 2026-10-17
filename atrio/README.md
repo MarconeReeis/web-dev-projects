@@ -63,6 +63,8 @@ durante o desenvolvimento.
   `provideDemoData()` por `provideFirebaseData()` no `app.config.ts`.
 - **Quem faz o quê mora só em `Professional.serviceIds`.** A relação com
   serviços tem um lado só, de propósito — ver docs/ARQUITETURA.md.
+- **O horário da barbearia é derivado** da jornada dos profissionais, não um
+  campo. Mesmo motivo.
 - **Componente não escreve cor crua.** Sempre um token semântico
   (`bg-primary`, `text-muted-foreground`). É o que faz o white-label funcionar.
 - **Conflito de horário é problema do servidor.** A validação local do modo
@@ -78,9 +80,10 @@ Agenda — grade diária e semanal, bloqueio de horário, painel de detalhes com
 as ações do atendimento e o cadastro de agendamento com horários livres
 calculados — a tela de Profissionais, com cadastro, edição, jornada, serviços
 realizados, foto e bloqueios, a tela de Serviços e preços, com catálogo,
-duração, valores e profissionais habilitados, e a tela de Financeiro, com
+duração, valores e profissionais habilitados, a tela de Financeiro, com
 indicadores do período, movimentações, pendências, despesas e registro de
-pagamento.
+pagamento, e as Configurações, com dados da barbearia, contato da conta,
+horário derivado e instalação do PWA.
 
-A seguir: Configurações, o app do cliente além da vitrine, autenticação e
-Firebase.
+**O painel administrativo está completo.** A seguir: o app do cliente além da
+vitrine (escolha de serviço, profissional e horário), autenticação e Firebase.

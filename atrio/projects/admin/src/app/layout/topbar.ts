@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { ATRIO_CONFIG, TenantContext } from '@atrio/core';
 import { AtrAvatar, AtrIcon } from '@atrio/ui';
 
@@ -52,9 +59,9 @@ import { AtrAvatar, AtrIcon } from '@atrio/ui';
       class="flex min-h-11 items-center gap-3 rounded-full px-1.5 transition-colors hover:bg-accent sm:pr-4"
       aria-label="Conta do administrador"
     >
-      <atr-avatar [name]="userName() ?? userRole()" size="default" />
+      <atr-avatar [name]="displayName() ?? userRole()" size="default" />
       <span class="hidden text-left leading-tight sm:block">
-        @if (userName(); as name) {
+        @if (displayName(); as name) {
           <span class="block text-sm font-bold">{{ name }}</span>
           <span class="block text-xs text-muted-foreground">{{ userRole() }}</span>
         } @else {
@@ -71,13 +78,17 @@ export class Topbar {
   readonly collapsed = input(false);
 
   /**
-   * Nulo enquanto não há autenticação: o perfil mostra só o papel, em vez de
-   * repetir "Administrador" em duas linhas. Quando o login entrar, o nome de
-   * quem está logado preenche a linha de cima.
+   * Nome de quem está logado. Enquanto não há autenticação fica nulo e o
+   * perfil cai no contato cadastrado em Configurações — melhor do que repetir
+   * "Administrador" em duas linhas.
    */
   readonly userName = input<string | null>(null);
   readonly userRole = input('Administrador');
   readonly toggleMenu = output<void>();
+
+  protected readonly displayName = computed(
+    () => this.userName() ?? this.tenant.tenant()?.admin.name ?? null,
+  );
 
   protected menuButtonLabel(): string {
     return this.collapsed() ? 'Abrir menu' : 'Recolher menu';
