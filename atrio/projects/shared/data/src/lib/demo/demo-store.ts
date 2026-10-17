@@ -83,6 +83,15 @@ export class DemoStore {
     });
   }
 
+  replaceEntry(entry: FinanceEntry): void {
+    this.commit({
+      ...this.state$.value,
+      entries: this.state$.value.entries.map((item) =>
+        item.id === entry.id ? entry : item,
+      ),
+    });
+  }
+
   removeEntry(id: Id): void {
     this.commit({
       ...this.state$.value,

@@ -110,6 +110,18 @@ export abstract class FinanceRepository {
   /** Lançamentos do período, filtrados por `occurredAt` (data do dinheiro). */
   abstract watchEntries(query: FinanceQuery): Observable<readonly FinanceEntry[]>;
   abstract addExpense(expense: NewExpense): Promise<void>;
+
+  /**
+   * Corrige uma despesa já lançada.
+   *
+   * Só despesa. Recebimento vindo de atendimento continua imutável: ele tem
+   * contrapartida no atendimento, e mexer num lado sem o outro desalinha o
+   * caixa. Despesa é lançamento manual, digitado às pressas no balcão — valor
+   * trocado acontece, e obrigar a excluir e relançar só faz o dono errar de
+   * novo.
+   */
+  abstract updateExpense(id: Id, expense: NewExpense): Promise<void>;
+
   abstract removeExpense(id: Id): Promise<void>;
 }
 

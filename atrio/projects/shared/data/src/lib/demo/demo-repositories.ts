@@ -280,6 +280,23 @@ export class DemoFinanceRepository extends FinanceRepository {
     this.store.addEntry(expenseEntry(this.store.snapshot().tenant.id, expense));
   }
 
+  async updateExpense(id: Id, expense: NewExpense): Promise<void> {
+    const current = this.store.snapshot().entries.find((entry) => entry.id === id);
+    if (!current) throw new Error('Despesa não encontrada.');
+    if (current.kind !== 'despesa') {
+      throw new Error('Só despesas podem ser editadas.');
+    }
+
+    this.store.replaceEntry({
+      ...current,
+      description: expense.description,
+      amount: expense.amount,
+      occurredAt: expense.occurredAt,
+      category: expense.category,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
   async removeExpense(id: Id): Promise<void> {
     this.store.removeEntry(id);
   }
