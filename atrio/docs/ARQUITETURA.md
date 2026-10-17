@@ -212,6 +212,29 @@ do dono da barbearia.
 
 ---
 
+## Como o cliente é identificado (e por que ainda não é login)
+
+O app do cliente não tem autenticação. O nome e o telefone digitados no
+agendamento ficam guardados no próprio aparelho, e "Meus horários" consulta os
+agendamentos por telefone.
+
+O risco está assumido: quem souber o telefone de outra pessoa vê os
+agendamentos dela. Para uma barbearia, a informação exposta é "fulano corta o
+cabelo quinta às 15h" — baixo impacto diante do custo de exigir cadastro, que
+derruba a conversão justamente na tela que precisa converter. Enquanto for
+assim, **nada sensível pode aparecer nessa tela**: sem valores pagos, sem
+dados de outras pessoas, sem histórico financeiro.
+
+Isso muda com a autenticação: a consulta passa a ser por `client.clientId` e o
+telefone volta a ser só contato. Telefone é identificador fraco — gente troca
+de número, e o número é reatribuído a outra pessoa depois.
+
+A decisão de COMO autenticar continua aberta e tem custo: SMS é pago por
+envio, e-mail tem adesão baixa nesse público, e link por WhatsApp depende da
+escolha de API que ainda não foi feita.
+
+---
+
 ## Offline
 
 Barbearia tem internet ruim e o tablet fica no balcão. A persistência offline

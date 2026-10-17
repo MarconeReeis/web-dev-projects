@@ -263,6 +263,40 @@ se o que foi digitado chegou a ser gravado.
 
 ---
 
+## 9. App do cliente
+
+Mesmos tokens, mesma fonte, mesmos componentes do painel. As referências de
+layout serviram para o **ritmo** — passo a passo, chips de dia roláveis, barra
+inferior, ação fixa no rodapé —, não para a pele: nada de laranja, verde ou
+cantos quadrados.
+
+Diferenças de forma, por ser celular:
+
+| Item | Painel | App do cliente |
+| --- | --- | --- |
+| Navegação | menu lateral grafite | barra inferior, duas seções |
+| Largura | até 1600px | coluna de 2xl, centrada |
+| Ação principal | no cabeçalho | fixa no rodapé, largura total |
+
+**A barra inferior tem dois itens, não cinco.** Um app de barbearia tem dois
+assuntos — marcar e acompanhar. As referências de e-commerce trazem busca e
+favoritos porque têm catálogo; aqui inventariam seções para preencher.
+
+**O agendamento fica fora da barra inferior.** Durante o fluxo não há para
+onde navegar senão adiante ou para trás, e a barra roubaria espaço do polegar
+na tela com mais toques.
+
+**Ordem: serviço → profissional → horário.** Não começa pelo profissional,
+que seria o natural: o serviço define a duração, que define quais horários
+cabem, e nem todo profissional faz todo serviço — escolher a pessoa primeiro
+leva a becos.
+
+**"Qualquer profissional" é a primeira opção.** Boa parte das pessoas não tem
+preferência, e obrigar a escolher esconde horários: o cliente vê a agenda de
+um barbeiro lotada e desiste, sem saber que o outro tinha a mesma hora livre.
+
+---
+
 ## 7. PWA
 
 `theme-color` grafite `#20212B`, manifesto em pt-BR, ícones de 72 a 512px,

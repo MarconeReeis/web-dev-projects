@@ -1,7 +1,14 @@
 import { Routes } from '@angular/router';
+import { Shell } from './layout/shell';
 
 /**
  * Rotas do app do cliente.
+ *
+ * O agendamento fica FORA do shell, como rota própria: durante o fluxo não há
+ * para onde navegar senão adiante ou para trás, e a barra inferior roubaria
+ * espaço do polegar justamente na tela com mais toques.
+ *
+ * A rota mais específica vem primeiro — o roteador casa de cima para baixo.
  *
  * Na v1 a barbearia é identificada por caminho (/b/:slug) e não por
  * subdomínio: o Firebase Hosting resolve sem wildcard de DNS. Quando cada
@@ -9,10 +16,30 @@ import { Routes } from '@angular/router';
  * passa para subdomínio e só o resolvedor de tenant muda.
  */
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'b/navalha-e-co' },
+  {
+    path: 'b/:slug/agendar',
+    title: 'Agendar horário',
+    loadComponent: () =>
+      import('./features/booking/booking-page').then((m) => m.BookingPage),
+  },
   {
     path: 'b/:slug',
-    loadComponent: () => import('./features/home/home-page').then((m) => m.HomePage),
+    component: Shell,
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./features/home/home-page').then((m) => m.HomePage),
+      },
+      {
+        path: 'meus-horarios',
+        title: 'Meus horários',
+        loadComponent: () =>
+          import('./features/appointments/appointments-page').then(
+            (m) => m.AppointmentsPage,
+          ),
+      },
+    ],
   },
-  { path: '**', redirectTo: '' },
+  { path: '', pathMatch: 'full', redirectTo: 'b/navalha-e-co' },
+  { path: '**', redirectTo: 'b/navalha-e-co' },
 ];

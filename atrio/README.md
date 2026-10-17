@@ -85,5 +85,15 @@ indicadores do período, movimentações, pendências, despesas e registro de
 pagamento, e as Configurações, com dados da barbearia, contato da conta,
 horário derivado e instalação do PWA.
 
-**O painel administrativo está completo.** A seguir: o app do cliente além da
-vitrine (escolha de serviço, profissional e horário), autenticação e Firebase.
+No app do cliente: vitrine da barbearia, agendamento em quatro passos (serviço,
+profissional, dia e horário, confirmação) com "qualquer profissional
+disponível", e "Meus horários" com cancelamento.
+
+**O painel administrativo e o fluxo do cliente estão completos.** A seguir:
+autenticação (e, com ela, a identificação do cliente — ver
+docs/ARQUITETURA.md), conflito de horário no servidor e Firebase.
+
+> Em modo demonstração os dois apps rodam em portas diferentes e, portanto, em
+> origens diferentes: cada um tem o seu `localStorage`. Um agendamento feito no
+> app do cliente **não** aparece no painel até os dois falarem com o mesmo
+> backend.
