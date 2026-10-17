@@ -318,6 +318,22 @@ vazio é melhor que anúncio genérico ocupando o topo.
 foto. Foto por serviço é o próximo passo natural — exige campo no modelo e
 upload no painel.
 
+### Barras fixas: sombra, não linha
+
+Nenhuma barra fixa do app do cliente usa borda. A linha corta a tela em duas
+partes iguais em peso visual; a sombra apenas sugere que há conteúdo passando
+por baixo, que é o que de fato acontece.
+
+| Barra | Tratamento |
+| --- | --- |
+| Navegação inferior | cápsula flutuante com `floating`, descolada das bordas |
+| Rodapé de ação (fluxo de agendamento) | `edge-top` |
+| Cabeçalho | sem nada: mesmo fundo do conteúdo |
+
+**Na navegação, só o item ativo mostra o rótulo.** Com dois itens, ícone
+sozinho seria ambíguo — um calendário pode ser qualquer coisa —, e exibir os
+dois rótulos o tempo todo engorda a barra sem informar nada novo.
+
 ---
 
 ## 7. PWA

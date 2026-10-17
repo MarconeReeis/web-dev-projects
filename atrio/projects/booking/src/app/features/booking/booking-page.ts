@@ -75,8 +75,9 @@ const TITLES: Readonly<Record<Step, string>> = {
   ],
   host: { class: 'flex min-h-dvh flex-col bg-background' },
   template: `
-    <!-- Cabeçalho -->
-    <header class="sticky top-0 z-20 border-b border-border bg-card">
+    <!-- Cabeçalho. Sem linha: a barra de progresso logo abaixo já separa, e
+         no passo final não há nada de que separar. -->
+    <header class="sticky top-0 z-20 bg-background">
       <div class="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3">
         @if (step() === 'pronto') {
           <span class="flex-1 font-bold">{{ title() }}</span>
@@ -322,7 +323,7 @@ const TITLES: Readonly<Record<Step, string>> = {
     <!-- Ação -->
     @if (step() !== 'pronto') {
       <div
-        class="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]"
+        class="edge-top fixed inset-x-0 bottom-0 z-20 bg-card pb-[env(safe-area-inset-bottom)]"
       >
         <div class="mx-auto w-full max-w-2xl px-4 py-3">
           <button

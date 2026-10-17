@@ -56,28 +56,36 @@ import { ClientIdentity } from '../shared/client-identity';
       </div>
     </header>
 
-    <main class="mx-auto w-full max-w-2xl flex-1 px-4 pt-5 pb-28">
+    <main class="mx-auto w-full max-w-2xl flex-1 px-4 pt-5 pb-32">
       <router-outlet />
     </main>
 
-    <!-- Barra inferior. O padding de baixo respeita a barra de gestos do
-         aparelho; sem ele o último item fica sob o indicador do iPhone. -->
-    <nav
-      class="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]"
-      aria-label="Seções"
-    >
-      <div class="mx-auto flex w-full max-w-2xl items-center gap-2 px-4 py-2">
-        @for (item of navItems; track item.path) {
-          <a
-            [routerLink]="item.path"
-            [routerLinkActiveOptions]="{ exact: item.exact }"
-            routerLinkActive="bg-primary-soft! text-primary-soft-foreground!"
-            class="flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-2xl text-xs font-semibold text-muted-foreground transition-colors"
-          >
-            <atr-icon [name]="item.icon" [size]="20" />
-            {{ item.label }}
-          </a>
-        }
+    <!-- Barra inferior flutuante.
+         Sem linha de separação: a cápsula já se destaca por sombra, e a linha
+         cortava a tela em duas. O padding de baixo respeita a barra de gestos
+         do aparelho; sem ele a cápsula encosta no indicador do iPhone.
+
+         Só o item ativo mostra o rótulo. Com dois itens, ícone sozinho seria
+         ambíguo — um calendário pode ser qualquer coisa —, e exibir os dois
+         rótulos o tempo todo engorda a barra sem informar nada novo. -->
+    <nav class="fixed inset-x-0 bottom-0 z-20 pb-[env(safe-area-inset-bottom)]" aria-label="Seções">
+      <div class="mx-auto w-full max-w-2xl px-4 pb-4">
+        <div class="floating flex items-center gap-1 rounded-full bg-card p-1.5">
+          @for (item of navItems; track item.path) {
+            <a
+              #rla="routerLinkActive"
+              [routerLink]="item.path"
+              [routerLinkActiveOptions]="{ exact: item.exact }"
+              routerLinkActive="bg-primary-soft! text-primary-soft-foreground!"
+              class="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full text-sm font-semibold text-muted-foreground transition-colors"
+            >
+              <atr-icon [name]="item.icon" [size]="20" />
+              @if (rla.isActive) {
+                {{ item.label }}
+              }
+            </a>
+          }
+        </div>
       </div>
     </nav>
   `,
