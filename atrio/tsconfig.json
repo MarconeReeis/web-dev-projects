@@ -1,0 +1,60 @@
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "paths": {
+      "@atrio/core": ["./projects/shared/core/src/public-api.ts"],
+      "@atrio/data": ["./projects/shared/data/src/public-api.ts"],
+      "@atrio/ui": ["./projects/shared/ui/src/public-api.ts"]
+    },
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "preserve"
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "./projects/admin/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/admin/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/booking/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/booking/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/shared/core/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/shared/core/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/shared/data/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/shared/data/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/shared/ui/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/shared/ui/tsconfig.spec.json"
+    }
+  ]
+}

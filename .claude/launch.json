@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "atrio-admin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "atrio", "run", "start"],
+      "port": 4200
+    },
+    {
+      "name": "atrio-booking",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "atrio", "run", "start:booking"],
+      "port": 4300
+    }
+  ]
+}
