@@ -121,6 +121,20 @@ export interface ProfessionalDialogData {
           </atr-field>
         </div>
 
+        <atr-field
+          label="Especialidade"
+          hint="Aparece no app do cliente, abaixo do nome."
+          [optional]="true"
+        >
+          <input
+            atrInput
+            type="text"
+            placeholder="Degradê e freestyle"
+            [value]="bio()"
+            (input)="bio.set($any($event.target).value)"
+          />
+        </atr-field>
+
         <!-- Serviços -->
         <fieldset>
           <legend class="mb-1.5 text-sm font-semibold">Serviços realizados</legend>
@@ -260,6 +274,7 @@ export class ProfessionalDialog {
   protected readonly name = signal(this.current?.name ?? '');
   protected readonly phone = signal(this.current?.phone ?? '');
   protected readonly photoUrl = signal<string | null>(this.current?.photoUrl ?? null);
+  protected readonly bio = signal(this.current?.bio ?? '');
   protected readonly serviceIds = signal<readonly Id[]>(this.current?.serviceIds ?? []);
   protected readonly active = signal(this.current?.active ?? true);
   protected readonly busy = signal(false);
@@ -390,6 +405,7 @@ export class ProfessionalDialog {
       name: this.name().trim(),
       photoUrl: this.photoUrl(),
       phone: this.phone().trim() || null,
+      bio: this.bio().trim() || null,
       serviceIds: this.serviceIds(),
       schedule: this.buildSchedule(),
       active: this.active(),

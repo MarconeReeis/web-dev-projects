@@ -351,10 +351,10 @@ export function buildDemoDataset(now: Date): DemoDataset {
   const allServiceIds = services.map((s) => s.id);
 
   const professionals: Professional[] = [
-    pro('pro-rafael', 'Rafael Lima', '(11) 97777-0001', allServiceIds, stamp),
-    pro('pro-diego', 'Diego Nunes', '(11) 97777-0002', allServiceIds, stamp),
-    pro('pro-caio', 'Caio Prado', '(11) 97777-0003', ['svc-corte', 'svc-acab'], stamp),
-    pro('pro-marcos', 'Marcos Vieira', null, ['svc-barba', 'svc-combo'], stamp, false),
+    pro('pro-rafael', 'Rafael Lima', '(11) 97777-0001', allServiceIds, stamp, true, 'Cortes clássicos e barba'),
+    pro('pro-diego', 'Diego Nunes', '(11) 97777-0002', allServiceIds, stamp, true, 'Degradê e freestyle'),
+    pro('pro-caio', 'Caio Prado', '(11) 97777-0003', ['svc-corte', 'svc-acab'], stamp, true, 'Máquina e acabamento'),
+    pro('pro-marcos', 'Marcos Vieira', null, ['svc-barba', 'svc-combo'], stamp, false, 'Barba e navalha'),
   ];
 
   const active = professionals.filter((p) => p.active);
@@ -506,6 +506,7 @@ export function buildDemoDataset(now: Date): DemoDataset {
     serviceIds: readonly Id[],
     ts: IsoDateTime,
     isActive = true,
+    bio: string | null = null,
   ): Professional {
     return {
       id,
@@ -513,6 +514,7 @@ export function buildDemoDataset(now: Date): DemoDataset {
       name,
       photoUrl: null,
       phone,
+      bio,
       serviceIds,
       schedule,
       active: isActive,

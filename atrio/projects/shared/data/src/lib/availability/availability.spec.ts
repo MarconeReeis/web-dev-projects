@@ -43,6 +43,7 @@ const PROFESSIONAL: Professional = {
   name: 'Zé',
   photoUrl: null,
   phone: null,
+  bio: null,
   serviceIds: ['svc-corte'],
   schedule: SCHEDULE,
   active: true,
