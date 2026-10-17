@@ -9,7 +9,7 @@ import {
 } from '@atrio/data';
 import { TenantContext } from '@atrio/core';
 import { AtrButton, AtrField, AtrInput, AtrSurfaceShell } from '@atrio/ui';
-import { toDateInputValue } from './appointment-panel';
+import { toDateInputValue } from './date-input';
 
 export interface BlockDialogData {
   readonly date: Date;

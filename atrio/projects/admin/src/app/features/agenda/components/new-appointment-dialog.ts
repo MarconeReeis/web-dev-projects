@@ -18,7 +18,7 @@ import {
 } from '@atrio/data';
 import { AtrButton, AtrField, AtrInput, AtrSurfaceShell } from '@atrio/ui';
 import { SlotPicker } from './slot-picker';
-import { toDateInputValue } from './appointment-panel';
+import { toDateInputValue } from '../../../shared/date-input';
 
 export interface NewAppointmentData {
   readonly date: Date;

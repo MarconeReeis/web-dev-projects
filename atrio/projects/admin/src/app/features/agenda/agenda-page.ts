@@ -28,8 +28,9 @@ import {
 import { AtrButton, AtrCard, AtrEmptyState, AtrIcon, AtrOverlay, AtrPageHeading } from '@atrio/ui';
 import { ProfessionalFilter } from '../../shared/professional-filter';
 import { AgendaGrid, GridColumn } from './components/agenda-grid';
-import { AppointmentPanel, toDateInputValue } from './components/appointment-panel';
-import { BlockDialog, BlockDialogData } from './components/block-dialog';
+import { AppointmentPanel } from './components/appointment-panel';
+import { toDateInputValue } from '../../shared/date-input';
+import { BlockDialog, BlockDialogData } from '../../shared/block-dialog';
 import { NewAppointmentData, NewAppointmentDialog } from './components/new-appointment-dialog';
 
 type View = 'dia' | 'semana';

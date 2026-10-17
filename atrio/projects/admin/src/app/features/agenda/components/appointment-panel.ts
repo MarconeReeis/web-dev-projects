@@ -21,6 +21,7 @@ import {
   startOfDay,
 } from '@atrio/data';
 import { AtrAvatar, AtrButton, AtrField, AtrIcon, AtrInput, AtrSurfaceShell } from '@atrio/ui';
+import { toDateInputValue } from '../../../shared/date-input';
 import { PaymentBadge, StatusBadge } from '../../../shared/status-badge';
 import { SlotPicker } from './slot-picker';
 
@@ -430,9 +431,3 @@ export class AppointmentPanel {
   }
 }
 
-/** Date para o formato que `<input type="date">` espera, em hora local. */
-export function toDateInputValue(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${date.getFullYear()}-${month}-${day}`;
-}
