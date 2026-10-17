@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { InstallPrompt, TenantContext } from '@atrio/core';
@@ -48,7 +48,7 @@ const HORIZON_DAYS = 120;
             <p class="mt-1.5 text-sm text-balance text-ink-muted">{{ promo.subtitle }}</p>
           }
           @if (promo.ctaLabel) {
-            <a atrButton size="sm" class="mt-4" [routerLink]="['../agendar']">
+            <a atrButton size="sm" class="mt-4" [routerLink]="['/b', slug(), 'agendar']">
               {{ promo.ctaLabel }}
             </a>
           }
@@ -60,7 +60,7 @@ const HORIZON_DAYS = 120;
     @if (nextAppointment(); as next) {
       <a
         class="mt-4 flex items-center gap-4 rounded-surface border border-primary bg-primary-soft p-4 transition-colors hover:brightness-97"
-        routerLink="../meus-horarios"
+        [routerLink]="['/b', slug(), 'meus-horarios']"
       >
         <span
           class="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
@@ -78,7 +78,7 @@ const HORIZON_DAYS = 120;
     }
 
     <!-- Agendar -->
-    <a atrButton size="lg" class="mt-4 w-full" [routerLink]="['../agendar']">
+    <a atrButton size="lg" class="mt-4 w-full" [routerLink]="['/b', slug(), 'agendar']">
       <atr-icon name="plus" [size]="18" />
       Agendar horário
     </a>
@@ -86,7 +86,7 @@ const HORIZON_DAYS = 120;
     <!-- Serviços -->
     <div class="mt-7 flex items-baseline justify-between gap-3">
       <h2 class="text-lg font-bold">Serviços</h2>
-      <a class="text-sm font-semibold text-primary" [routerLink]="['../agendar']">Ver todos</a>
+      <a class="text-sm font-semibold text-primary" [routerLink]="['/b', slug(), 'agendar']">Ver todos</a>
     </div>
 
     <ul class="mt-3 grid grid-cols-2 gap-3">
@@ -94,7 +94,7 @@ const HORIZON_DAYS = 120;
         <li>
           <a
             class="surface flex h-full flex-col overflow-hidden transition-colors hover:border-primary"
-            [routerLink]="['../agendar']"
+            [routerLink]="['/b', slug(), 'agendar']"
             [queryParams]="{ servico: service.id }"
           >
             <span
@@ -131,7 +131,7 @@ const HORIZON_DAYS = 120;
         subheading="Toque para agendar com quem você prefere."
         class="mt-4"
       >
-        <a atrButton="outline" size="sm" routerLink="../profissionais" card-action>
+        <a atrButton="outline" size="sm" [routerLink]="['/b', slug(), 'profissionais']" card-action>
           Ver todos
           <atr-icon name="chevron-right" [size]="15" />
         </a>
@@ -141,7 +141,7 @@ const HORIZON_DAYS = 120;
             <li>
               <a
                 class="flex w-20 flex-col items-center gap-2 rounded-2xl p-1 text-center transition-colors hover:bg-accent"
-                [routerLink]="['../agendar']"
+                [routerLink]="['/b', slug(), 'agendar']"
                 [queryParams]="{ profissional: professional.id }"
               >
                 <atr-avatar
@@ -214,6 +214,16 @@ const HORIZON_DAYS = 120;
   `,
 })
 export class HomePage {
+  /**
+   * Slug da barbearia, vindo do parâmetro de rota.
+   *
+   * Os links desta tela são ABSOLUTOS de propósito. A home é o filho de
+   * caminho vazio de `b/:slug` e não contribui com segmento nenhum de URL,
+   * então um `../agendar` come o slug e produz `/b/agendar` — rota que não
+   * existe, cai no `**` e devolve para a própria home. O botão parecia morto.
+   */
+  readonly slug = input<string>('');
+
   protected readonly tenant = inject(TenantContext);
   protected readonly install = inject(InstallPrompt);
   private readonly identity = inject(ClientIdentity);
