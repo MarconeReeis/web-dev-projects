@@ -18,7 +18,7 @@ import { DemoDataset, buildDemoDataset, todayKey } from './demo-seed';
  * retrato velho em vez de tentar migrá-lo: é demonstração, não há nada a
  * preservar.
  */
-const STORAGE_KEY = 'atrio.demo.v2';
+const STORAGE_KEY = 'atrio.demo.v3';
 
 /**
  * Estado do modo demonstração, em memória e espelhado no armazenamento local.

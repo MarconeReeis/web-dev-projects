@@ -45,6 +45,25 @@ export interface TenantAdmin {
   readonly email: string;
 }
 
+/**
+ * Destaque da vitrine: o banner no topo do app do cliente.
+ *
+ * Espaço da barbearia para anunciar promoção, serviço novo ou recado — "toda
+ * terça, barba com 20%". É editável nas Configurações porque um banner que só
+ * o desenvolvedor muda não serve para promoção: a data passa e ele fica
+ * mentindo na tela do cliente.
+ *
+ * Nulo, ou inativo, e o banner simplesmente não aparece. Espaço vazio é
+ * melhor que um anúncio genérico ocupando o topo.
+ */
+export interface Highlight {
+  readonly title: string;
+  readonly subtitle: string | null;
+  /** Rótulo do botão. Nulo deixa o banner só informativo. */
+  readonly ctaLabel: string | null;
+  readonly active: boolean;
+}
+
 export interface Tenant {
   readonly id: Id;
   /**
@@ -65,6 +84,7 @@ export interface Tenant {
   readonly phone: string | null;
   readonly address: Address | null;
   readonly admin: TenantAdmin;
+  readonly highlight: Highlight | null;
   readonly branding: Branding;
   readonly subscription: SubscriptionStatus;
   /** IANA, ex.: "America/Sao_Paulo". O Brasil tem mais de um fuso. */

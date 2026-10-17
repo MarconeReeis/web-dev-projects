@@ -15,6 +15,7 @@ import {
   DemoStore,
   Professional,
   ProfessionalRepository,
+  Highlight,
   Tenant,
   TenantRepository,
   Weekday,
@@ -31,6 +32,7 @@ import {
   AtrInput,
   AtrOverlay,
   AtrPageHeading,
+  AtrSwitch,
 } from '@atrio/ui';
 import { readSquareAvatar } from '../../shared/photo';
 import { WEEKDAYS, daysLabel, groupWeek } from '../../shared/week-summary';
@@ -69,6 +71,7 @@ const EMPTY_ADDRESS: Address = {
     AtrInput,
     AtrIcon,
     AtrAvatar,
+    AtrSwitch,
   ],
   host: { class: 'mx-auto block w-full max-w-4xl' },
   template: `
@@ -252,6 +255,56 @@ const EMPTY_ADDRESS: Address = {
       </div>
     </atr-card>
 
+    <!-- Destaque do app do cliente -->
+    <atr-card
+      heading="Destaque no app do cliente"
+      subheading="O banner no topo da tela inicial. Use para promoção, serviço novo ou recado."
+      class="mt-4"
+    >
+      <div class="flex flex-col gap-4">
+        <atr-field label="Título" [error]="showErrors() ? highlightError() : null">
+          <input
+            atrInput
+            type="text"
+            placeholder="Terça é dia de barba"
+            [invalid]="showErrors() && !!highlightError()"
+            [value]="highlightTitle()"
+            (input)="highlightTitle.set($any($event.target).value)"
+          />
+        </atr-field>
+
+        <atr-field label="Descrição" [optional]="true">
+          <input
+            atrInput
+            type="text"
+            placeholder="20% de desconto, só com agendamento pelo app."
+            [value]="highlightSubtitle()"
+            (input)="highlightSubtitle.set($any($event.target).value)"
+          />
+        </atr-field>
+
+        <atr-field
+          label="Texto do botão"
+          hint="Sem texto, o banner fica só informativo."
+          [optional]="true"
+        >
+          <input
+            atrInput
+            type="text"
+            placeholder="Agendar agora"
+            [value]="highlightCta()"
+            (input)="highlightCta.set($any($event.target).value)"
+          />
+        </atr-field>
+
+        <atr-switch
+          [(checked)]="highlightActive"
+          label="Mostrar o banner"
+          description="Desligue quando a promoção acabar — banner vencido na tela do cliente é pior que nenhum."
+        />
+      </div>
+    </atr-card>
+
     <!-- Instalação -->
     <atr-card class="on-ink mt-4 bg-ink text-ink-foreground">
       <div class="flex flex-wrap items-start justify-between gap-4">
@@ -317,6 +370,11 @@ export class SettingsPage {
   protected readonly adminName = signal('');
   protected readonly adminEmail = signal('');
 
+  protected readonly highlightTitle = signal('');
+  protected readonly highlightSubtitle = signal('');
+  protected readonly highlightCta = signal('');
+  protected readonly highlightActive = signal(false);
+
   protected readonly busy = signal(false);
   protected readonly showErrors = signal(false);
 
@@ -346,6 +404,10 @@ export class SettingsPage {
         this.address.set(current.address ?? EMPTY_ADDRESS);
         this.adminName.set(current.admin.name);
         this.adminEmail.set(current.admin.email);
+        this.highlightTitle.set(current.highlight?.title ?? '');
+        this.highlightSubtitle.set(current.highlight?.subtitle ?? '');
+        this.highlightCta.set(current.highlight?.ctaLabel ?? '');
+        this.highlightActive.set(current.highlight?.active ?? false);
         this.loaded.set(this.fingerprint());
       });
     });
@@ -394,6 +456,13 @@ export class SettingsPage {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return 'E-mail inválido.';
     return null;
   });
+
+  /** Só cobra o título quando o banner vai de fato aparecer. */
+  protected readonly highlightError = computed(() =>
+    this.highlightActive() && this.highlightTitle().trim().length < 3
+      ? 'Informe o título do banner.'
+      : null,
+  );
 
   protected readonly dirty = computed(() => this.fingerprint() !== this.loaded());
 
@@ -451,7 +520,19 @@ export class SettingsPage {
   protected async save(): Promise<void> {
     this.showErrors.set(true);
     const current = this.tenant.tenant();
-    if (!current || this.nameError() || this.emailError()) return;
+    if (!current || this.nameError() || this.emailError() || this.highlightError()) {
+      return;
+    }
+
+    const title = this.highlightTitle().trim();
+    const highlight: Highlight | null = title
+      ? {
+          title,
+          subtitle: this.highlightSubtitle().trim() || null,
+          ctaLabel: this.highlightCta().trim() || null,
+          active: this.highlightActive(),
+        }
+      : null;
 
     const next: Tenant = {
       ...current,
@@ -460,6 +541,7 @@ export class SettingsPage {
       address: this.address(),
       branding: { ...current.branding, logoUrl: this.logoUrl() },
       admin: { name: this.adminName().trim(), email: this.adminEmail().trim() },
+      highlight,
     };
 
     this.busy.set(true);
@@ -498,6 +580,10 @@ export class SettingsPage {
       this.address(),
       this.adminName(),
       this.adminEmail(),
+      this.highlightTitle(),
+      this.highlightSubtitle(),
+      this.highlightCta(),
+      this.highlightActive(),
     ]);
   }
 }

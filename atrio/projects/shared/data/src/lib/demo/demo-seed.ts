@@ -329,6 +329,12 @@ export function buildDemoDataset(now: Date): DemoDataset {
       zipCode: '01304-001',
     },
     admin: { name: 'Marcone Reis', email: 'admin@navalhaeco.com.br' },
+    highlight: {
+      title: 'Terça é dia de barba',
+      subtitle: '20% de desconto na barba, só com agendamento pelo app.',
+      ctaLabel: 'Agendar agora',
+      active: true,
+    },
     branding: { logoUrl: null, primaryColor: null },
     subscription: 'trial',
     timeZone: 'America/Sao_Paulo',
