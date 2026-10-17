@@ -29,6 +29,12 @@ const METHODS: readonly PaymentMethod[] = ['pix', 'dinheiro', 'cartao'];
 
 type Mode = 'detalhes' | 'pagamento' | 'reagendar' | 'cancelar' | 'faltou';
 
+export interface AppointmentPanelData {
+  readonly appointmentId: Id;
+  /** Abre o painel já numa ação; o padrão são os detalhes. */
+  readonly mode?: Mode;
+}
+
 /**
  * Painel lateral do atendimento.
  *
@@ -284,7 +290,7 @@ type Mode = 'detalhes' | 'pagamento' | 'reagendar' | 'cancelar' | 'faltou';
 })
 export class AppointmentPanel {
   private readonly ref = inject<DialogRef<void, AppointmentPanel>>(DialogRef);
-  private readonly data = inject<{ appointmentId: Id }>(DIALOG_DATA);
+  private readonly data = inject<AppointmentPanelData>(DIALOG_DATA);
 
   private readonly appointmentsRepo = inject(AppointmentRepository);
   private readonly professionalsRepo = inject(ProfessionalRepository);
@@ -296,7 +302,10 @@ export class AppointmentPanel {
   protected longDate = formatLongDate;
   protected readonly methods = METHODS;
 
-  protected readonly mode = signal<Mode>('detalhes');
+  // O Financeiro abre direto em "pagamento": quem clicou em Registrar já
+  // decidiu o que quer fazer, e mostrar os detalhes antes seria um toque a
+  // mais para chegar no mesmo lugar.
+  protected readonly mode = signal<Mode>(this.data.mode ?? 'detalhes');
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly newStartsAt = signal<IsoDateTime | null>(null);

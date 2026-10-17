@@ -9,7 +9,12 @@ const PRESETS: readonly PeriodPreset[] = ['hoje', 'semana', 'mes'];
  *
  * "Período personalizado" é um botão à parte porque abre um seletor de datas
  * em vez de aplicar um valor direto — misturar os dois comportamentos na
- * mesma fileira de pills confunde quem opera rápido.
+ * mesma fileira de pills confunde quem opera rápido. Por isso ele tem a sua
+ * própria saída: a página decide como pedir as datas.
+ *
+ * Com um período escolhido, a cápsula passa a mostrá-lo ("01/10 a 15/10") em
+ * vez do rótulo genérico. Sem isso o usuário perde de vista qual recorte está
+ * olhando assim que o diálogo fecha.
  */
 @Component({
   selector: 'adm-period-filter',
@@ -34,10 +39,10 @@ const PRESETS: readonly PeriodPreset[] = ['hoje', 'semana', 'mes'];
         class="pill"
         [attr.data-active]="selected() === 'personalizado'"
         [attr.aria-pressed]="selected() === 'personalizado'"
-        (click)="selectedChange.emit('personalizado')"
+        (click)="customRequested.emit()"
       >
         <atr-icon name="calendar-days" [size]="16" />
-        {{ labels.personalizado }}
+        {{ customLabel() ?? labels.personalizado }}
       </button>
     </div>
   `,
@@ -47,5 +52,9 @@ export class PeriodFilter {
   protected readonly labels = PERIOD_LABEL;
 
   readonly selected = input.required<PeriodPreset>();
+  /** "01/10 a 15/10" quando já há um período escolhido. */
+  readonly customLabel = input<string | null>(null);
+
   readonly selectedChange = output<PeriodPreset>();
+  readonly customRequested = output<void>();
 }

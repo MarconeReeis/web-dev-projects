@@ -17,12 +17,14 @@ import {
   formatMoney,
   rangeFor,
 } from '@atrio/data';
-import { AtrButton, AtrIcon, AtrPageHeading } from '@atrio/ui';
+import { AtrButton, AtrIcon, AtrOverlay, AtrPageHeading } from '@atrio/ui';
+import { CustomPeriodDialog, CustomPeriodData } from '../../shared/custom-period-dialog';
 import { PeriodFilter } from '../../shared/period-filter';
+import { PeriodSelection } from '../../shared/period-selection';
 import { ProfessionalFilter } from '../../shared/professional-filter';
 import { BarsChart, ChartBucket } from './components/bars-chart';
 import { FinancePanel } from './components/finance-panel';
-import { KpiCard } from './components/kpi-card';
+import { KpiCard } from '../../shared/kpi-card';
 import { UpcomingAppointments } from './components/upcoming-appointments';
 
 const DAY_MS = 86_400_000;
@@ -66,7 +68,12 @@ const DAY_MS = 86_400_000;
     </atr-page-heading>
 
     <div class="mt-6 flex flex-wrap items-center gap-3">
-      <adm-period-filter [selected]="preset()" (selectedChange)="preset.set($event)" />
+      <adm-period-filter
+        [selected]="period.preset()"
+        [customLabel]="period.customLabel()"
+        (selectedChange)="period.select($event)"
+        (customRequested)="openCustomPeriod()"
+      />
       <adm-professional-filter
         [professionals]="professionals()"
         [selected]="professionalId()"
@@ -80,7 +87,7 @@ const DAY_MS = 86_400_000;
         label="Agendamentos"
         [value]="scheduledCount().toString()"
         icon="calendar-days"
-        [highlight]="true"
+        tone="soft"
       />
       <adm-kpi-card
         label="Atendimentos concluídos"
@@ -126,16 +133,29 @@ export class DashboardPage {
   private readonly financeRepo = inject(FinanceRepository);
   private readonly professionalsRepo = inject(ProfessionalRepository);
   private readonly router = inject(Router);
+  private readonly overlay = inject(AtrOverlay);
 
   protected money = formatMoney;
 
   // ─── filtros ──────────────────────────────────────────────────────────
 
-  protected readonly preset = signal<PeriodPreset>('hoje');
+  protected readonly period = new PeriodSelection('hoje');
   protected readonly professionalId = signal<Id | null>(null);
 
-  private readonly range = computed<DateRange>(() => rangeFor(this.preset()));
+  private readonly range = this.period.range;
   private readonly todayRange = computed<DateRange>(() => rangeFor('hoje'));
+
+  protected openCustomPeriod(): void {
+    const ref = this.overlay.openDialog<
+      CustomPeriodDialog,
+      CustomPeriodData,
+      DateRange | null
+    >(CustomPeriodDialog, this.period.suggestion());
+
+    ref.closed.subscribe((range) => {
+      if (range) this.period.applyCustom(range);
+    });
+  }
 
   // ─── dados ────────────────────────────────────────────────────────────
 
