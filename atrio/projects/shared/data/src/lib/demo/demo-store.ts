@@ -9,7 +9,16 @@ import { Service } from '../models/service';
 import { Tenant } from '../models/tenant';
 import { DemoDataset, buildDemoDataset, todayKey } from './demo-seed';
 
-const STORAGE_KEY = 'atrio.demo.v1';
+/**
+ * A versão faz parte da chave de propósito.
+ *
+ * O conjunto salvo é um retrato do modelo do dia em que foi gravado. Quando o
+ * formato muda — um campo novo em Tenant, por exemplo — o dado antigo deixa de
+ * satisfazer os tipos e a tela quebra ao ler. Subir a versão descarta o
+ * retrato velho em vez de tentar migrá-lo: é demonstração, não há nada a
+ * preservar.
+ */
+const STORAGE_KEY = 'atrio.demo.v2';
 
 /**
  * Estado do modo demonstração, em memória e espelhado no armazenamento local.

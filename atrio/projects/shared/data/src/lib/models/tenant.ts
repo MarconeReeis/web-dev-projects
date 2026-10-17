@@ -1,5 +1,4 @@
 import { Id, IsoDateTime } from './common';
-import { WeeklySchedule } from './schedule';
 
 /**
  * Situação da assinatura.
@@ -33,14 +32,39 @@ export interface Branding {
   readonly primaryColor: string | null;
 }
 
+/**
+ * Contato responsável pela conta.
+ *
+ * Fica no tenant, e não num modelo de usuário, porque é dado do cliente da
+ * assinatura: quem o Átrio cobra e procura quando algo dá errado. Quando a
+ * autenticação entrar, os usuários que operam o painel são outra coisa — uma
+ * barbearia pode ter três atendentes e um dono.
+ */
+export interface TenantAdmin {
+  readonly name: string;
+  readonly email: string;
+}
+
 export interface Tenant {
   readonly id: Id;
+  /**
+   * NÃO existe horário de funcionamento aqui, de propósito.
+   *
+   * O horário real da barbearia é a união das jornadas dos profissionais —
+   * é o que determina quais horários o cliente consegue marcar. Um campo
+   * separado viraria uma segunda fonte de verdade: a vitrine anunciaria
+   * 09:00 e o agendamento não ofereceria horário nenhum às 09:00, porque
+   * ninguém trabalha a essa hora.
+   *
+   * As Configurações exibem o horário derivado, em leitura.
+   */
+
   /** Identificador na URL pública: /b/barbearia-do-ze */
   readonly slug: string;
   readonly name: string;
   readonly phone: string | null;
   readonly address: Address | null;
-  readonly openingHours: WeeklySchedule;
+  readonly admin: TenantAdmin;
   readonly branding: Branding;
   readonly subscription: SubscriptionStatus;
   /** IANA, ex.: "America/Sao_Paulo". O Brasil tem mais de um fuso. */

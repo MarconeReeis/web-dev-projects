@@ -328,7 +328,7 @@ export function buildDemoDataset(now: Date): DemoDataset {
       state: 'SP',
       zipCode: '01304-001',
     },
-    openingHours: schedule,
+    admin: { name: 'Marcone Reis', email: 'admin@navalhaeco.com.br' },
     branding: { logoUrl: null, primaryColor: null },
     subscription: 'trial',
     timeZone: 'America/Sao_Paulo',

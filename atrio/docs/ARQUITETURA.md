@@ -97,6 +97,21 @@ deixaria o catálogo discordando da equipe, então em Firestore isso é um batch
 
 ---
 
+## O horário da barbearia é derivado
+
+Não existe campo de horário de funcionamento no tenant. O horário real é a
+união das jornadas dos profissionais ativos: a barbearia abre quando o
+primeiro começa e fecha quando o último termina, porque é quando existe
+alguém para atender.
+
+Um campo separado seria uma segunda fonte de verdade — o mesmo erro do vínculo
+profissional↔serviço. A vitrine anunciaria 09:00, o cliente tentaria marcar às
+09:00 e não haveria horário nenhum, porque ninguém trabalha a essa hora. As
+Configurações exibem o horário derivado, em leitura, com link para a tela de
+Profissionais.
+
+---
+
 ## Financeiro
 
 Regras que a modelagem existe para garantir:
