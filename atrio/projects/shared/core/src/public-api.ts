@@ -11,3 +11,4 @@ export * from './lib/config/app-config';
 export * from './lib/tenant/tenant-context';
 export * from './lib/branding/oklch';
 export * from './lib/branding/branding';
+export * from './lib/pwa/install-prompt';

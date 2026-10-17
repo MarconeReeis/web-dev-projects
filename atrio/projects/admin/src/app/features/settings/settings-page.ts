@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ATRIO_CONFIG, TenantContext } from '@atrio/core';
+import { ATRIO_CONFIG, InstallPrompt, TenantContext } from '@atrio/core';
 import {
   Address,
   DemoStore,
@@ -32,7 +32,6 @@ import {
   AtrOverlay,
   AtrPageHeading,
 } from '@atrio/ui';
-import { InstallPrompt } from '../../shared/install-prompt';
 import { readSquareAvatar } from '../../shared/photo';
 import { WEEKDAYS, daysLabel, groupWeek } from '../../shared/week-summary';
 

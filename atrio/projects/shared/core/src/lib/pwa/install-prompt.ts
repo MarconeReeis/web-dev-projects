@@ -18,7 +18,7 @@ export type InstallState =
   | 'manual';
 
 /**
- * Instalação do painel como aplicativo.
+ * Instalação como aplicativo, para os dois apps.
  *
  * O Chromium dispara `beforeinstallprompt` quando o app é instalável e deixa
  * guardar o evento para disparar a instalação na hora que a interface quiser.
@@ -29,8 +29,8 @@ export type InstallState =
  * Safari não implementa o evento, e aí as instruções continuam sendo a única
  * saída. Por isso o estado tem três valores e não um booleano.
  *
- * O evento chega cedo, às vezes antes da tela de Configurações existir — daí
- * o serviço ser de raiz e escutar desde o início.
+ * O evento chega cedo, às vezes antes de a tela que o usa existir — daí o
+ * serviço ser de raiz e escutar desde o início.
  */
 @Injectable({ providedIn: 'root' })
 export class InstallPrompt {
