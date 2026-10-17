@@ -70,11 +70,12 @@ Detalhes em [DESIGN.md](DESIGN.md) e [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
 ## Estado atual
 
 Pronto: workspace, design system, camada de domínio, modo demonstração, shell
-do admin, Dashboard, PWA nos dois apps, motor de disponibilidade e a tela de
+do admin, Dashboard, PWA nos dois apps, motor de disponibilidade, a tela de
 Agenda — grade diária e semanal, bloqueio de horário, painel de detalhes com
-as ações do atendimento, e o cadastro de agendamento com horários livres
-calculados.
+as ações do atendimento e o cadastro de agendamento com horários livres
+calculados — e a tela de Profissionais, com cadastro, edição, jornada,
+serviços realizados, foto e bloqueios.
 
 A seguir: tela de Financeiro (lista de movimentações, despesas, registro de
-pagamento fora da Agenda), cadastros de profissionais e serviços, o app do
-cliente além da vitrine, autenticação e Firebase.
+pagamento fora da Agenda), cadastro de Serviços e preços, Configurações, o app
+do cliente além da vitrine, autenticação e Firebase.

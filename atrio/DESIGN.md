@@ -128,6 +128,7 @@ Tema claro único. O contraste vem do menu grafite, não de um dark mode.
 | Controle | `<input atrInput>` | retângulo arredondado, altura 44px |
 | Moldura de overlay | `<atr-surface-shell heading="...">` | cabeçalho fixo, corpo rolável, rodapé fixo |
 | Confirmação | `AtrOverlay.confirm({...})` | substitui o `confirm()` do navegador |
+| Chave liga/desliga | `<atr-switch [(checked)]="..." label="...">` | a linha inteira é o alvo de toque |
 
 Diálogos e painéis laterais passam por `AtrOverlay` (`openDialog`, `openSheet`,
 `confirm`), uma camada fina sobre o CDK Dialog — que é headless e já resolve
@@ -189,6 +190,31 @@ atendimento.
 
 **Datas não usam `capitalize` do CSS.** Ele produzia "Sexta-Feira, 16 De
 Outubro". Só a primeira letra sobe.
+
+**Em Profissionais, os serviços são checkbox, não radio.** A referência
+desenhava círculos de radio numa seleção múltipla. O controle é `checkbox`
+de verdade — o visual circular ficou, a semântica para teclado e leitor de
+tela é a correta.
+
+**As iniciais dos dias ganham rótulo acessível.** "D S T Q Q S S" tem dois S
+e dois Q; a inicial sozinha não identifica o dia. Cada chip carrega `title` e
+`aria-label` com o dia por extenso e se é dia de trabalho ou folga.
+
+**O cartão do profissional adapta o bloco de expediente.** A referência mostra
+uma faixa única, o que só funciona quando a jornada é igual todo dia —
+barbearia raramente é, com sexta fechando mais tarde e sábado abrindo mais
+cedo. Quando o horário é único, saem os dois blocos da referência; quando não
+é, sai uma lista agrupada ("Seg–Qui 09:00 – 20:00", "Sáb 08:00 – 18:00").
+Exibir o horário de um dia como se valesse para todos seria mentira, e um
+"Varia" genérico não informa nada.
+
+**O formulário avisa antes de achatar a jornada.** Ele edita um horário só e
+aplica a todos os dias marcados, como a referência. Quando o profissional já
+tem horários diferentes por dia, aparece um aviso antes de salvar.
+
+**Desativar com agendamentos futuros pede confirmação**, dizendo quantos são e
+que eles continuam de pé. Não existe excluir profissional, só desativar: o
+histórico e o financeiro apontam para o cadastro.
 
 ---
 
