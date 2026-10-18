@@ -312,7 +312,7 @@ Escolhendo essa opção, o passo de serviço mostra o catálogo inteiro.
 | 1 | Escolha o profissional | o profissional escolhido |
 | 2 | Escolha o serviço | serviço e preço |
 | 3 | Data e horário | dia, início–fim e, em destaque, o preço |
-| 4 | Confirme o agendamento | preço total |
+| 4 | Revisão | nada: o botão ocupa a largura e leva o valor |
 
 O passo de serviço repete o profissional num cartão de contexto no topo: mudar
 de etapa apaga da tela a escolha anterior, e na etapa 4 o cliente não deveria
@@ -357,6 +357,31 @@ errado.
 | Mês pelo dia do meio da semana | semana de 31/10 a 6/11 é de novembro |
 | "Hoje" no lugar do dia da semana | a primeira coluna nem sempre é óbvia |
 | Título do mês em `text-xl` | em 375px, `text-2xl` cortava o ano ao lado dos três botões |
+
+### Revisão
+
+Uma ficha com uma linha por decisão — barbearia, profissional, serviço,
+duração, data, horário, cliente — e o total em destaque. Cada decisão tem um
+**Editar** que volta ao passo que a tomou, sem perder o resto. Duração e
+barbearia não têm: decorrem do serviço e do link por onde o cliente entrou.
+
+**Nome e telefone viram linha quando o aparelho já os conhece.** Na
+referência o cliente já está logado; aqui ainda não há conta. Sem nada
+lembrado, os campos aparecem abertos abaixo da ficha; com um agendamento
+anterior no aparelho, viram a linha "Cliente" com Editar. Se fosse derivado da
+validação, os campos sumiriam no meio da digitação assim que o telefone
+ficasse válido — por isso é decidido uma vez, ao abrir.
+
+**"Pagamento na barbearia"** em verde: o app não cobra nada, e dizer isso
+antes do botão tira a dúvida que faz a pessoa desistir na última tela.
+
+No rodapé, só a ação — o resumo já é a tela inteira —, com o valor no próprio
+botão.
+
+| Diferença da referência | Por quê |
+| --- | --- |
+| "Segunda-feira, 19 de outubro" | `capitalize` subia "Feira" e "De" |
+| Profissional "qualquer" mostra quem ficou e "Quem estiver livre no horário" | a escolha foi da agenda, não do cliente |
 
 ### Tela inicial
 
