@@ -9,9 +9,8 @@ import {
   untracked,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import { switchMap } from 'rxjs';
 import {
   Appointment,
   AppointmentRepository,
@@ -26,6 +25,7 @@ import {
   formatLongDate,
   formatMoney,
   formatTime,
+  isSameDay,
   leastBusy,
   openSlots,
   startOfDay,
@@ -39,7 +39,7 @@ import {
   initialsOf,
 } from '@atrio/ui';
 import { ClientIdentity } from '../../shared/client-identity';
-import { ScheduleStep } from './components/schedule-step';
+import { BOOKING_HORIZON_DAYS, ScheduleStep } from './components/schedule-step';
 
 type Step = 'profissional' | 'servico' | 'horario' | 'confirmar' | 'pronto';
 
@@ -60,7 +60,7 @@ const ORDER: readonly Step[] = ['profissional', 'servico', 'horario', 'confirmar
 const TITLES: Readonly<Record<Step, string>> = {
   profissional: 'Escolha o profissional',
   servico: 'Escolha o serviço',
-  horario: 'Escolha o horário',
+  horario: 'Data e horário',
   confirmar: 'Confirme o agendamento',
   pronto: 'Agendado',
 };
@@ -308,11 +308,53 @@ type ProfessionalChoice = Id | typeof ANY | null;
         <!-- 3. Dia e horário -->
         @case ('horario') {
           @if (service(); as chosen) {
+            <!-- O que está sendo marcado. O lápis volta ao serviço — de lá,
+                 voltar mais uma vez troca o profissional. -->
+            <div class="surface mb-6 flex items-center gap-3 p-3">
+              @if (chosenProfessional(); as professional) {
+                @if (professional.photoUrl; as photo) {
+                  <img
+                    [src]="photo"
+                    [alt]="professional.name"
+                    class="size-14 shrink-0 rounded-xl object-cover"
+                  />
+                } @else {
+                  <span
+                    class="flex size-14 shrink-0 items-center justify-center rounded-xl bg-primary-soft font-extrabold text-primary-soft-foreground"
+                    aria-hidden="true"
+                  >
+                    {{ initials(professional.name) }}
+                  </span>
+                }
+              } @else {
+                <span
+                  class="flex size-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-muted-foreground"
+                >
+                  <atr-icon name="users" [size]="22" />
+                </span>
+              }
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-lg font-bold">{{ chosen.name }}</span>
+                <span class="tabular block text-sm text-muted-foreground">
+                  {{ chosenProfessional()?.name ?? 'Qualquer profissional' }} ·
+                  {{ chosen.durationMinutes }} min · {{ money(chosen.price) }}
+                </span>
+              </span>
+              <button
+                type="button"
+                class="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-secondary text-foreground transition-colors hover:bg-accent"
+                aria-label="Trocar o serviço"
+                (click)="step.set('servico')"
+              >
+                <atr-icon name="pencil" [size]="18" />
+              </button>
+            </div>
+
             <bkg-schedule-step
               [service]="chosen"
               [professionals]="slotCandidates()"
-              [existing]="dayAppointments()"
-              [blocks]="dayBlocks()"
+              [existing]="horizonAppointments()"
+              [blocks]="horizonBlocks()"
               [date]="date()"
               [selected]="startsAt()"
               (dateChange)="chooseDate($event)"
@@ -428,7 +470,9 @@ type ProfessionalChoice = Id | typeof ANY | null;
         <div class="mx-auto flex w-full max-w-2xl items-center gap-4 px-4 py-3">
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm text-muted-foreground">{{ summaryLabel() }}</p>
-            <p class="tabular truncate font-extrabold">{{ summaryValue() }}</p>
+            @if (summaryValue(); as value) {
+              <p class="tabular truncate text-lg font-extrabold">{{ value }}</p>
+            }
           </div>
           <button
             type="button"
@@ -551,23 +595,38 @@ export class BookingPage {
     return this.professionals().filter((item) => item.serviceIds.includes(service.id));
   });
 
-  private readonly dayRange = computed(() => {
-    const from = this.date();
+  /**
+   * A janela inteira de agendamento, numa consulta só.
+   *
+   * O passo de horário precisa saber de antemão quais dias da semana à mostra
+   * têm vaga, e qual é a próxima data livre quando o dia escolhido não tem.
+   * Consultar dia a dia seriam até 21 leituras a cada troca de semana; três
+   * semanas de agenda de uma barbearia são poucas centenas de documentos.
+   *
+   * Fixa no carregamento da página: quem atravessa a meia-noite com a tela
+   * aberta continua vendo "hoje" como ontem até recarregar, como já era.
+   */
+  private readonly horizon = (() => {
+    const from = startOfDay(new Date());
     const to = new Date(from);
-    to.setDate(to.getDate() + 1);
+    to.setDate(to.getDate() + BOOKING_HORIZON_DAYS);
     return { from: from.toISOString(), to: to.toISOString() };
-  });
+  })();
 
-  protected readonly dayAppointments = toSignal(
-    toObservable(this.dayRange).pipe(
-      switchMap((range) => this.appointmentsRepo.watch({ range })),
-    ),
+  protected readonly horizonAppointments = toSignal(
+    this.appointmentsRepo.watch({ range: this.horizon }),
     { initialValue: [] as readonly Appointment[] },
   );
 
-  protected readonly dayBlocks = toSignal(
-    toObservable(this.dayRange).pipe(switchMap((range) => this.blocksRepo.watch(range))),
-    { initialValue: [] as readonly TimeBlock[] },
+  protected readonly horizonBlocks = toSignal(this.blocksRepo.watch(this.horizon), {
+    initialValue: [] as readonly TimeBlock[],
+  });
+
+  /** Só os do dia escolhido: é sobre eles que se mede quem está menos ocupado. */
+  private readonly dayAppointments = computed(() =>
+    this.horizonAppointments().filter((item) =>
+      isSameDay(new Date(item.startsAt), this.date()),
+    ),
   );
 
   /** Congelado na confirmação — ver o comentário em confirm(). */
@@ -586,7 +645,7 @@ export class BookingPage {
       service,
       professionals: this.slotCandidates(),
       existing: this.dayAppointments(),
-      blocks: this.dayBlocks(),
+      blocks: this.horizonBlocks(),
       now: new Date(),
     }).find((item) => item.startsAt === startsAt);
 
@@ -628,8 +687,17 @@ export class BookingPage {
         return this.choice() === null ? 'Nenhum profissional escolhido' : 'Profissional';
       case 'servico':
         return this.service() ? 'Serviço' : 'Nenhum serviço selecionado';
-      case 'horario':
-        return this.startsAt() ? 'Horário' : 'Escolha um horário livre';
+      case 'horario': {
+        // Aqui o rótulo carrega o horário e o valor vira o preço: quem chega
+        // ao fim da escolha confere as duas coisas antes de seguir.
+        const startsAt = this.startsAt();
+        const service = this.service();
+        if (!startsAt || !service) return 'Selecione um horário';
+
+        const ends = new Date(startsAt);
+        ends.setMinutes(ends.getMinutes() + service.durationMinutes);
+        return `${shortDay(startsAt)} · ${formatTime(startsAt)}–${formatTime(ends)}`;
+      }
       default:
         return this.service()?.name ?? '';
     }
@@ -639,15 +707,15 @@ export class BookingPage {
     switch (this.step()) {
       case 'profissional':
         return this.choice() === null
-          ? '—'
+          ? ''
           : (this.chosenProfessional()?.name ?? 'Qualquer profissional');
       case 'servico': {
         const service = this.service();
-        return service ? `${service.name} · ${formatMoney(service.price)}` : '—';
+        return service ? `${service.name} · ${formatMoney(service.price)}` : '';
       }
       case 'horario': {
-        const startsAt = this.startsAt();
-        return startsAt ? `${this.dateLabel()} · ${formatTime(startsAt)}` : '—';
+        const service = this.service();
+        return this.startsAt() && service ? formatMoney(service.price) : '';
       }
       default:
         return formatMoney(this.service()?.price ?? 0);
@@ -702,13 +770,18 @@ export class BookingPage {
   // ─── navegação ────────────────────────────────────────────────────────
 
   protected choose(value: ProfessionalChoice): void {
-    if (this.choice() !== value) {
-      // Trocar de profissional pode invalidar o serviço: nem todos realizam
-      // os mesmos. O horário cai junto, porque depende dos dois.
-      this.serviceId.set(null);
-      this.startsAt.set(null);
-    }
+    if (this.choice() === value) return;
     this.choice.set(value);
+
+    // O serviço só cai se quem foi escolhido não o realiza. Limpar sempre
+    // apagava o serviço que veio marcado da vitrine (?servico=) logo no
+    // primeiro toque, e o atalho nunca chegava à etapa 2.
+    const service = this.serviceId();
+    if (service && !this.visibleServices().some((item) => item.id === service)) {
+      this.serviceId.set(null);
+    }
+    // O horário cai sempre: a agenda é de outra pessoa.
+    this.startsAt.set(null);
   }
 
   protected chooseDate(date: Date): void {
@@ -784,4 +857,16 @@ export class BookingPage {
       this.busy.set(false);
     }
   }
+}
+
+const SHORT_DAY = new Intl.DateTimeFormat('pt-BR', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+});
+
+/** "Seg, 19 de out" — cabe no rodapé ao lado do botão, a data longa não. */
+function shortDay(instant: IsoDateTime): string {
+  const label = SHORT_DAY.format(new Date(instant)).replaceAll('.', '');
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }

@@ -311,7 +311,7 @@ Escolhendo essa opção, o passo de serviço mostra o catálogo inteiro.
 | --- | --- | --- |
 | 1 | Escolha o profissional | o profissional escolhido |
 | 2 | Escolha o serviço | serviço e preço |
-| 3 | Escolha o horário | dia e hora |
+| 3 | Data e horário | dia, início–fim e, em destaque, o preço |
 | 4 | Confirme o agendamento | preço total |
 
 O passo de serviço repete o profissional num cartão de contexto no topo: mudar
@@ -321,6 +321,42 @@ função — resumo à esquerda, ação à direita.
 
 **O progresso é segmentado, não contínuo.** Quatro barras dizem quantas etapas
 faltam; uma barra única só diz quanto já andou.
+
+### Data e horário
+
+No topo, o que está sendo marcado — foto, serviço, profissional, duração e
+preço — com um lápis que volta ao serviço.
+
+**Os dias andam em semanas, não numa faixa rolável.** Sete colunas fixas, duas
+setas e um calendário. A faixa escondia os dias fora da tela e não dizia até
+onde dava para ir; e rolar na horizontal dentro de uma página que rola na
+vertical é o gesto que mais escapa do polegar. A semana começa **hoje**, não no
+domingo, para nenhuma semana abrir com dias mortos. A janela é de três semanas
+(`BOOKING_HORIZON_DAYS`); as setas param nas pontas.
+
+**O calendário complementa, não substitui.** Marcar para a semana que vem
+continua a um toque; o calendário é para o caso raro de marcar longe. Fecha ao
+escolher, ao tocar fora e com Esc.
+
+**Dia sem vaga fica esmaecido e não aceita toque** — e "sem vaga" é a conta
+real (expediente, atendimentos, bloqueios, hora já passada), não só "trabalha
+nesse dia da semana": sábado lotado é tão inútil quanto domingo fechado. Para
+isso a página consulta a janela inteira de uma vez, em vez de dia a dia. O
+calendário só desabilita o que está fora da janela: pintar a disponibilidade de
+um mês inteiro não compensa, e o dia vazio já tem saída na tela.
+
+**Dia vazio oferece a próxima data livre**, em vez de só dizer "tente outra".
+Quando o dia de hoje já acabou — o caso mais comum à noite — o cliente chega
+nesse estado e resolve com um toque. O app **não pula sozinho** para o próximo
+dia livre: trocar a data sem o cliente pedir faz parecer que ele marcou o dia
+errado.
+
+| Diferença da referência | Por quê |
+| --- | --- |
+| "Outubro de 2026", não "Outubro De 2026" | `capitalize` capitaliza a preposição; só a primeira letra sobe |
+| Mês pelo dia do meio da semana | semana de 31/10 a 6/11 é de novembro |
+| "Hoje" no lugar do dia da semana | a primeira coluna nem sempre é óbvia |
+| Título do mês em `text-xl` | em 375px, `text-2xl` cortava o ano ao lado dos três botões |
 
 ### Tela inicial
 
