@@ -2,10 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
-  signal,
-  untracked,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
@@ -27,12 +24,11 @@ import {
   AtrButton,
   AtrCard,
   AtrEmptyState,
-  AtrField,
   AtrIcon,
-  AtrInput,
   AtrOverlay,
 } from '@atrio/ui';
-import { ClientIdentity } from '../../shared/client-identity';
+import { ClientSession } from '../../shared/client-session';
+import { SignIn } from '../auth/sign-in';
 
 /** Janela consultada: três meses para trás, quatro para frente. */
 const PAST_DAYS = 90;
@@ -57,15 +53,15 @@ const TONE: Readonly<Record<Appointment['status'], AtrBadgeTone>> = {
 };
 
 /**
- * Agendamentos do cliente.
+ * Agendamentos do cliente, só com a conta aberta.
  *
- * Sem login: os agendamentos são encontrados pelo telefone guardado neste
- * aparelho (ver ClientIdentity). Quem ainda não marcou nada por aqui pode
- * digitar o telefone para reencontrar o que marcou no balcão.
+ * Antes bastava digitar um telefone, o que deixava qualquer pessoa ver — e
+ * cancelar — os horários de outra. Agora é a mesma entrada do agendamento.
  *
- * Por isso esta tela não mostra nada sensível — nem valores de pagamento,
- * nem dados de outras pessoas. O que aparece é o que a própria barbearia
- * diria por telefone a quem ligasse informando o número.
+ * A consulta ainda é pelo telefone DA CONTA: é o que liga a pessoa aos
+ * horários marcados no balcão, antes de ela ter conta. Com o Firebase, a
+ * leitura passa a ser filtrada pelas regras de segurança (Client.userId), e
+ * não pela tela.
  */
 @Component({
   selector: 'bkg-appointments-page',
@@ -76,38 +72,19 @@ const TONE: Readonly<Record<Appointment['status'], AtrBadgeTone>> = {
     AtrBadge,
     AtrButton,
     AtrIcon,
-    AtrField,
-    AtrInput,
     AtrEmptyState,
+    SignIn,
   ],
   host: { class: 'block' },
   template: `
     <h1 class="text-2xl font-extrabold tracking-tight">Meus horários</h1>
 
-    @if (!identity.known()) {
-      <!-- Sem identificação neste aparelho -->
-      <atr-card
-        heading="Qual é o seu telefone?"
-        subheading="Usamos para encontrar o que você já marcou."
+    @if (!session.signedIn()) {
+      <bkg-sign-in
         class="mt-5"
-      >
-        <atr-field label="Telefone" [error]="showError() ? phoneError() : null">
-          <input
-            atrInput
-            type="tel"
-            inputmode="tel"
-            autocomplete="tel"
-            placeholder="(11) 98888-7777"
-            [invalid]="showError() && !!phoneError()"
-            [value]="draftPhone()"
-            (input)="draftPhone.set($any($event.target).value)"
-          />
-        </atr-field>
-
-        <button type="button" atrButton class="mt-4 w-full" (click)="identify()">
-          Ver meus horários
-        </button>
-      </atr-card>
+        heading="Entre para ver seus horários"
+        lead="Seus agendamentos ficam na sua conta, e só você consegue ver ou cancelar."
+      />
     } @else {
       @if (upcoming().length === 0 && past().length === 0) {
         <atr-card class="mt-5">
@@ -200,9 +177,9 @@ const TONE: Readonly<Record<Appointment['status'], AtrBadgeTone>> = {
         atrButton="ghost"
         size="sm"
         class="mt-8 w-full"
-        (click)="identity.forget()"
+        (click)="session.signOut()"
       >
-        Não é você? Trocar telefone
+        Sair da conta
       </button>
     }
   `,
@@ -212,43 +189,22 @@ export class AppointmentsPage {
   private readonly professionalsRepo = inject(ProfessionalRepository);
   private readonly overlay = inject(AtrOverlay);
 
-  protected readonly identity = inject(ClientIdentity);
+  protected readonly session = inject(ClientSession);
   protected readonly cancelLimit = CANCEL_LIMIT_HOURS;
 
   protected money = formatMoney;
   protected time = formatTime;
-
-  protected readonly draftPhone = signal('');
-  protected readonly showError = signal(false);
 
   private readonly professionals = toSignal(this.professionalsRepo.watchAll(true), {
     initialValue: [] as readonly Professional[],
   });
 
   private readonly appointments = toSignal(
-    toObservable(this.identity.phone).pipe(
+    toObservable(this.session.phone).pipe(
       switchMap((phone) => this.repository.watchByClientPhone(phone, horizon())),
     ),
     { initialValue: [] as readonly Appointment[] },
   );
-
-  constructor() {
-    // Quem se reencontra digitando o telefone não informa o nome — e o
-    // cabeçalho passava a dizer "Olá!" para alguém que o app já conhece. Os
-    // próprios agendamentos carregam o nome, então aproveitamos o primeiro
-    // que aparecer.
-    effect(() => {
-      const encontrados = this.appointments();
-      if (encontrados.length === 0) return;
-
-      untracked(() => {
-        if (this.identity.name()) return;
-
-        const nome = encontrados[encontrados.length - 1].client.name;
-        if (nome) this.identity.remember(nome, this.identity.phone());
-      });
-    });
-  }
 
   protected readonly upcoming = computed(() => {
     const now = Date.now();
@@ -269,12 +225,6 @@ export class AppointmentsPage {
       )
       .reverse();
   });
-
-  protected readonly phoneError = computed(() =>
-    this.draftPhone().replace(/\D/g, '').length < 10
-      ? 'Informe um telefone com DDD.'
-      : null,
-  );
 
   protected tone(status: Appointment['status']): AtrBadgeTone {
     return TONE[status];
@@ -298,15 +248,6 @@ export class AppointmentsPage {
 
     const limit = Date.now() + CANCEL_LIMIT_HOURS * 3_600_000;
     return new Date(appointment.startsAt).getTime() > limit;
-  }
-
-  protected identify(): void {
-    this.showError.set(true);
-    if (this.phoneError()) return;
-
-    // O nome fica vazio até a pessoa agendar por aqui; a consulta é por
-    // telefone de qualquer forma.
-    this.identity.remember('', this.draftPhone());
   }
 
   protected async cancel(appointment: Appointment): Promise<void> {

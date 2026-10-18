@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { TenantContext } from '@atrio/core';
 import { AtrAvatar, AtrIcon } from '@atrio/ui';
-import { ClientIdentity } from '../shared/client-identity';
+import { ClientSession } from '../shared/client-session';
 
 /**
  * Moldura do app do cliente.
@@ -29,8 +29,8 @@ import { ClientIdentity } from '../shared/client-identity';
   template: `
     <header class="mx-auto w-full max-w-2xl px-4 pt-5">
       <div class="flex items-center gap-3">
-        @if (identity.known() && identity.name()) {
-          <atr-avatar [name]="identity.name()" size="lg" />
+        @if (session.signedIn()) {
+          <atr-avatar [name]="session.name()" [photoUrl]="session.photoUrl()" size="lg" />
         } @else {
           <span
             class="flex size-12 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground"
@@ -97,7 +97,7 @@ import { ClientIdentity } from '../shared/client-identity';
 })
 export class Shell {
   protected readonly tenant = inject(TenantContext);
-  protected readonly identity = inject(ClientIdentity);
+  protected readonly session = inject(ClientSession);
 
   private readonly router = inject(Router);
 
@@ -141,9 +141,8 @@ export class Shell {
   /**
    * Quem está usando o app.
    *
-   * Enquanto não há autenticação, o nome vem do último agendamento feito
-   * neste aparelho. Sem nome, uma saudação genérica — melhor do que um campo
-   * vazio ou um "visitante", que soa a cadastro faltando.
+   * Com sessão, o nome da conta. Sem, uma saudação genérica — melhor do que
+   * um campo vazio ou um "visitante", que soa a cadastro faltando.
    */
-  protected readonly who = computed(() => this.identity.name() || 'Olá!');
+  protected readonly who = computed(() => this.session.name() || 'Olá!');
 }

@@ -212,26 +212,39 @@ do dono da barbearia.
 
 ---
 
-## Como o cliente é identificado (e por que ainda não é login)
+## Como o cliente é identificado
 
-O app do cliente não tem autenticação. O nome e o telefone digitados no
-agendamento ficam guardados no próprio aparelho, e "Meus horários" consulta os
-agendamentos por telefone.
+O cliente entra com conta (e-mail e senha) antes de revisar o agendamento, e
+"Meus horários" só abre com a conta. O contrato é `ClientAuth`, em
+`@atrio/data`; o modo demonstração implementa no armazenamento local
+(`DemoClientAuth`), e o Firebase Auth entra no lugar sem tocar nas telas.
 
-O risco está assumido: quem souber o telefone de outra pessoa vê os
-agendamentos dela. Para uma barbearia, a informação exposta é "fulano corta o
-cabelo quinta às 15h" — baixo impacto diante do custo de exigir cadastro, que
-derruba a conversão justamente na tela que precisa converter. Enquanto for
-assim, **nada sensível pode aparecer nessa tela**: sem valores pagos, sem
-dados de outras pessoas, sem histórico financeiro.
+**Por que a exigência vem só no fim.** Profissional, serviço e horário são
+escolhidos sem conta; o login aparece no passo 4, no mesmo lugar, e a revisão
+surge sozinha quando a sessão abre. Pedir conta antes de a pessoa ter
+investido nas escolhas é o ponto em que ela mais desiste. O custo de exigir
+conta continua real — quem chega para marcar um corte e encontra um cadastro
+pode ir embora —, e por isso a criação de conta fica na mesma tela.
 
-Isso muda com a autenticação: a consulta passa a ser por `client.clientId` e o
-telefone volta a ser só contato. Telefone é identificador fraco — gente troca
-de número, e o número é reatribuído a outra pessoa depois.
+**O que mudou em relação à fase sem login.** Antes, nome e telefone ficavam
+lembrados no aparelho, e "Meus horários" consultava por qualquer telefone
+digitado: quem soubesse o número de outra pessoa via — e cancelava — os
+horários dela. Com conta, a consulta usa o telefone DA conta, que é o que liga
+a pessoa aos horários marcados no balcão antes de ela se cadastrar.
 
-A decisão de COMO autenticar continua aberta e tem custo: SMS é pago por
-envio, e-mail tem adesão baixa nesse público, e link por WhatsApp depende da
-escolha de API que ainda não foi feita.
+**Conta não é `Client`.** `ClientAccount` é da pessoa e vale para qualquer
+barbearia do Átrio; `Client` é o cadastro dela dentro de uma barbearia, e
+existe sem conta. A ligação (`Client.userId`) é feita pelo servidor ao gravar
+o agendamento — o app grava `clientId: null` e não tem como se passar por
+outro cliente. No Firebase, a leitura de "Meus horários" passa a ser filtrada
+pelas regras de segurança, não pela tela.
+
+**Pendências para o Firebase.** Telefone é identificador fraco — gente troca
+de número, e ele é reatribuído —, então a consulta deve migrar para
+`Client.userId`. Entrar com Google e verificação do e-mail ficam para quando
+o provedor real entrar. O "Esqueci minha senha" do modo demonstração não
+envia nada; a mensagem é a mesma do real, que não revela se o e-mail tem
+conta.
 
 ---
 

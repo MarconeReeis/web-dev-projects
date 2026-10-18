@@ -312,7 +312,7 @@ Escolhendo essa opção, o passo de serviço mostra o catálogo inteiro.
 | 1 | Escolha o profissional | o profissional escolhido |
 | 2 | Escolha o serviço | serviço e preço |
 | 3 | Data e horário | dia, início–fim e, em destaque, o preço |
-| 4 | Revisão | nada: o botão ocupa a largura e leva o valor |
+| 4 | Identificação (sem conta), depois Revisão | nada: o botão ocupa a largura e leva o valor |
 
 O passo de serviço repete o profissional num cartão de contexto no topo: mudar
 de etapa apaga da tela a escolha anterior, e na etapa 4 o cliente não deveria
@@ -365,12 +365,16 @@ duração, data, horário, cliente — e o total em destaque. Cada decisão tem 
 **Editar** que volta ao passo que a tomou, sem perder o resto. Duração e
 barbearia não têm: decorrem do serviço e do link por onde o cliente entrou.
 
-**Nome e telefone viram linha quando o aparelho já os conhece.** Na
-referência o cliente já está logado; aqui ainda não há conta. Sem nada
-lembrado, os campos aparecem abertos abaixo da ficha; com um agendamento
-anterior no aparelho, viram a linha "Cliente" com Editar. Se fosse derivado da
-validação, os campos sumiriam no meio da digitação assim que o telefone
-ficasse válido — por isso é decidido uma vez, ao abrir.
+**Sem conta, a revisão espera pela identificação** — no mesmo passo, com o
+título "Identificação". Não é uma etapa a mais na contagem: quem já entrou
+pula direto para a revisão, e um contador que muda de tamanho conforme a
+pessoa está logada ou não é o tipo de inconsistência que o fluxo de quatro
+etapas fixas existe para evitar. Também não é uma rota de login: sair da
+página descartaria as escolhas. Ao abrir a sessão, a revisão aparece sozinha.
+
+A linha "Cliente" mostra nome e telefone da conta, com **Trocar** (sair e
+entrar com outra) no lugar de Editar: editar dados da conta é perfil, não
+agendamento.
 
 **"Pagamento na barbearia"** em verde: o app não cobra nada, e dizer isso
 antes do botão tira a dúvida que faz a pessoa desistir na última tela.
@@ -409,6 +413,23 @@ vazio é melhor que anúncio genérico ocupando o topo.
 **Serviços em cards de duas colunas**, com bloco lilás e ícone no lugar da
 foto. Foto por serviço é o próximo passo natural — exige campo no modelo e
 upload no painel.
+
+### Entrar
+
+Uma tela, três modos — entrar, criar conta, recuperar senha —, trocados no
+lugar. A mesma peça (`bkg-sign-in`) serve ao passo 4 e a "Meus horários"; só o
+título e o texto de apoio mudam. Ela não navega ao terminar: quem a usa observa
+a sessão.
+
+| Decisão | Por quê |
+| --- | --- |
+| Erro de login não diz se foi o e-mail ou a senha | dizer entrega quem tem conta |
+| "Esqueci minha senha" responde igual exista a conta ou não | mesmo motivo |
+| Tamanho mínimo da senha cobrado só no cadastro | no login, "curta demais" para uma senha errada só confunde |
+| E-mail atravessa os modos, a senha não | quem errou a senha e foi recuperar não redigita o e-mail |
+| Mínimo de 6 caracteres | é o do Firebase Auth; exigir mais barraria quem ele aceita |
+| "Usar acesso demonstrativo" só com `demoMode` | entra por `signIn` como qualquer pessoa, com um cliente que o seed já atende |
+| Rodapé fixo some na identificação | a tela tem os próprios botões; dois "continuar" seriam um a mais |
 
 ### Barras fixas: sombra, não linha
 

@@ -87,12 +87,15 @@ horário derivado e instalação do PWA.
 
 No app do cliente: vitrine da barbearia com banner de destaque editável pelo
 painel, lista de profissionais com especialidade, agendamento em quatro etapas
-(profissional, serviço, dia e horário, confirmação) com "qualquer profissional
-disponível", e "Meus horários" com cancelamento.
+(profissional, serviço, dia e horário, revisão) com "qualquer profissional
+disponível", conta do cliente — entrar, cadastro e recuperação de senha,
+exigidos antes da revisão — e "Meus horários" com cancelamento, só com a
+conta aberta. No modo demonstração, "Usar acesso demonstrativo" entra como
+um cliente fictício que já tem histórico.
 
 **O painel administrativo e o fluxo do cliente estão completos.** A seguir:
-autenticação (e, com ela, a identificação do cliente — ver
-docs/ARQUITETURA.md), conflito de horário no servidor e Firebase.
+Firebase (Auth no lugar da autenticação de demonstração), conflito de horário
+no servidor e login do painel.
 
 > Em modo demonstração os dois apps rodam em portas diferentes e, portanto, em
 > origens diferentes: cada um tem o seu `localStorage`. Um agendamento feito no

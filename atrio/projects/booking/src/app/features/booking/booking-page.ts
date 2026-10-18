@@ -39,7 +39,8 @@ import {
   initialsOf,
 } from '@atrio/ui';
 import { TenantContext } from '@atrio/core';
-import { ClientIdentity } from '../../shared/client-identity';
+import { ClientSession } from '../../shared/client-session';
+import { SignIn } from '../auth/sign-in';
 import { BOOKING_HORIZON_DAYS, ScheduleStep } from './components/schedule-step';
 
 type Step = 'profissional' | 'servico' | 'horario' | 'confirmar' | 'pronto';
@@ -81,6 +82,7 @@ type ProfessionalChoice = Id | typeof ANY | null;
     AtrAvatar,
     AtrField,
     AtrInput,
+    SignIn,
     ScheduleStep,
   ],
   host: { class: 'flex min-h-dvh flex-col bg-background' },
@@ -383,139 +385,112 @@ type ProfessionalChoice = Id | typeof ANY | null;
           }
         }
 
-        <!-- 4. Revisão -->
+        <!-- 4. Identificação, quando preciso, e revisão -->
         @case ('confirmar') {
-          <h2 class="text-2xl font-extrabold tracking-tight">Confira sua reserva</h2>
-          <p class="mt-1 text-sm text-muted-foreground">
-            O horário só fica garantido após a confirmação.
-          </p>
+          @if (!session.signedIn()) {
+            <!-- Sem conta, a revisão espera. Fica no mesmo passo — e não numa
+                 rota de login — porque sair daqui descartaria tudo o que foi
+                 escolhido; ao abrir a sessão, a revisão aparece sozinha. -->
+            <bkg-sign-in
+              heading="Entre para continuar"
+              lead="Com uma conta você acompanha, reagenda e cancela seus horários. Suas escolhas estão salvas."
+            />
+          } @else {
+            <h2 class="text-2xl font-extrabold tracking-tight">Confira sua reserva</h2>
+            <p class="mt-1 text-sm text-muted-foreground">
+              O horário só fica garantido após a confirmação.
+            </p>
 
-          <!-- Uma linha por decisão, cada uma com o caminho de volta ao passo
-               que a tomou. Duração e barbearia não têm "Editar": decorrem
-               do serviço e do link por onde o cliente entrou. -->
-          <dl class="surface mt-5 divide-y divide-border px-5 text-sm">
-            <ng-container
-              *ngTemplateOutlet="row; context: { label: 'Barbearia', value: tenant.name() }"
-            />
-            <div class="flex items-start gap-3 py-4">
-              <dt class="w-24 shrink-0 text-muted-foreground">Profissional</dt>
-              <dd class="min-w-0 flex-1">
-                <span class="block font-semibold">{{ assignedLabel() }}</span>
-                @if (!chosenProfessional()) {
-                  <span class="block text-muted-foreground">Quem estiver livre no horário</span>
-                }
-              </dd>
-              <ng-container *ngTemplateOutlet="edit; context: { $implicit: 'profissional', what: 'o profissional' }" />
-            </div>
-            <div class="flex items-start gap-3 py-4">
-              <dt class="w-24 shrink-0 text-muted-foreground">Serviço</dt>
-              <dd class="min-w-0 flex-1 font-semibold">{{ service()?.name }}</dd>
-              <ng-container *ngTemplateOutlet="edit; context: { $implicit: 'servico', what: 'o serviço' }" />
-            </div>
-            <ng-container
-              *ngTemplateOutlet="
-                row;
-                context: { label: 'Duração', value: (service()?.durationMinutes ?? 0) + ' min' }
-              "
-            />
-            <div class="flex items-start gap-3 py-4">
-              <dt class="w-24 shrink-0 text-muted-foreground">Data</dt>
-              <dd class="min-w-0 flex-1 font-semibold">{{ dateLabel() }}</dd>
-              <ng-container *ngTemplateOutlet="edit; context: { $implicit: 'horario', what: 'a data' }" />
-            </div>
-            <div class="flex items-start gap-3 py-4">
-              <dt class="w-24 shrink-0 text-muted-foreground">Horário</dt>
-              <dd class="tabular min-w-0 flex-1 font-semibold">{{ timeRange() }}</dd>
-              <ng-container *ngTemplateOutlet="edit; context: { $implicit: 'horario', what: 'o horário' }" />
-            </div>
-            @if (!editingClient()) {
+            <!-- Uma linha por decisão, cada uma com o caminho de volta ao passo
+                 que a tomou. Duração e barbearia não têm "Editar": decorrem
+                 do serviço e do link por onde o cliente entrou. -->
+            <dl class="surface mt-5 divide-y divide-border px-5 text-sm">
+              <ng-container
+                *ngTemplateOutlet="row; context: { label: 'Barbearia', value: tenant.name() }"
+              />
+              <div class="flex items-start gap-3 py-4">
+                <dt class="w-24 shrink-0 text-muted-foreground">Profissional</dt>
+                <dd class="min-w-0 flex-1">
+                  <span class="block font-semibold">{{ assignedLabel() }}</span>
+                  @if (!chosenProfessional()) {
+                    <span class="block text-muted-foreground">Quem estiver livre no horário</span>
+                  }
+                </dd>
+                <ng-container *ngTemplateOutlet="edit; context: { $implicit: 'profissional', what: 'o profissional' }" />
+              </div>
+              <div class="flex items-start gap-3 py-4">
+                <dt class="w-24 shrink-0 text-muted-foreground">Serviço</dt>
+                <dd class="min-w-0 flex-1 font-semibold">{{ service()?.name }}</dd>
+                <ng-container *ngTemplateOutlet="edit; context: { $implicit: 'servico', what: 'o serviço' }" />
+              </div>
+              <ng-container
+                *ngTemplateOutlet="
+                  row;
+                  context: { label: 'Duração', value: (service()?.durationMinutes ?? 0) + ' min' }
+                "
+              />
+              <div class="flex items-start gap-3 py-4">
+                <dt class="w-24 shrink-0 text-muted-foreground">Data</dt>
+                <dd class="min-w-0 flex-1 font-semibold">{{ dateLabel() }}</dd>
+                <ng-container *ngTemplateOutlet="edit; context: { $implicit: 'horario', what: 'a data' }" />
+              </div>
+              <div class="flex items-start gap-3 py-4">
+                <dt class="w-24 shrink-0 text-muted-foreground">Horário</dt>
+                <dd class="tabular min-w-0 flex-1 font-semibold">{{ timeRange() }}</dd>
+                <ng-container *ngTemplateOutlet="edit; context: { $implicit: 'horario', what: 'o horário' }" />
+              </div>
               <div class="flex items-start gap-3 py-4">
                 <dt class="w-24 shrink-0 text-muted-foreground">Cliente</dt>
                 <dd class="min-w-0 flex-1">
-                  <span class="block font-semibold">{{ name() }}</span>
-                  <span class="tabular block text-muted-foreground">{{ phone() }}</span>
+                  <span class="block font-semibold">{{ session.name() }}</span>
+                  <span class="tabular block text-muted-foreground">{{ session.phone() }}</span>
                 </dd>
+                <!-- Sair e entrar com outra conta: as escolhas ficam. -->
                 <button
                   type="button"
                   class="shrink-0 font-semibold text-primary"
-                  aria-label="Editar seus dados"
-                  (click)="editingClient.set(true)"
+                  aria-label="Entrar com outra conta"
+                  (click)="session.signOut()"
                 >
-                  Editar
+                  Trocar
                 </button>
               </div>
-            }
-            <div class="flex items-center justify-between gap-3 py-4">
-              <dt class="text-base font-semibold">Total</dt>
-              <dd class="tabular text-2xl font-extrabold tracking-tight">
-                {{ money(service()?.price ?? 0) }}
-              </dd>
-            </div>
-          </dl>
+              <div class="flex items-center justify-between gap-3 py-4">
+                <dt class="text-base font-semibold">Total</dt>
+                <dd class="tabular text-2xl font-extrabold tracking-tight">
+                  {{ money(service()?.price ?? 0) }}
+                </dd>
+              </div>
+            </dl>
 
-          <!-- Sem conta e sem dado lembrado, os campos aparecem abertos. Com
-               o aparelho já lembrando de um agendamento anterior, viram uma
-               linha da revisão — ninguém precisa redigitar o próprio nome. -->
-          @if (editingClient()) {
-            <div class="mt-6 flex flex-col gap-4">
-              <h3 class="font-bold">Seus dados</h3>
-              <atr-field label="Seu nome" [error]="showErrors() ? nameError() : null">
-                <input
-                  atrInput
-                  type="text"
-                  autocomplete="name"
-                  [invalid]="showErrors() && !!nameError()"
-                  [value]="name()"
-                  (input)="name.set($any($event.target).value)"
-                />
-              </atr-field>
-
-              <atr-field
-                label="Telefone"
-                hint="A barbearia usa para falar com você se precisar."
-                [error]="showErrors() ? phoneError() : null"
-              >
-                <input
-                  atrInput
-                  type="tel"
-                  inputmode="tel"
-                  autocomplete="tel"
-                  placeholder="(11) 98888-7777"
-                  [invalid]="showErrors() && !!phoneError()"
-                  [value]="phone()"
-                  (input)="phone.set($any($event.target).value)"
-                />
-              </atr-field>
-            </div>
-          }
-
-          <p
-            class="mt-5 flex items-start gap-3 rounded-2xl bg-success-soft px-4 py-3.5 text-sm text-success-soft-foreground"
-          >
-            <atr-icon name="banknote" [size]="20" class="mt-px shrink-0" />
-            <span>
-              <strong class="font-bold">Pagamento na barbearia.</strong> Nada é cobrado
-              agora.
-            </span>
-          </p>
-
-          <atr-field label="Observações" [optional]="true" class="mt-6 block">
-            <textarea
-              atrInput
-              rows="3"
-              class="py-3"
-              placeholder="Ex.: quero manter o comprimento em cima"
-              (input)="notes.set($any($event.target).value)"
-            >{{ notes() }}</textarea>
-          </atr-field>
-
-          @if (error(); as message) {
             <p
-              class="mt-4 rounded-xl bg-destructive-soft px-4 py-3 text-sm font-medium text-destructive-soft-foreground"
-              role="alert"
+              class="mt-5 flex items-start gap-3 rounded-2xl bg-success-soft px-4 py-3.5 text-sm text-success-soft-foreground"
             >
-              {{ message }}
+              <atr-icon name="banknote" [size]="20" class="mt-px shrink-0" />
+              <span>
+                <strong class="font-bold">Pagamento na barbearia.</strong> Nada é cobrado
+                agora.
+              </span>
             </p>
+
+            <atr-field label="Observações" [optional]="true" class="mt-6 block">
+              <textarea
+                atrInput
+                rows="3"
+                class="py-3"
+                placeholder="Ex.: quero manter o comprimento em cima"
+                (input)="notes.set($any($event.target).value)"
+              >{{ notes() }}</textarea>
+            </atr-field>
+
+            @if (error(); as message) {
+              <p
+                class="mt-4 rounded-xl bg-destructive-soft px-4 py-3 text-sm font-medium text-destructive-soft-foreground"
+                role="alert"
+              >
+                {{ message }}
+              </p>
+            }
           }
         }
 
@@ -546,8 +521,9 @@ type ProfessionalChoice = Id | typeof ANY | null;
       }
     </main>
 
-    <!-- Rodapé: resumo da escolha + ação -->
-    @if (step() !== 'pronto') {
+    <!-- Rodapé: resumo da escolha + ação. Some na identificação, que tem os
+         próprios botões — dois "continuar" na mesma tela seriam um a mais. -->
+    @if (step() !== 'pronto' && !(step() === 'confirmar' && !session.signedIn())) {
       <div class="edge-top fixed inset-x-0 bottom-0 z-20 bg-card pb-[env(safe-area-inset-bottom)]">
         <div class="mx-auto flex w-full max-w-2xl items-center gap-4 px-4 py-3">
           <!-- Na revisão o resumo já está na tela inteira; o rodapé vira só
@@ -580,7 +556,7 @@ export class BookingPage {
   private readonly professionalsRepo = inject(ProfessionalRepository);
   private readonly appointmentsRepo = inject(AppointmentRepository);
   private readonly blocksRepo = inject(TimeBlockRepository);
-  private readonly identity = inject(ClientIdentity);
+  protected readonly session = inject(ClientSession);
   protected readonly tenant = inject(TenantContext);
   private readonly router = inject(Router);
 
@@ -607,24 +583,9 @@ export class BookingPage {
   protected readonly date = signal(startOfDay(new Date()));
   protected readonly startsAt = signal<IsoDateTime | null>(null);
 
-  protected readonly name = signal(this.identity.name());
-  protected readonly phone = signal(this.identity.phone());
   protected readonly notes = signal('');
 
-  /**
-   * Campos de nome e telefone abertos na revisão.
-   *
-   * Começa aberto só quando o aparelho não lembra de ninguém (ou lembra de
-   * um nome incompleto). É um retrato do início, não um derivado da
-   * validação: se fosse, os campos sumiriam no meio da digitação assim que o
-   * telefone ficasse válido.
-   */
-  protected readonly editingClient = signal(
-    !this.identity.known() || this.identity.name().trim().length < 2,
-  );
-
   protected readonly busy = signal(false);
-  protected readonly showErrors = signal(false);
   protected readonly error = signal<string | null>(null);
 
   protected readonly professionals = toSignal(this.professionalsRepo.watchAll(), {
@@ -757,7 +718,11 @@ export class BookingPage {
 
   // ─── cabeçalho e rodapé ───────────────────────────────────────────────
 
-  protected readonly title = computed(() => TITLES[this.step()]);
+  protected readonly title = computed(() =>
+    this.step() === 'confirmar' && !this.session.signedIn()
+      ? 'Identificação'
+      : TITLES[this.step()],
+  );
 
   protected readonly stepNumber = computed(() => {
     const index = ORDER.indexOf(this.step());
@@ -851,17 +816,6 @@ export class BookingPage {
 
   // ─── validação ────────────────────────────────────────────────────────
 
-  protected readonly nameError = computed(() =>
-    this.name().trim().length < 2 ? 'Informe seu nome.' : null,
-  );
-
-  protected readonly phoneError = computed(() => {
-    const digits = this.phone().replace(/\D/g, '');
-    // 10 dígitos cobre fixo com DDD; 11, celular. Sem exigir formatação:
-    // quem digita sem parênteses não deve ser barrado.
-    return digits.length < 10 ? 'Informe um telefone com DDD.' : null;
-  });
-
   protected readonly canAdvance = computed(() => {
     switch (this.step()) {
       case 'profissional':
@@ -918,14 +872,15 @@ export class BookingPage {
   }
 
   private async confirm(): Promise<void> {
-    this.showErrors.set(true);
     this.error.set(null);
 
     const service = this.service();
     const startsAt = this.startsAt();
     const professional = this.assigned();
 
-    if (this.nameError() || this.phoneError() || !service || !startsAt) return;
+    const account = this.session.account();
+
+    if (!account || !service || !startsAt) return;
 
     if (!professional) {
       this.error.set('Esse horário acabou de ser ocupado. Escolha outro.');
@@ -939,10 +894,13 @@ export class BookingPage {
       await this.appointmentsRepo.create({
         professionalId: professional.id,
         serviceId: service.id,
+        // `clientId` é o cadastro do cliente NA barbearia, não a conta. Quem
+        // liga um ao outro é o servidor ao gravar (Client.userId), para o
+        // app não poder se passar por outro cliente.
         client: {
           clientId: null,
-          name: this.name().trim(),
-          phone: this.phone().trim(),
+          name: account.name,
+          phone: account.phone,
         },
         startsAt,
         notes: this.notes().trim() || null,
@@ -952,7 +910,6 @@ export class BookingPage {
       // lista do dia e passaria a apontar outra pessoa. A tela de sucesso
       // precisa dizer quem de fato ficou com o atendimento.
       this.confirmedWith.set(professional);
-      this.identity.remember(this.name(), this.phone());
       this.step.set('pronto');
     } catch (cause) {
       // Entre escolher o horário e confirmar, alguém pode ter marcado.

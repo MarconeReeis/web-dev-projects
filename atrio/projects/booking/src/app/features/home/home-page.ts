@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { switchMap } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { InstallPrompt, TenantContext } from '@atrio/core';
 import {
@@ -15,7 +16,7 @@ import {
   startOfDay,
 } from '@atrio/data';
 import { AtrAvatar, AtrButton, AtrCard, AtrIcon } from '@atrio/ui';
-import { ClientIdentity } from '../../shared/client-identity';
+import { ClientSession } from '../../shared/client-session';
 
 const HORIZON_DAYS = 120;
 
@@ -233,7 +234,7 @@ export class HomePage {
 
   protected readonly tenant = inject(TenantContext);
   protected readonly install = inject(InstallPrompt);
-  private readonly identity = inject(ClientIdentity);
+  private readonly session = inject(ClientSession);
   private readonly servicesRepo = inject(ServiceRepository);
   private readonly professionalsRepo = inject(ProfessionalRepository);
   private readonly appointmentsRepo = inject(AppointmentRepository);
@@ -249,8 +250,12 @@ export class HomePage {
     initialValue: [] as readonly Professional[],
   });
 
+  // Reativo à sessão: entrar ou sair em outra tela muda o card de "próximo
+  // horário" sem precisar recarregar a vitrine.
   private readonly myAppointments = toSignal(
-    this.appointmentsRepo.watchByClientPhone(this.identity.phone(), horizon()),
+    toObservable(this.session.phone).pipe(
+      switchMap((phone) => this.appointmentsRepo.watchByClientPhone(phone, horizon())),
+    ),
     { initialValue: [] as readonly Appointment[] },
   );
 
