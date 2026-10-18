@@ -5,6 +5,7 @@ import {
   NewAppointment,
   PaymentMethod,
 } from '../models/appointment';
+import { ClientAccount, NewClientAccount } from '../models/client-account';
 import { Cents, DateRange, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
 import { Professional } from '../models/professional';
@@ -151,4 +152,27 @@ export abstract class TenantRepository {
   /** A barbearia da sessão atual. */
   abstract watchCurrent(): Observable<Tenant | null>;
   abstract save(tenant: Tenant): Promise<void>;
+}
+
+/**
+ * Autenticação do cliente final (app de agendamento).
+ *
+ * Separada dos repositórios de dados porque o backend dela é outro — o
+ * Firebase Auth, não o Firestore — e porque o painel da barbearia terá a sua,
+ * com papéis e tenant na custom claim. Misturar as duas abriria a porta para
+ * um cliente chegar ao painel.
+ *
+ * Falhas que a tela precisa explicar chegam como `ClientAuthError`.
+ */
+export abstract class ClientAuth {
+  /** Conta com sessão aberta neste aparelho; null quando ninguém entrou. */
+  abstract watchSession(): Observable<ClientAccount | null>;
+  abstract signIn(email: string, password: string): Promise<ClientAccount>;
+  abstract signUp(account: NewClientAccount): Promise<ClientAccount>;
+  abstract signOut(): Promise<void>;
+  /**
+   * Pede o link de nova senha. Resolve igual exista a conta ou não: dizer
+   * "esse e-mail não tem cadastro" entrega a quem perguntar quem é cliente.
+   */
+  abstract sendPasswordReset(email: string): Promise<void>;
 }

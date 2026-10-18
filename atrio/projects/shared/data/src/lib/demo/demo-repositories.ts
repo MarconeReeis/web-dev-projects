@@ -16,6 +16,7 @@ import { Tenant } from '../models/tenant';
 import {
   AppointmentQuery,
   AppointmentRepository,
+  ClientAuth,
   FinanceQuery,
   FinanceRepository,
   ProfessionalRepository,
@@ -23,6 +24,7 @@ import {
   TenantRepository,
   TimeBlockRepository,
 } from '../repositories/repositories';
+import { DemoClientAuth } from './demo-auth';
 import { sortProfessionals } from './demo-seed';
 import {
   DemoStore,
@@ -379,5 +381,6 @@ export function provideDemoData(): Provider[] {
     { provide: FinanceRepository, useClass: DemoFinanceRepository },
     { provide: TimeBlockRepository, useClass: DemoTimeBlockRepository },
     { provide: TenantRepository, useClass: DemoTenantRepository },
+    { provide: ClientAuth, useClass: DemoClientAuth },
   ];
 }
