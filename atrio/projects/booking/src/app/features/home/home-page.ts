@@ -10,6 +10,7 @@ import {
   ProfessionalRepository,
   Service,
   ServiceRepository,
+  formatAddress,
   formatLongDate,
   formatMoney,
   formatTime,
@@ -276,16 +277,9 @@ export class HomePage {
     );
   });
 
-  protected readonly addressLabel = computed(() => {
-    const address = this.tenant.tenant()?.address;
-    if (!address?.street) return null;
-
-    const line = [address.street, address.number].filter(Boolean).join(', ');
-    const extra = [address.complement, address.district].filter(Boolean).join(' · ');
-    const city = [address.city, address.state].filter(Boolean).join(' - ');
-
-    return [line, extra, city].filter(Boolean).join(' — ');
-  });
+  protected readonly addressLabel = computed(() =>
+    formatAddress(this.tenant.tenant()?.address),
+  );
 
   protected dateLabel(instant: string): string {
     const label = formatLongDate(instant);

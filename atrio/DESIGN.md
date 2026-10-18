@@ -414,6 +414,27 @@ vazio é melhor que anúncio genérico ocupando o topo.
 foto. Foto por serviço é o próximo passo natural — exige campo no modelo e
 upload no painel.
 
+### Agendamento confirmado
+
+Sem cabeçalho nem progresso: não há para onde voltar — o agendamento já
+existe — e etapa nenhuma a contar. Selo verde, "Seu horário está marcado!" e
+um comprovante: data, início–fim, serviço, profissional, valor ("na
+barbearia") e endereço. Os botões ficam no pé da tela.
+
+O comprovante lê o **agendamento gravado**, não o que estava na tela: preço e
+nome do serviço são os congelados na marcação, e o profissional é quem de
+fato ficou com o atendimento — no "qualquer profissional", a escolha é da
+agenda.
+
+| Diferença da referência | Por quê |
+| --- | --- |
+| Sem "Código" | nada no sistema o usa: o painel não busca por código e o balcão acha o cliente por nome e horário. Volta quando a agenda puder buscar por ele |
+| "Te esperamos na Navalha & Co." com um ponto só | a referência dobrava o ponto quando o nome já termina em um |
+| "Segunda-feira, 19 de outubro" | o mesmo `capitalize` das outras telas |
+
+O endereço sai de `formatAddress` (`@atrio/data`), o mesmo da vitrine: dois
+formatos para a mesma barbearia parecem dois lugares diferentes.
+
 ### Entrar
 
 Uma tela, três modos — entrar, criar conta, recuperar senha —, trocados no

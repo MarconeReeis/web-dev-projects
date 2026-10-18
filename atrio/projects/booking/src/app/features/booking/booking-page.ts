@@ -22,6 +22,7 @@ import {
   ServiceRepository,
   TimeBlock,
   TimeBlockRepository,
+  formatAddress,
   formatLongDate,
   formatMoney,
   formatTime,
@@ -108,6 +109,14 @@ type ProfessionalChoice = Id | typeof ANY | null;
       </div>
     </ng-template>
 
+    <!-- Linhas do comprovante (sucesso) -->
+    <ng-template #receipt let-label="label" let-value="value">
+      <div class="flex items-start justify-between gap-4">
+        <dt class="shrink-0 text-muted-foreground">{{ label }}</dt>
+        <dd class="min-w-0 text-right font-semibold text-balance">{{ value }}</dd>
+      </div>
+    </ng-template>
+
     <ng-template #edit let-target let-what="what">
       <button
         type="button"
@@ -119,19 +128,11 @@ type ProfessionalChoice = Id | typeof ANY | null;
       </button>
     </ng-template>
 
-    <!-- Cabeçalho -->
-    <header class="sticky top-0 z-20 bg-background">
-      <div class="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3">
-        @if (step() === 'pronto') {
-          <span class="flex-1 font-bold">{{ title() }}</span>
-          <a
-            class="inline-flex size-11 items-center justify-center rounded-full text-muted-foreground"
-            aria-label="Fechar"
-            [routerLink]="['/b', slug()]"
-          >
-            <atr-icon name="x" [size]="20" />
-          </a>
-        } @else {
+    <!-- Cabeçalho. Some na tela de sucesso: não há para onde voltar — o
+         agendamento já existe — e etapa nenhuma a contar. -->
+    @if (step() !== 'pronto') {
+      <header class="sticky top-0 z-20 bg-background">
+        <div class="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3">
           <button
             type="button"
             class="floating inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-card text-foreground transition-colors hover:bg-accent"
@@ -147,12 +148,10 @@ type ProfessionalChoice = Id | typeof ANY | null;
             </span>
           </span>
           <span class="size-11 shrink-0"></span>
-        }
-      </div>
+        </div>
 
-      <!-- Progresso em segmentos: diz quantas etapas faltam, não só quanto já
-           andou — uma barra contínua não informa isso. -->
-      @if (step() !== 'pronto') {
+        <!-- Progresso em segmentos: diz quantas etapas faltam, não só quanto
+             já andou — uma barra contínua não informa isso. -->
         <div class="mx-auto flex w-full max-w-2xl gap-1.5 px-4 pb-3">
           @for (item of order; track item) {
             <span
@@ -161,10 +160,13 @@ type ProfessionalChoice = Id | typeof ANY | null;
             ></span>
           }
         </div>
-      }
-    </header>
+      </header>
+    }
 
-    <main class="mx-auto w-full max-w-2xl flex-1 px-4 pt-2 pb-36">
+    <main
+      class="mx-auto w-full max-w-2xl flex-1 px-4"
+      [class]="step() === 'pronto' ? 'flex flex-col pt-14 pb-8' : 'pt-2 pb-36'"
+    >
       @switch (step()) {
         <!-- 1. Profissional -->
         @case ('profissional') {
@@ -494,29 +496,58 @@ type ProfessionalChoice = Id | typeof ANY | null;
           }
         }
 
-        <!-- Pronto -->
+        <!-- Pronto. Tudo vem do agendamento gravado, não do que estava na
+             tela: preço e serviço são os congelados na marcação. -->
         @case ('pronto') {
-          <div class="flex flex-col items-center gap-4 py-10 text-center">
-            <span
-              class="flex size-20 items-center justify-center rounded-full bg-success-soft text-success-soft-foreground"
-            >
-              <atr-icon name="check" [size]="36" [strokeWidth]="3" />
-            </span>
-            <h2 class="text-2xl font-extrabold tracking-tight">Horário confirmado</h2>
-            <p class="text-balance text-muted-foreground">
-              {{ dateLabel() }} às {{ startsAt() ? time(startsAt()!) : '' }}, com
-              {{ assignedLabel() }}.
-            </p>
+          @if (confirmed(); as done) {
+            <div class="flex flex-col items-center text-center">
+              <span
+                class="flex size-16 items-center justify-center rounded-full bg-success-soft text-success-soft-foreground"
+              >
+                <atr-icon name="circle-check-big" [size]="30" />
+              </span>
+              <h2 class="mt-5 text-3xl font-extrabold tracking-tight text-balance">
+                Seu horário está marcado!
+              </h2>
+              <p class="mt-2 text-sm text-muted-foreground">{{ waitingLine() }}</p>
+            </div>
 
-            <div class="mt-4 flex w-full flex-col gap-2">
-              <a atrButton class="w-full" [routerLink]="['/b', slug(), 'meus-horarios']">
-                Ver meus horários
+            <div class="surface mt-8 p-5">
+              <p class="text-xl font-extrabold tracking-tight">{{ longDate(done.startsAt) }}</p>
+              <p class="tabular mt-0.5 text-lg font-bold text-primary">
+                {{ time(done.startsAt) }} – {{ time(done.endsAt) }}
+              </p>
+
+              <dl class="mt-4 flex flex-col gap-2.5 border-t border-dashed border-border pt-4 text-sm">
+                <ng-container
+                  *ngTemplateOutlet="receipt; context: { label: 'Serviço', value: done.serviceName }"
+                />
+                <ng-container
+                  *ngTemplateOutlet="receipt; context: { label: 'Profissional', value: assignedLabel() }"
+                />
+                <ng-container
+                  *ngTemplateOutlet="
+                    receipt;
+                    context: { label: 'Valor', value: money(done.price) + ' · na barbearia' }
+                  "
+                />
+                @if (address(); as where) {
+                  <ng-container
+                    *ngTemplateOutlet="receipt; context: { label: 'Endereço', value: where }"
+                  />
+                }
+              </dl>
+            </div>
+
+            <div class="mt-auto flex flex-col gap-1 pt-10">
+              <a atrButton size="lg" class="w-full" [routerLink]="['/b', slug(), 'meus-horarios']">
+                Ver meu agendamento
               </a>
-              <a atrButton="ghost" class="w-full" [routerLink]="['/b', slug()]">
+              <a atrButton="ghost" size="lg" class="w-full" [routerLink]="['/b', slug()]">
                 Voltar ao início
               </a>
             </div>
-          </div>
+          }
         }
       }
     </main>
@@ -692,6 +723,18 @@ export class BookingPage {
   /** Congelado na confirmação — ver o comentário em confirm(). */
   private readonly confirmedWith = signal<Professional | null>(null);
 
+  /** O agendamento como foi gravado — é dele que a tela de sucesso lê. */
+  protected readonly confirmed = signal<Appointment | null>(null);
+
+  /** "Te esperamos na Navalha & Co." — sem ponto dobrado quando o nome já termina em um. */
+  protected readonly waitingLine = computed(() => {
+    const name = this.tenant.name().trim();
+    if (!name) return 'Te esperamos lá.';
+    return `Te esperamos na ${name}${name.endsWith('.') ? '' : '.'}`;
+  });
+
+  protected readonly address = computed(() => formatAddress(this.tenant.tenant()?.address));
+
   private readonly assigned = computed<Professional | null>(() => {
     const chosen = this.chosenProfessional();
     if (chosen) return chosen;
@@ -743,6 +786,11 @@ export class BookingPage {
     ends.setMinutes(ends.getMinutes() + service.durationMinutes);
     return `${formatTime(startsAt)} às ${formatTime(ends)}`;
   });
+
+  protected longDate(instant: IsoDateTime): string {
+    const label = formatLongDate(instant);
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
 
   protected readonly dateLabel = computed(() => {
     const instant = this.startsAt() ?? this.date().toISOString();
@@ -891,7 +939,7 @@ export class BookingPage {
 
     this.busy.set(true);
     try {
-      await this.appointmentsRepo.create({
+      const created = await this.appointmentsRepo.create({
         professionalId: professional.id,
         serviceId: service.id,
         // `clientId` é o cadastro do cliente NA barbearia, não a conta. Quem
@@ -910,6 +958,7 @@ export class BookingPage {
       // lista do dia e passaria a apontar outra pessoa. A tela de sucesso
       // precisa dizer quem de fato ficou com o atendimento.
       this.confirmedWith.set(professional);
+      this.confirmed.set(created);
       this.step.set('pronto');
     } catch (cause) {
       // Entre escolher o horário e confirmar, alguém pode ter marcado.

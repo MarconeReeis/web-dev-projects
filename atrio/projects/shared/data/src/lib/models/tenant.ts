@@ -26,6 +26,24 @@ export interface Address {
  * identificando qual barbearia está logada. Quem é personalizado é a vitrine
  * que o cliente final vê.
  */
+/**
+ * Endereço numa linha: "Rua Augusta, 1520 — Consolação — São Paulo - SP".
+ *
+ * Mora aqui, e não em cada tela, porque o mesmo endereço aparece na vitrine e
+ * no comprovante do agendamento — e dois formatos para a mesma barbearia
+ * parecem dois lugares diferentes. Sem rua, devolve null: meio endereço é
+ * pior que nenhum.
+ */
+export function formatAddress(address: Address | null | undefined): string | null {
+  if (!address?.street) return null;
+
+  const line = [address.street, address.number].filter(Boolean).join(', ');
+  const extra = [address.complement, address.district].filter(Boolean).join(' · ');
+  const city = [address.city, address.state].filter(Boolean).join(' - ');
+
+  return [line, extra, city].filter(Boolean).join(' — ');
+}
+
 export interface Branding {
   readonly logoUrl: string | null;
   /** Cor da marca em hex. As variações (hover, soft) são derivadas em oklch. */
