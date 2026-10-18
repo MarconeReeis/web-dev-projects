@@ -107,6 +107,10 @@
 
   /* ─── 3. Forma e elevação ────────────────────────────────────────── */
 
+  /* Família tipográfica. É token porque o app do cliente usa outra — ver
+     projects/booking/src/styles.css. O painel fica com Manrope. */
+  --app-font: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
   --radius-base: 1rem;
   --surface-radius: calc(var(--radius-base) + 0.5rem);
   --control-height: 2.75rem;          /* 44px — alvo mínimo de toque */

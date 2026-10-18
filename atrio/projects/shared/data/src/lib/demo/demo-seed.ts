@@ -351,10 +351,17 @@ export function buildDemoDataset(now: Date): DemoDataset {
   const allServiceIds = services.map((s) => s.id);
 
   const professionals: Professional[] = [
-    pro('pro-rafael', 'Rafael Lima', '(11) 97777-0001', allServiceIds, stamp, true, 'Cortes clássicos e barba'),
-    pro('pro-diego', 'Diego Nunes', '(11) 97777-0002', allServiceIds, stamp, true, 'Degradê e freestyle'),
-    pro('pro-caio', 'Caio Prado', '(11) 97777-0003', ['svc-corte', 'svc-acab'], stamp, true, 'Máquina e acabamento'),
-    pro('pro-marcos', 'Marcos Vieira', null, ['svc-barba', 'svc-combo'], stamp, false, 'Barba e navalha'),
+    pro('pro-rafael', 'Rafael Lima', '(11) 97777-0001', allServiceIds, stamp, true,
+      'Cortes clássicos e barba',
+      '12 anos de navalha. Especialista em barba com toalha quente e cortes clássicos.'),
+    pro('pro-diego', 'Diego Nunes', '(11) 97777-0002', allServiceIds, stamp, true,
+      'Degradê e freestyle',
+      'Formado em barbearia moderna. Faz degradê, risco e desenho na máquina.'),
+    pro('pro-caio', 'Caio Prado', '(11) 97777-0003', ['svc-corte', 'svc-acab'], stamp, true,
+      'Máquina e acabamento',
+      'Rápido e caprichoso no acabamento. Ideal para manutenção entre cortes.'),
+    pro('pro-marcos', 'Marcos Vieira', null, ['svc-barba', 'svc-combo'], stamp, false,
+      'Barba e navalha', null),
   ];
 
   const active = professionals.filter((p) => p.active);
@@ -507,6 +514,7 @@ export function buildDemoDataset(now: Date): DemoDataset {
     ts: IsoDateTime,
     isActive = true,
     bio: string | null = null,
+    about: string | null = null,
   ): Professional {
     return {
       id,
@@ -515,6 +523,7 @@ export function buildDemoDataset(now: Date): DemoDataset {
       photoUrl: null,
       phone,
       bio,
+      about,
       serviceIds,
       schedule,
       active: isActive,

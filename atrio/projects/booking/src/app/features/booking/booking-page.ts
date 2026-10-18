@@ -30,7 +30,14 @@ import {
   openSlots,
   startOfDay,
 } from '@atrio/data';
-import { AtrAvatar, AtrButton, AtrField, AtrIcon, AtrInput } from '@atrio/ui';
+import {
+  AtrAvatar,
+  AtrButton,
+  AtrField,
+  AtrIcon,
+  AtrInput,
+  initialsOf,
+} from '@atrio/ui';
 import { ClientIdentity } from '../../shared/client-identity';
 import { ScheduleStep } from './components/schedule-step';
 
@@ -199,33 +206,54 @@ type ProfessionalChoice = Id | typeof ANY | null;
 
         <!-- 2. Serviço -->
         @case ('servico') {
-          <!-- Contexto: lembra com quem o cliente vai. Sem isso, mudar de
-               passo apaga da tela a escolha anterior. -->
-          <div class="surface mb-5 flex items-center gap-4 p-4">
+          <!-- Ficha do profissional: foto à esquerda, identificação à
+               direita. Lembra com quem o cliente vai — mudar de etapa apaga
+               da tela a escolha anterior — e a apresentação ajuda quem ainda
+               está decidindo se é mesmo aquele barbeiro. -->
+          <div class="surface mb-5 flex items-start gap-4 p-4">
             @if (chosenProfessional(); as professional) {
-              <atr-avatar
-                [name]="professional.name"
-                [photoUrl]="professional.photoUrl"
-                size="lg"
-              />
-              <span class="min-w-0">
-                <span class="block truncate text-lg font-bold">{{ professional.name }}</span>
+              @if (professional.photoUrl; as photo) {
+                <img
+                  [src]="photo"
+                  [alt]="professional.name"
+                  class="size-20 shrink-0 rounded-2xl object-cover"
+                />
+              } @else {
+                <span
+                  class="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-primary-soft text-xl font-extrabold text-primary-soft-foreground"
+                  aria-hidden="true"
+                >
+                  {{ initials(professional.name) }}
+                </span>
+              }
+              <span class="min-w-0 flex-1">
+                <span class="block text-2xl font-extrabold tracking-tight text-balance">
+                  {{ professional.name }}
+                </span>
                 @if (professional.bio) {
-                  <span class="block truncate text-sm font-semibold text-primary">
+                  <span class="mt-0.5 block font-semibold text-primary">
                     {{ professional.bio }}
+                  </span>
+                }
+                @if (professional.about) {
+                  <span class="mt-1.5 block text-sm text-balance text-muted-foreground">
+                    {{ professional.about }}
                   </span>
                 }
               </span>
             } @else {
               <span
-                class="flex size-12 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground"
+                class="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-secondary text-muted-foreground"
               >
-                <atr-icon name="users" [size]="20" />
+                <atr-icon name="users" [size]="28" />
               </span>
-              <span class="min-w-0">
-                <span class="block text-lg font-bold">Qualquer profissional</span>
-                <span class="block text-sm text-muted-foreground">
-                  Todos os serviços da casa
+              <span class="min-w-0 flex-1">
+                <span class="block text-2xl font-extrabold tracking-tight">
+                  Qualquer profissional
+                </span>
+                <span class="mt-1.5 block text-sm text-muted-foreground">
+                  Mostramos o catálogo completo e, no horário escolhido, quem
+                  estiver livre atende você.
                 </span>
               </span>
             }
@@ -437,6 +465,7 @@ export class BookingPage {
 
   protected money = formatMoney;
   protected time = formatTime;
+  protected initials = initialsOf;
   protected readonly order = ORDER;
   protected readonly total = ORDER.length;
   protected readonly ANY = ANY;

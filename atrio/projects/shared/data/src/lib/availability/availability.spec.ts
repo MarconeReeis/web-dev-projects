@@ -44,6 +44,7 @@ const PROFESSIONAL: Professional = {
   photoUrl: null,
   phone: null,
   bio: null,
+  about: null,
   serviceIds: ['svc-corte'],
   schedule: SCHEDULE,
   active: true,

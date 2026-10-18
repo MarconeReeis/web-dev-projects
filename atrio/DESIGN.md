@@ -28,7 +28,8 @@ Cada app importa `tailwindcss` e, na sequência, `shared/ui/src/styles/index.css
 
 | Item | Valor |
 | --- | --- |
-| Família | **Manrope**, pesos 400–800 |
+| Família (painel) | **Manrope**, pesos 400–800 |
+| Família (app do cliente) | **Plus Jakarta Sans**, pesos 400–800 |
 | Fallback | `ui-sans-serif, system-ui, sans-serif` |
 | Carregamento | `<link>` no `index.html` de cada app |
 | Números | `font-feature-settings: 'tnum' 1` no `body` |

@@ -15,3 +15,20 @@
 
 @source './app';
 @source '../../shared/ui/src/lib';
+
+/**
+ * Tipografia do app do cliente.
+ *
+ * Plus Jakarta Sans no lugar do Manrope do painel. São produtos com públicos
+ * diferentes: o painel é ferramenta de trabalho, o app é vitrine, e a vitrine
+ * aguenta mais personalidade.
+ *
+ * A base continua em 16px. Cheguei a subir para 17 atrás do respiro da
+ * referência e as descrições de serviço passaram a quebrar em três linhas num
+ * aparelho de 375px — a referência só parece maior porque está desenhada numa
+ * tela mais larga. O respiro vem do espaçamento dos componentes, não de
+ * inflar a raiz.
+ */
+:root {
+  --app-font: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+}
