@@ -23,6 +23,20 @@ export const routes: Routes = [
       import('./features/booking/booking-page').then((m) => m.BookingPage),
   },
   {
+    // Detalhes e reagendamento também ficam fora do shell: têm o próprio
+    // "voltar" e ações no pé da tela, que a barra inferior cobriria.
+    path: 'b/:slug/meus-horarios/:id/reagendar',
+    title: 'Reagendar',
+    loadComponent: () =>
+      import('./features/appointments/reschedule-page').then((m) => m.ReschedulePage),
+  },
+  {
+    path: 'b/:slug/meus-horarios/:id',
+    title: 'Agendamento',
+    loadComponent: () =>
+      import('./features/appointments/appointment-page').then((m) => m.AppointmentPage),
+  },
+  {
     path: 'b/:slug',
     component: Shell,
     children: [

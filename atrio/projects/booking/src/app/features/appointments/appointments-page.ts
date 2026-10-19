@@ -8,7 +8,6 @@ import {
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { TenantContext } from '@atrio/core';
 import { switchMap } from 'rxjs';
 import {
   APPOINTMENT_STATUS_LABEL,
@@ -16,11 +15,9 @@ import {
   AppointmentRepository,
   Professional,
   ProfessionalRepository,
-  formatAddress,
   formatMoney,
   formatShortDay,
   formatTime,
-  startOfDay,
 } from '@atrio/data';
 import {
   AtrBadge,
@@ -29,33 +26,10 @@ import {
   AtrCard,
   AtrEmptyState,
   AtrIcon,
-  AtrOverlay,
 } from '@atrio/ui';
 import { ClientSession } from '../../shared/client-session';
 import { SignIn } from '../auth/sign-in';
-import { AppointmentDetails, AppointmentDetailsData } from './appointment-details';
-
-/** Janela consultada: três meses para trás, quatro para frente. */
-const PAST_DAYS = 90;
-const AHEAD_DAYS = 120;
-
-/**
- * Antecedência mínima para o cliente cancelar sozinho.
- *
- * Sem regra, a pessoa cancela cinco minutos antes e a cadeira fica vazia sem
- * chance de reocupar. Com duas horas, a barbearia ainda consegue encaixar
- * alguém — e quem precisa cancelar em cima da hora liga, que é o que já
- * acontece hoje.
- */
-const CANCEL_LIMIT_HOURS = 2;
-
-const TONE: Readonly<Record<Appointment['status'], AtrBadgeTone>> = {
-  agendado: 'primary',
-  em_atendimento: 'primary',
-  concluido: 'success',
-  cancelado: 'destructive',
-  nao_compareceu: 'warning',
-};
+import { STATUS_TONE, clientWindow } from './appointment-rules';
 
 type Tab = 'proximos' | 'historico';
 
@@ -65,7 +39,7 @@ type Tab = 'proximos' | 'historico';
  * Duas abas — próximos e histórico — com a contagem no rótulo, para a pessoa
  * saber o que há do outro lado antes de trocar. Cada card mostra o que se
  * confere de relance (dia, hora, serviço, com quem, duração, valor); tocar
- * nele abre os detalhes, onde fica o cancelamento.
+ * nele abre a página do agendamento, onde ficam reagendar e cancelar.
  *
  * A consulta ainda é pelo telefone DA CONTA: é o que liga a pessoa aos
  * horários marcados no balcão, antes de ela ter conta. Com o Firebase, a
@@ -130,11 +104,10 @@ type Tab = 'proximos' | 'historico';
         <ul class="mt-5 flex flex-col gap-3">
           @for (appointment of visible(); track appointment.id) {
             <li>
-              <button
-                type="button"
-                class="surface block w-full p-5 text-left transition-colors hover:border-primary"
+              <a
+                class="surface block p-5 transition-colors hover:border-primary"
                 [attr.aria-label]="'Detalhes de ' + appointment.serviceName + ', ' + dayAndTime(appointment)"
-                (click)="open(appointment)"
+                [routerLink]="['/b', slug(), 'meus-horarios', appointment.id]"
               >
                 <span class="flex items-start justify-between gap-3">
                   <span class="min-w-0">
@@ -160,7 +133,7 @@ type Tab = 'proximos' | 'historico';
                   </span>
                   <span class="tabular font-extrabold">{{ money(appointment.price) }}</span>
                 </span>
-              </button>
+              </a>
             </li>
           }
         </ul>
@@ -181,8 +154,6 @@ type Tab = 'proximos' | 'historico';
 export class AppointmentsPage {
   private readonly repository = inject(AppointmentRepository);
   private readonly professionalsRepo = inject(ProfessionalRepository);
-  private readonly overlay = inject(AtrOverlay);
-  private readonly tenant = inject(TenantContext);
 
   protected readonly session = inject(ClientSession);
 
@@ -203,7 +174,7 @@ export class AppointmentsPage {
 
   private readonly appointments = toSignal(
     toObservable(this.session.phone).pipe(
-      switchMap((phone) => this.repository.watchByClientPhone(phone, horizon())),
+      switchMap((phone) => this.repository.watchByClientPhone(phone, clientWindow())),
     ),
     { initialValue: [] as readonly Appointment[] },
   );
@@ -243,7 +214,7 @@ export class AppointmentsPage {
   }
 
   protected tone(status: Appointment['status']): AtrBadgeTone {
-    return TONE[status];
+    return STATUS_TONE[status];
   }
 
   protected statusLabel(status: Appointment['status']): string {
@@ -253,32 +224,4 @@ export class AppointmentsPage {
   protected professionalName(id: string): string {
     return this.professionals().find((p) => p.id === id)?.name ?? 'Profissional';
   }
-
-  protected open(appointment: Appointment): void {
-    this.overlay.openSheet<AppointmentDetails, AppointmentDetailsData>(AppointmentDetails, {
-      appointment,
-      professionalName: this.professionalName(appointment.professionalId),
-      address: formatAddress(this.tenant.tenant()?.address),
-      tone: this.tone(appointment.status),
-      canCancel: canCancel(appointment),
-      cancelLimitHours: CANCEL_LIMIT_HOURS,
-    });
-  }
-}
-
-function canCancel(appointment: Appointment): boolean {
-  if (appointment.status !== 'agendado') return false;
-
-  const limit = Date.now() + CANCEL_LIMIT_HOURS * 3_600_000;
-  return new Date(appointment.startsAt).getTime() > limit;
-}
-
-function horizon() {
-  const from = startOfDay(new Date());
-  from.setDate(from.getDate() - PAST_DAYS);
-
-  const to = startOfDay(new Date());
-  to.setDate(to.getDate() + AHEAD_DAYS);
-
-  return { from: from.toISOString(), to: to.toISOString() };
 }

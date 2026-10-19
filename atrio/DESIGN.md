@@ -465,8 +465,8 @@ rótulo, para a pessoa saber o que há do outro lado antes de trocar. Histórico
 
 Cada card mostra o que se confere de relance: "Seg, 19 de out · 14:15",
 serviço com quem, status com ponto, e, abaixo de uma linha tracejada, duração e
-valor. Tocar no card abre **os detalhes** — data longa, início–fim, endereço,
-observações — e é lá que fica "Cancelar horário".
+valor. Tocar no card abre **a página do agendamento**, onde ficam reagendar e
+cancelar.
 
 | Diferença da referência | Por quê |
 | --- | --- |
@@ -476,6 +476,53 @@ observações — e é lá que fica "Cancelar horário".
 
 O formato "Seg, 19 de out" sai de `formatShortDay` (`@atrio/data`), o mesmo do
 rodapé do agendamento.
+
+### Página do agendamento
+
+Rota própria (`/meus-horarios/:id`), fora do shell — e não painel por cima da
+lista: daqui se vai ao reagendamento e se volta, e o "voltar" do celular
+precisa voltar para cá, não fechar tudo.
+
+O topo escuro (`bg-ink`) leva o que se procura de relance: foto de com quem,
+dia e horário. Abaixo, a ficha — status, serviço e duração, profissional,
+valor, local, observações. Depois, **Reagendar** (cheio) e **Cancelar
+agendamento** (`destructive-outline`: avisa pela cor sem disputar com o botão
+principal).
+
+Faltando menos de 2h, os dois botões dão lugar a um aviso com o telefone da
+barbearia. É a mesma regra para os dois: para a agenda, reagendar é cancelar
+e marcar de novo.
+
+A página só abre agendamentos **da conta aberta**: a busca passa pela lista do
+próprio cliente, e um id de outra pessoa cai em "não encontrado" — com o id na
+URL, sem isso qualquer um cancelaria o horário de outro.
+
+**Cancelar** pergunta num diálogo empilhado (`stacked` no `confirm`): texto
+centralizado, "Sim, cancelar" em vermelho e "Manter" abaixo, cada um na
+largura toda. Depois, a pessoa fica na página e vê o status virar
+"Cancelado", com um aviso — a confirmação mais clara de que deu certo.
+
+**Reagendar** (`/meus-horarios/:id/reagendar`) reaproveita o passo de data e
+horário do agendamento, com três ajustes:
+
+| Ajuste | Por quê |
+| --- | --- |
+| O próprio agendamento não conta como ocupado | senão o horário atual aparecia tomado por ele mesmo, e trocar 09:30 por 09:45 seria impossível |
+| Duração é a congelada na marcação | é a que `reschedule` grava; procurar vaga com a duração nova do catálogo mostraria horários que não batem |
+| Abre no dia do horário atual | quem reagenda costuma mexer na hora, não no dia |
+
+Serviço e profissional não mudam: trocar de barbeiro é outro agendamento. A
+reserva atual vale até "Confirmar troca", que fica desabilitado enquanto o
+horário escolhido for o mesmo. No rodapé, o dia vai na linha de cima e a hora
+na de baixo — juntos, a hora era cortada, como na referência. Ao confirmar, a
+página do agendamento volta com "Horário alterado!" (pelo estado da
+navegação, não pela URL: recarregar não repete o aviso), e substitui o
+histórico, para o "voltar" não cair de novo no reagendamento.
+
+| Diferença da referência | Por quê |
+| --- | --- |
+| Sem "Código" | o mesmo motivo da tela de confirmação |
+| Rodapé do reagendamento em duas linhas | a referência cortava a hora |
 
 ### Barras fixas: sombra, não linha
 
