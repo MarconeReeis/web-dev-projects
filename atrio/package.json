@@ -9,6 +9,7 @@
     "build:admin": "ng build admin",
     "build:booking": "ng build booking",
     "test": "ng test",
+    "test:db": "node --test supabase/tests/schema.test.mjs",
     "icons": "node tools/generate-icons.mjs"
   },
   "private": true,
@@ -29,6 +30,7 @@
     "@angular/build": "^22.2.3",
     "@angular/cli": "^22.2.3",
     "@angular/compiler-cli": "^22.2.0",
+    "@electric-sql/pglite": "^0.5.10",
     "@tailwindcss/postcss": "^4.3.3",
     "jsdom": "^30.0.0",
     "lucide-static": "^1.58.0",
