@@ -73,6 +73,7 @@ durante o desenvolvimento.
   com dois celulares marcando no mesmo instante — ver `supabase/README.md`.
 
 Detalhes em [DESIGN.md](DESIGN.md) e [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
+O que falta até o lançamento, em [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Estado atual
 
