@@ -17,19 +17,19 @@ admin / booking          telas, rotas, estado de tela
 @atrio/data              modelos + contratos de repositório
       ↓
 demo/ (hoje)             em memória, localStorage
-firebase/ (depois)       Firestore, Auth, Cloud Functions
+supabase/ (depois)       Postgres, Auth, Realtime — esquema em /supabase
 ```
 
 A regra que sustenta tudo: **o componente depende do contrato, nunca da
-implementação**. `provideDemoData()` e, adiante, `provideFirebaseData()` são a
+implementação**. `provideDemoData()` e, adiante, `provideSupabaseData()` são a
 única linha que muda.
 
 Isso compra três coisas concretas:
 
 1. A interface inteira é construída e revisada antes de existir backend.
-2. Teste injeta um fake, sem emulador do Firebase.
-3. Se o Firestore se mostrar o backend errado para a parte financeira, a troca
-   não encosta em tela nenhuma.
+2. Teste injeta um fake, sem banco nenhum.
+3. A troca de backend não encosta em tela nenhuma — e já aconteceu uma vez:
+   o plano era Firebase, e a escolha final foi Supabase (ver "Backend").
 
 ---
 
@@ -37,8 +37,7 @@ Isso compra três coisas concretas:
 
 Todo documento tem `tenantId`. Desde o primeiro dia, com um cliente só.
 
-Não é zelo prematuro: as regras de segurança do Firestore filtram por esse
-campo, e acrescentar isolamento depois significa migrar dados em produção de
+Não é zelo prematuro: a Row Level Security do banco filtra por esse campo, e acrescentar isolamento depois significa migrar dados em produção de
 um cliente pagante. É das refatorações mais caras que existem.
 
 O tenant vem da **custom claim** do usuário autenticado — nunca de parâmetro
@@ -93,7 +92,7 @@ O custo de ter um lado só é varrer os profissionais para descobrir quem
 realiza um serviço. São poucos por barbearia, então é irrelevante — e a tela
 de Serviços escreve o vínculo por `ProfessionalRepository.setServiceAssignment`,
 que altera vários profissionais numa operação só. Metade deles atualizados
-deixaria o catálogo discordando da equipe, então em Firestore isso é um batch.
+deixaria o catálogo discordando da equipe, então no banco isso é uma transação.
 
 ---
 
@@ -146,7 +145,7 @@ exibição (`formatMoney`).
 
 ## Datas
 
-ISO 8601 em string, não `Date`. Serializa direto para Firestore e
+ISO 8601 em string, não `Date`. Serializa direto para a API e o
 localStorage, não sofre a mutabilidade silenciosa do `Date`, e é comparável.
 Converte para `Date` só na borda de apresentação.
 
@@ -179,36 +178,43 @@ senão o cliente veria o roxo do Átrio piscar antes da cor da barbearia.
 
 ### Endereço do app do cliente
 
-**v1:** por caminho — `agenda.atrio.com.br/b/barbearia-do-ze`. Simples, o
-Firebase Hosting resolve sem wildcard de DNS.
+**v1:** por caminho — `agenda.atrio.com.br/b/barbearia-do-ze`. Simples:
+qualquer hospedagem estática resolve sem wildcard de DNS. (O Supabase não
+hospeda o front; a escolha da hospedagem ainda está aberta.)
 
 **Depois:** por subdomínio — `barbearia-do-ze.atrio.com.br`. Cada barbearia
 vira uma origem isolada, com ícone, nome e armazenamento próprios na tela
 inicial do celular — a sensação de white-label que se vende. Custa wildcard DNS
-e certificado, que o Firebase Hosting não entrega bem; resolve com Cloudflare
-na frente.
+e certificado — Cloudflare na frente resolve, qualquer que seja a
+hospedagem.
 
 A migração é chata mas não bloqueia o lançamento.
 
 ---
 
-## Firebase: o que ainda precisa ser decidido
+## Backend: Supabase (Postgres)
 
-A escolha é pelo Firebase por domínio da ferramenta. Vale registrar o
-trade-off: agendamento e financeiro são domínios relacionais com muita
-agregação (relatórios por período, por profissional, por forma de pagamento),
-e o Firestore não faz isso bem. A alternativa técnica melhor encaixada seria
-Postgres (Supabase, com Row Level Security mapeando multi-tenancy).
+O plano inicial era Firebase, pela familiaridade com a ferramenta, com o
+trade-off registrado: agendamento e financeiro são domínios relacionais com
+muita agregação, e o Firestore não faz isso bem. Na hora de escolher, pesou
+mais o domínio, e a escolha foi **Postgres pelo Supabase**:
 
-Indo de Firebase, dois pontos exigem cuidado deliberado:
+- **Horário duplo impossível no próprio banco.** Uma *exclusion constraint*
+  recusa dois atendimentos sobrepostos do mesmo profissional, para qualquer
+  caminho de escrita e mesmo com duas gravações no mesmo instante. No
+  Firestore, isso exigiria uma Cloud Function transacional escrita à mão.
+- **Relatórios são SQL.** Somar por período, profissional e forma de
+  pagamento é uma consulta, não um contador mantido por função — e todo bug
+  de contador vira número errado na tela do dono.
+- **Isolamento por barbearia na RLS**, com chaves estrangeiras compostas
+  `(tenant_id, id)`: nem por bug um agendamento aponta para o profissional de
+  outra barbearia.
+- **Custo previsível** (plano fixo, não cobrança por leitura) e **sem
+  aprisionamento**: é Postgres, muda de hospedagem quando quiser.
 
-1. Escrita de agendamento **sempre** via Cloud Function transacional.
-2. Relatórios calculados a partir de uma coleção de movimentações imutável,
-   nunca recalculados sobre documentos editáveis.
-
-Contadores denormalizados mantidos por Cloud Function são o caminho usual para
-agregação no Firestore — e todo bug de contador vira um número errado na tela
-do dono da barbearia.
+O que se perde em relação ao Firebase: a persistência offline pronta (ver
+Offline). O esquema, as regras e os testes estão em `supabase/` — e o
+`supabase/README.md` descreve o que muda no contrato dos repositórios.
 
 ---
 
@@ -217,7 +223,7 @@ do dono da barbearia.
 O cliente entra com conta (e-mail e senha) antes de revisar o agendamento, e
 "Meus horários" só abre com a conta. O contrato é `ClientAuth`, em
 `@atrio/data`; o modo demonstração implementa no armazenamento local
-(`DemoClientAuth`), e o Firebase Auth entra no lugar sem tocar nas telas.
+(`DemoClientAuth`), e o Supabase Auth entra no lugar sem tocar nas telas.
 
 **Por que a exigência vem só no fim.** Profissional, serviço e horário são
 escolhidos sem conta; o login aparece no passo 4, no mesmo lugar, e a revisão
@@ -236,13 +242,16 @@ a pessoa aos horários marcados no balcão antes de ela se cadastrar.
 barbearia do Átrio; `Client` é o cadastro dela dentro de uma barbearia, e
 existe sem conta. A ligação (`Client.userId`) é feita pelo servidor ao gravar
 o agendamento — o app grava `clientId: null` e não tem como se passar por
-outro cliente. No Firebase, a leitura de "Meus horários" passa a ser filtrada
-pelas regras de segurança, não pela tela.
+outro cliente. No banco, a leitura de "Meus horários" é filtrada pela RLS,
+pela ficha ligada à conta — não pela tela, e não pelo telefone.
 
-**Pendências para o Firebase.** Telefone é identificador fraco — gente troca
-de número, e ele é reatribuído —, então a consulta deve migrar para
-`Client.userId`. Entrar com Google e verificação do e-mail ficam para quando
-o provedor real entrar. O "Esqueci minha senha" do modo demonstração não
+**Telefone não liga conta a histórico.** Telefone é identificador fraco —
+gente troca de número, e ele é reatribuído —, e o da conta não é verificado.
+Por isso horários marcados no balcão antes de a pessoa ter conta não aparecem
+sozinhos em "Meus horários": ligar por telefone entregaria o histórico de
+outra pessoa a quem cadastrasse o número dela. A ligação fica para a equipe,
+ou para quando houver verificação por SMS. Entrar com Google e verificação do
+e-mail ficam para quando o Supabase Auth entrar. O "Esqueci minha senha" do modo demonstração não
 envia nada; a mensagem é a mesma do real, que não revela se o e-mail tem
 conta.
 
@@ -250,8 +259,10 @@ conta.
 
 ## Offline
 
-Barbearia tem internet ruim e o tablet fica no balcão. A persistência offline
-do Firestore ajuda, mas o comportamento precisa ser decidido explicitamente:
+Barbearia tem internet ruim e o tablet fica no balcão. O Supabase não traz
+persistência offline pronta, como o Firestore traria; a leitura da agenda
+precisa de um cache no app (a última agenda carregada, guardada no aparelho).
+O comportamento continua decidido assim:
 
 - consulta da agenda offline: **sim**;
 - confirmar agendamento offline: **não** — depende da checagem de conflito no

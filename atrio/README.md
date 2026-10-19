@@ -28,6 +28,7 @@ concluídos, um em andamento e os próximos. São gerados também 30 dias de
 histórico, para os filtros de semana e mês e o Financeiro mostrarem algo real.
 
 ```bash
+npm run test:db        # testa o esquema do banco (Postgres em WebAssembly)
 npm run build          # compila os dois apps
 npm run icons          # regenera o conjunto de ícones (ver tools/)
 ```
@@ -59,16 +60,17 @@ durante o desenvolvimento.
 - **Todo documento tem `tenantId`.** Multi-tenant desde o primeiro dia, mesmo
   com um cliente só — acrescentar isolamento depois significa migrar produção.
 - **Componente não conhece backend.** As telas dependem dos contratos em
-  `@atrio/data/repositories`. Trocar demonstração por Firebase é mudar
-  `provideDemoData()` por `provideFirebaseData()` no `app.config.ts`.
+  `@atrio/data/repositories`. Trocar demonstração por Supabase é mudar
+  `provideDemoData()` por `provideSupabaseData()` no `app.config.ts`.
 - **Quem faz o quê mora só em `Professional.serviceIds`.** A relação com
   serviços tem um lado só, de propósito — ver docs/ARQUITETURA.md.
 - **O horário da barbearia é derivado** da jornada dos profissionais, não um
   campo. Mesmo motivo.
 - **Componente não escreve cor crua.** Sempre um token semântico
   (`bg-primary`, `text-muted-foreground`). É o que faz o white-label funcionar.
-- **Conflito de horário é problema do servidor.** A validação local do modo
-  demonstração não sobrevive a dois celulares marcando ao mesmo tempo.
+- **Conflito de horário é problema do banco.** Uma *exclusion constraint* no
+  Postgres recusa dois atendimentos sobrepostos do mesmo profissional, mesmo
+  com dois celulares marcando no mesmo instante — ver `supabase/README.md`.
 
 Detalhes em [DESIGN.md](DESIGN.md) e [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
 
@@ -93,9 +95,11 @@ exigidos antes da revisão — e "Meus horários" com cancelamento, só com a
 conta aberta. No modo demonstração, "Usar acesso demonstrativo" entra como
 um cliente fictício que já tem histórico.
 
-**O painel administrativo e o fluxo do cliente estão completos.** A seguir:
-Firebase (Auth no lugar da autenticação de demonstração), conflito de horário
-no servidor e login do painel.
+**O painel administrativo e o fluxo do cliente estão completos.** O backend
+é Supabase: esquema, regras de acesso e operações de agenda estão em
+`supabase/`, testados com `npm run test:db`. A seguir: ligar os repositórios
+ao Supabase (com os três ajustes de contrato descritos em
+`supabase/README.md`), autenticação real e login do painel.
 
 > Em modo demonstração os dois apps rodam em portas diferentes e, portanto, em
 > origens diferentes: cada um tem o seu `localStorage`. Um agendamento feito no
