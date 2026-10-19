@@ -63,7 +63,7 @@ export class SupabaseClientAuth extends ClientAuth {
       password,
     });
     if (error) throw translate(error);
-    return this.accountOf(data.user);
+    return this.publish(await this.accountOf(data.user));
   }
 
   async signUp(input: NewClientAccount): Promise<ClientAccount> {
@@ -83,7 +83,17 @@ export class SupabaseClientAuth extends ClientAuth {
         'Conta criada. Enviamos um link para o seu e-mail — confirme e depois entre.',
       );
     }
-    return this.accountOf(data.user);
+    return this.publish(await this.accountOf(data.user));
+  }
+
+  /**
+   * Publica a conta já na resposta do login, sem esperar o onAuthStateChange
+   * — quem chamou pode reagir à sessão logo em seguida (ver o mesmo caso em
+   * SupabaseStaffAuth.signIn, onde a demora mandava de volta ao login).
+   */
+  private publish(account: ClientAccount): ClientAccount {
+    this.session$.next(account);
+    return account;
   }
 
   async signOut(): Promise<void> {

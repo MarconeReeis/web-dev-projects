@@ -49,6 +49,13 @@ export class SupabaseStaffAuth extends StaffAuth {
         'Esta conta não tem acesso a nenhuma barbearia. Fale com o responsável pela sua barbearia.',
       );
     }
+
+    // A sessão é publicada AQUI, antes de devolver — e não só quando o
+    // onAuthStateChange chegar. Quem chamou navega para o painel em
+    // seguida, e a guarda de rota lê a sessão na hora: se ela ainda fosse a
+    // antiga (nula), a guarda mandava de volta para a tela de entrar. O
+    // callback do Supabase vem logo depois e publica a mesma sessão.
+    this.session$.next(staff);
     return staff;
   }
 
