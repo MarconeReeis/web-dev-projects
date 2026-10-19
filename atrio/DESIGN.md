@@ -464,7 +464,8 @@ a sessão.
 | Tamanho mínimo da senha cobrado só no cadastro | no login, "curta demais" para uma senha errada só confunde |
 | E-mail atravessa os modos, a senha não | quem errou a senha e foi recuperar não redigita o e-mail |
 | Mínimo de 6 caracteres | é o do Firebase Auth; exigir mais barraria quem ele aceita |
-| "Usar acesso demonstrativo" só com `demoMode` | entra por `signIn` como qualquer pessoa, com um cliente que o seed já atende |
+| "Continuar com Google" no lugar do acesso demonstrativo | o login social é o que mais reduz desistência no cadastro. Ainda não está ligado (precisa do cliente OAuth no Google Cloud e do provedor no Supabase); até lá, o toque explica isso — botão mudo parece app quebrado |
+| "Entrar com a conta de demonstração", em link discreto, só com `demoMode` | entra por `signIn` como qualquer pessoa, com um cliente que o seed já atende |
 | Rodapé fixo some na identificação | a tela tem os próprios botões; dois "continuar" seriam um a mais |
 
 ### Meus horários
