@@ -25,6 +25,7 @@ import {
   formatAddress,
   formatLongDate,
   formatMoney,
+  formatShortDay,
   formatTime,
   isSameDay,
   leastBusy,
@@ -817,7 +818,7 @@ export class BookingPage {
         const service = this.service();
         if (!startsAt || !service) return 'Selecione um horário';
 
-        return `${shortDay(startsAt)} · ${this.timeRange().replace(' às ', '–')}`;
+        return `${formatShortDay(startsAt)} · ${this.timeRange().replace(' às ', '–')}`;
       }
       default:
         return this.service()?.name ?? '';
@@ -971,16 +972,4 @@ export class BookingPage {
       this.busy.set(false);
     }
   }
-}
-
-const SHORT_DAY = new Intl.DateTimeFormat('pt-BR', {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-});
-
-/** "Seg, 19 de out" — cabe no rodapé ao lado do botão, a data longa não. */
-function shortDay(instant: IsoDateTime): string {
-  const label = SHORT_DAY.format(new Date(instant)).replaceAll('.', '');
-  return label.charAt(0).toUpperCase() + label.slice(1);
 }

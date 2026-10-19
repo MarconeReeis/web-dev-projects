@@ -457,6 +457,26 @@ a sessão.
 | "Usar acesso demonstrativo" só com `demoMode` | entra por `signIn` como qualquer pessoa, com um cliente que o seed já atende |
 | Rodapé fixo some na identificação | a tela tem os próprios botões; dois "continuar" seriam um a mais |
 
+### Meus horários
+
+Duas abas em cápsula — **Próximos** e **Histórico** — com a contagem no
+rótulo, para a pessoa saber o que há do outro lado antes de trocar. Histórico
+é o que já passou e o que foi cancelado, do mais recente para o mais antigo.
+
+Cada card mostra o que se confere de relance: "Seg, 19 de out · 14:15",
+serviço com quem, status com ponto, e, abaixo de uma linha tracejada, duração e
+valor. Tocar no card abre **os detalhes** — data longa, início–fim, endereço,
+observações — e é lá que fica "Cancelar horário".
+
+| Diferença da referência | Por quê |
+| --- | --- |
+| Título "Meus horários", não "Agendamentos" | é o nome da aba da barra que leva até aqui; dois nomes para o mesmo lugar confundem |
+| Cancelamento nos detalhes, não no card | a referência não mostra onde cancelar; no card, o botão pesava a lista e ficava a um toque acidental. Nos detalhes, a pessoa decide com tudo à vista, e ainda confirma |
+| Barra inferior sem "Perfil" | não existe tela de perfil ainda; um item que não leva a lugar nenhum é pior que nenhum |
+
+O formato "Seg, 19 de out" sai de `formatShortDay` (`@atrio/data`), o mesmo do
+rodapé do agendamento.
+
 ### Barras fixas: sombra, não linha
 
 Nenhuma barra fixa do app do cliente usa borda. A linha corta a tela em duas

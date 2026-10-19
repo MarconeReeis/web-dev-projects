@@ -3,9 +3,12 @@ import {
   Component,
   computed,
   inject,
+  input,
+  signal,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
+import { TenantContext } from '@atrio/core';
 import { switchMap } from 'rxjs';
 import {
   APPOINTMENT_STATUS_LABEL,
@@ -13,8 +16,9 @@ import {
   AppointmentRepository,
   Professional,
   ProfessionalRepository,
-  formatLongDate,
+  formatAddress,
   formatMoney,
+  formatShortDay,
   formatTime,
   startOfDay,
 } from '@atrio/data';
@@ -29,6 +33,7 @@ import {
 } from '@atrio/ui';
 import { ClientSession } from '../../shared/client-session';
 import { SignIn } from '../auth/sign-in';
+import { AppointmentDetails, AppointmentDetailsData } from './appointment-details';
 
 /** Janela consultada: três meses para trás, quatro para frente. */
 const PAST_DAYS = 90;
@@ -52,11 +57,15 @@ const TONE: Readonly<Record<Appointment['status'], AtrBadgeTone>> = {
   nao_compareceu: 'warning',
 };
 
+type Tab = 'proximos' | 'historico';
+
 /**
  * Agendamentos do cliente, só com a conta aberta.
  *
- * Antes bastava digitar um telefone, o que deixava qualquer pessoa ver — e
- * cancelar — os horários de outra. Agora é a mesma entrada do agendamento.
+ * Duas abas — próximos e histórico — com a contagem no rótulo, para a pessoa
+ * saber o que há do outro lado antes de trocar. Cada card mostra o que se
+ * confere de relance (dia, hora, serviço, com quem, duração, valor); tocar
+ * nele abre os detalhes, onde fica o cancelamento.
  *
  * A consulta ainda é pelo telefone DA CONTA: é o que liga a pessoa aos
  * horários marcados no balcão, antes de ela ter conta. Com o Firebase, a
@@ -66,18 +75,10 @@ const TONE: Readonly<Record<Appointment['status'], AtrBadgeTone>> = {
 @Component({
   selector: 'bkg-appointments-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    RouterLink,
-    AtrCard,
-    AtrBadge,
-    AtrButton,
-    AtrIcon,
-    AtrEmptyState,
-    SignIn,
-  ],
+  imports: [RouterLink, AtrCard, AtrBadge, AtrButton, AtrIcon, AtrEmptyState, SignIn],
   host: { class: 'block' },
   template: `
-    <h1 class="text-2xl font-extrabold tracking-tight">Meus horários</h1>
+    <h1 class="text-3xl font-extrabold tracking-tight">Meus horários</h1>
 
     @if (!session.signedIn()) {
       <bkg-sign-in
@@ -86,87 +87,80 @@ const TONE: Readonly<Record<Appointment['status'], AtrBadgeTone>> = {
         lead="Seus agendamentos ficam na sua conta, e só você consegue ver ou cancelar."
       />
     } @else {
-      @if (upcoming().length === 0 && past().length === 0) {
-        <atr-card class="mt-5">
-          <atr-empty-state
-            icon="calendar-days"
-            heading="Nada marcado ainda"
-            description="Quando você agendar, seus horários aparecem aqui."
+      <!-- Abas em cápsula: a ativa é um "botão" claro sobre o trilho. -->
+      <div class="mt-5 grid grid-cols-2 gap-1 rounded-full bg-secondary p-1" role="tablist">
+        @for (option of tabs; track option.id) {
+          <button
+            type="button"
+            role="tab"
+            class="h-11 rounded-full text-sm font-semibold transition-colors"
+            [class]="
+              tab() === option.id
+                ? 'shadow-card bg-card text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            "
+            [attr.aria-selected]="tab() === option.id"
+            (click)="tab.set(option.id)"
           >
-            <a atrButton class="mt-2" routerLink="../agendar">Agendar horário</a>
-          </atr-empty-state>
-        </atr-card>
-      }
+            {{ option.label }}
+            <span class="tabular font-medium text-muted-foreground">({{ count(option.id) }})</span>
+          </button>
+        }
+      </div>
 
-      @if (upcoming().length > 0) {
-        <h2 class="mt-6 font-bold">Próximos</h2>
-        <ul class="mt-3 flex flex-col gap-3">
-          @for (appointment of upcoming(); track appointment.id) {
-            <li class="surface p-5">
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <p class="font-bold">{{ appointment.serviceName }}</p>
-                  <p class="text-sm text-muted-foreground">
-                    com {{ professionalName(appointment.professionalId) }}
-                  </p>
-                </div>
-                <atr-badge [tone]="tone(appointment.status)">
-                  {{ statusLabel(appointment.status) }}
-                </atr-badge>
-              </div>
-
-              <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-                <span class="inline-flex items-center gap-2">
-                  <atr-icon name="calendar-days" [size]="16" class="text-muted-foreground" />
-                  {{ dateLabel(appointment.startsAt) }}
-                </span>
-                <span class="tabular inline-flex items-center gap-2">
-                  <atr-icon name="clock" [size]="16" class="text-muted-foreground" />
-                  {{ time(appointment.startsAt) }}
-                </span>
-                <span class="tabular inline-flex items-center gap-2 font-semibold">
-                  {{ money(appointment.price) }}
-                </span>
-              </div>
-
-              @if (canCancel(appointment)) {
-                <button
-                  type="button"
-                  atrButton="outline"
-                  size="sm"
-                  class="mt-4"
-                  (click)="cancel(appointment)"
-                >
-                  Cancelar
-                </button>
-              } @else {
-                <p class="mt-4 text-sm text-muted-foreground">
-                  Para cancelar com menos de {{ cancelLimit }}h de antecedência,
-                  fale com a barbearia.
-                </p>
-              }
-            </li>
+      @if (visible().length === 0) {
+        <atr-card class="mt-5">
+          @if (tab() === 'proximos') {
+            <atr-empty-state
+              icon="calendar-days"
+              heading="Nada marcado"
+              description="Quando você agendar, seus horários aparecem aqui."
+            >
+              <a atrButton class="mt-2" [routerLink]="['/b', slug(), 'agendar']">Agendar horário</a>
+            </atr-empty-state>
+          } @else {
+            <atr-empty-state
+              icon="clock"
+              heading="Sem histórico ainda"
+              description="Atendimentos passados e cancelados aparecem aqui."
+            />
           }
-        </ul>
-      }
+        </atr-card>
+      } @else {
+        <ul class="mt-5 flex flex-col gap-3">
+          @for (appointment of visible(); track appointment.id) {
+            <li>
+              <button
+                type="button"
+                class="surface block w-full p-5 text-left transition-colors hover:border-primary"
+                [attr.aria-label]="'Detalhes de ' + appointment.serviceName + ', ' + dayAndTime(appointment)"
+                (click)="open(appointment)"
+              >
+                <span class="flex items-start justify-between gap-3">
+                  <span class="min-w-0">
+                    <span class="tabular block text-lg font-extrabold tracking-tight">
+                      {{ dayAndTime(appointment) }}
+                    </span>
+                    <span class="mt-0.5 block text-sm text-muted-foreground">
+                      {{ appointment.serviceName }} com
+                      {{ professionalName(appointment.professionalId) }}
+                    </span>
+                  </span>
+                  <atr-badge class="shrink-0" [tone]="tone(appointment.status)" [dot]="true">
+                    {{ statusLabel(appointment.status) }}
+                  </atr-badge>
+                </span>
 
-      @if (past().length > 0) {
-        <h2 class="mt-7 font-bold">Anteriores</h2>
-        <ul class="mt-3 flex flex-col gap-2">
-          @for (appointment of past(); track appointment.id) {
-            <li class="flex items-center gap-3 rounded-2xl border border-border p-4">
-              <span class="min-w-0 flex-1">
-                <span class="block truncate font-semibold">
-                  {{ appointment.serviceName }}
+                <span
+                  class="mt-4 flex items-center justify-between gap-3 border-t border-dashed border-border pt-3.5"
+                >
+                  <span class="tabular inline-flex items-center gap-2 text-sm text-muted-foreground">
+                    <atr-icon name="clock" [size]="16" />
+                    {{ appointment.durationMinutes }} min
+                  </span>
+                  <span class="tabular font-extrabold">{{ money(appointment.price) }}</span>
                 </span>
-                <span class="tabular block text-sm text-muted-foreground">
-                  {{ dateLabel(appointment.startsAt) }} ·
-                  {{ time(appointment.startsAt) }}
-                </span>
-              </span>
-              <atr-badge [tone]="tone(appointment.status)">
-                {{ statusLabel(appointment.status) }}
-              </atr-badge>
+              </button>
             </li>
           }
         </ul>
@@ -188,12 +182,20 @@ export class AppointmentsPage {
   private readonly repository = inject(AppointmentRepository);
   private readonly professionalsRepo = inject(ProfessionalRepository);
   private readonly overlay = inject(AtrOverlay);
+  private readonly tenant = inject(TenantContext);
 
   protected readonly session = inject(ClientSession);
-  protected readonly cancelLimit = CANCEL_LIMIT_HOURS;
+
+  /** Os links são absolutos — ver o comentário de `slug` na home. */
+  readonly slug = input<string>('');
 
   protected money = formatMoney;
-  protected time = formatTime;
+
+  protected readonly tabs: readonly { id: Tab; label: string }[] = [
+    { id: 'proximos', label: 'Próximos' },
+    { id: 'historico', label: 'Histórico' },
+  ];
+  protected readonly tab = signal<Tab>('proximos');
 
   private readonly professionals = toSignal(this.professionalsRepo.watchAll(true), {
     initialValue: [] as readonly Professional[],
@@ -206,7 +208,8 @@ export class AppointmentsPage {
     { initialValue: [] as readonly Appointment[] },
   );
 
-  protected readonly upcoming = computed(() => {
+  /** Do mais próximo para o mais distante. */
+  private readonly upcoming = computed(() => {
     const now = Date.now();
     return this.appointments().filter(
       (appointment) =>
@@ -215,7 +218,8 @@ export class AppointmentsPage {
     );
   });
 
-  protected readonly past = computed(() => {
+  /** Do mais recente para o mais antigo; cancelados entram aqui mesmo se futuros. */
+  private readonly past = computed(() => {
     const now = Date.now();
     return this.appointments()
       .filter(
@@ -225,6 +229,18 @@ export class AppointmentsPage {
       )
       .reverse();
   });
+
+  protected readonly visible = computed(() =>
+    this.tab() === 'proximos' ? this.upcoming() : this.past(),
+  );
+
+  protected count(tab: Tab): number {
+    return tab === 'proximos' ? this.upcoming().length : this.past().length;
+  }
+
+  protected dayAndTime(appointment: Appointment): string {
+    return `${formatShortDay(appointment.startsAt)} · ${formatTime(appointment.startsAt)}`;
+  }
 
   protected tone(status: Appointment['status']): AtrBadgeTone {
     return TONE[status];
@@ -238,29 +254,23 @@ export class AppointmentsPage {
     return this.professionals().find((p) => p.id === id)?.name ?? 'Profissional';
   }
 
-  protected dateLabel(instant: string): string {
-    const label = formatLongDate(instant);
-    return label.charAt(0).toUpperCase() + label.slice(1);
-  }
-
-  protected canCancel(appointment: Appointment): boolean {
-    if (appointment.status !== 'agendado') return false;
-
-    const limit = Date.now() + CANCEL_LIMIT_HOURS * 3_600_000;
-    return new Date(appointment.startsAt).getTime() > limit;
-  }
-
-  protected async cancel(appointment: Appointment): Promise<void> {
-    const confirmed = await this.overlay.confirm({
-      heading: 'Cancelar horário',
-      message: `${appointment.serviceName} em ${this.dateLabel(appointment.startsAt)} às ${formatTime(appointment.startsAt)}. O horário volta a ficar livre para outra pessoa.`,
-      confirmLabel: 'Cancelar horário',
-      cancelLabel: 'Manter',
-      destructive: true,
+  protected open(appointment: Appointment): void {
+    this.overlay.openSheet<AppointmentDetails, AppointmentDetailsData>(AppointmentDetails, {
+      appointment,
+      professionalName: this.professionalName(appointment.professionalId),
+      address: formatAddress(this.tenant.tenant()?.address),
+      tone: this.tone(appointment.status),
+      canCancel: canCancel(appointment),
+      cancelLimitHours: CANCEL_LIMIT_HOURS,
     });
-
-    if (confirmed) await this.repository.changeStatus(appointment.id, 'cancelado');
   }
+}
+
+function canCancel(appointment: Appointment): boolean {
+  if (appointment.status !== 'agendado') return false;
+
+  const limit = Date.now() + CANCEL_LIMIT_HOURS * 3_600_000;
+  return new Date(appointment.startsAt).getTime() > limit;
 }
 
 function horizon() {

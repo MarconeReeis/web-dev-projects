@@ -98,6 +98,21 @@ export function formatLongDate(instant: string | Date): string {
   return LONG_DATE.format(new Date(instant));
 }
 
+const SHORT_DAY = new Intl.DateTimeFormat('pt-BR', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+});
+
+/**
+ * "Seg, 19 de out" — para rodapés, cards e listas, onde a data longa não cabe.
+ * O Intl devolve "seg., 19 de out."; os pontos saem e só a primeira letra sobe.
+ */
+export function formatShortDay(instant: string | Date): string {
+  const label = SHORT_DAY.format(new Date(instant)).replaceAll('.', '');
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 /** "16/10" */
 export function formatShortDate(instant: string | Date): string {
   return SHORT_DATE.format(new Date(instant));
