@@ -67,6 +67,10 @@ export abstract class AppointmentRepository {
    */
   abstract create(input: NewAppointment): Promise<Appointment>;
 
+  /**
+   * Move o agendamento. Mesma ressalva de `create`: no Firebase, o conflito
+   * é checado na transação do servidor, desconsiderando o próprio horário.
+   */
   abstract reschedule(
     id: Id,
     startsAt: IsoDateTime,

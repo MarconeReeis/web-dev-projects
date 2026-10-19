@@ -106,19 +106,7 @@ export class DemoAppointmentRepository extends AppointmentRepository {
     const startsAt = new Date(input.startsAt);
     const endsAt = new Date(startsAt.getTime() + service.durationMinutes * 60_000);
 
-    // No modo demonstração a trava é local porque não há concorrência real.
-    // A implementação Firebase NÃO pode fazer isso aqui: a checagem tem de
-    // acontecer dentro de uma transação no servidor.
-    const conflict = appointments.find(
-      (a) =>
-        a.professionalId === input.professionalId &&
-        BLOCKING_STATUSES.includes(a.status) &&
-        new Date(a.startsAt) < endsAt &&
-        startsAt < new Date(a.endsAt),
-    );
-    if (conflict) {
-      throw new Error('Esse profissional já tem atendimento nesse horário.');
-    }
+    assertFree(appointments, input.professionalId, startsAt, endsAt);
 
     const stamp = new Date().toISOString();
     const appointment: Appointment = {
@@ -153,11 +141,21 @@ export class DemoAppointmentRepository extends AppointmentRepository {
 
     const start = new Date(startsAt);
     const end = new Date(start.getTime() + current.durationMinutes * 60_000);
+    const professional = professionalId ?? current.professionalId;
+
+    // O próprio agendamento fica de fora: mudar 09:30 para 09:45 sobrepõe o
+    // horário antigo, que deixa de existir no mesmo instante.
+    assertFree(
+      this.store.snapshot().appointments.filter((a) => a.id !== id),
+      professional,
+      start,
+      end,
+    );
 
     this.store.patchAppointment(id, {
       startsAt: start.toISOString(),
       endsAt: end.toISOString(),
-      professionalId: professionalId ?? current.professionalId,
+      professionalId: professional,
     });
   }
 
@@ -383,4 +381,29 @@ export function provideDemoData(): Provider[] {
     { provide: TenantRepository, useClass: DemoTenantRepository },
     { provide: ClientAuth, useClass: DemoClientAuth },
   ];
+}
+
+/**
+ * Trava de conflito do modo demonstração, a mesma para criar e reagendar.
+ *
+ * Local porque aqui não há concorrência real. A implementação Firebase NÃO
+ * pode fazer isso no cliente: a checagem tem de acontecer dentro de uma
+ * transação no servidor.
+ */
+function assertFree(
+  appointments: readonly Appointment[],
+  professionalId: Id,
+  startsAt: Date,
+  endsAt: Date,
+): void {
+  const conflict = appointments.some(
+    (a) =>
+      a.professionalId === professionalId &&
+      BLOCKING_STATUSES.includes(a.status) &&
+      new Date(a.startsAt) < endsAt &&
+      startsAt < new Date(a.endsAt),
+  );
+  if (conflict) {
+    throw new Error('Esse profissional já tem atendimento nesse horário.');
+  }
 }

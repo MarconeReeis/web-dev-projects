@@ -8,6 +8,7 @@ export type AtrButtonVariant =
   | 'secondary'
   | 'success'
   | 'destructive'
+  | 'destructive-outline'
   | 'ghost'
   | 'link';
 
@@ -29,6 +30,11 @@ const VARIANT: Record<AtrButtonVariant, string> = {
   secondary: 'bg-secondary text-secondary-foreground hover:bg-border',
   success: 'bg-success text-success-foreground hover:brightness-110',
   destructive: 'bg-destructive text-destructive-foreground hover:brightness-110',
+  // Ação destrutiva que não é a principal da tela ("Cancelar agendamento"
+  // abaixo de "Reagendar"): avisa pela cor sem disputar atenção com o botão
+  // cheio. A confirmação que vem depois é que usa o vermelho sólido.
+  'destructive-outline':
+    'bg-card text-destructive border border-destructive/40 hover:bg-destructive-soft',
   ghost: 'text-foreground hover:bg-accent hover:text-accent-foreground',
   link: 'text-primary underline-offset-4 hover:underline',
 };
