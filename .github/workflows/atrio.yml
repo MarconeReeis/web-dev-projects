@@ -1,0 +1,68 @@
+# Átrio — conferência a cada push e pull request.
+#
+# Roda só quando algo em atrio/ muda: o repositório guarda outros projetos,
+# e eles não têm por que esperar nem pagar por esta verificação.
+#
+# A ordem é do mais barato ao mais caro: as regras do banco (segundos) antes
+# dos builds (minutos). Se o horário duplo voltar a ser possível, o aviso
+# chega antes de alguém esperar o build terminar.
+#
+# Ainda não publica nada nem aplica migração: isso entra quando existir o
+# banco de produção (docs/ROADMAP.md, fase 3).
+
+name: Átrio
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'atrio/**'
+      - '.github/workflows/atrio.yml'
+  pull_request:
+    paths:
+      - 'atrio/**'
+      - '.github/workflows/atrio.yml'
+
+# Dois pushes seguidos: o primeiro é cancelado, só o mais novo importa.
+concurrency:
+  group: atrio-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    name: Testes e builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NG_CLI_ANALYTICS: 'false'
+    defaults:
+      run:
+        working-directory: atrio
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 24: o Angular 22 exige 22.22.3+, 24.15+ ou 26+.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: atrio/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Regras do banco (Postgres em WebAssembly)
+        run: npm run test:db
+
+      - name: Camada de dados
+        run: npx ng test @atrio/data
+
+      - name: Build de produção — painel
+        run: npx ng build admin
+
+      - name: Build de produção — app do cliente
+        run: npx ng build booking
