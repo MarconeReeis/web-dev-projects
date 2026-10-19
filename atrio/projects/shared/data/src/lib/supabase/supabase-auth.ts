@@ -1,5 +1,5 @@
 import { Injectable, Provider, inject } from '@angular/core';
-import { AuthError, User, createClient } from '@supabase/supabase-js';
+import { AuthError, User } from '@supabase/supabase-js';
 import { BehaviorSubject, Observable, filter } from 'rxjs';
 import { ClientAccount, ClientAuthError, NewClientAccount } from '../models/client-account';
 import {
@@ -16,6 +16,7 @@ import {
   SupabaseDataConfig,
   SupabaseSync,
   SupabaseTenantScope,
+  createSupabaseClient,
 } from './supabase-core';
 import {
   SupabaseAppointmentRepository,
@@ -149,10 +150,7 @@ export function provideSupabaseData(config: SupabaseDataConfig): Provider[] {
     { provide: SUPABASE_CONFIG, useValue: config },
     {
       provide: SUPABASE_CLIENT,
-      useFactory: () =>
-        createClient(config.url, config.key, {
-          auth: { persistSession: true, autoRefreshToken: true, storageKey: 'atrio.auth' },
-        }),
+      useFactory: () => createSupabaseClient(config.url, config.key, 'atrio.auth.cliente'),
     },
     SupabaseSync,
     SupabaseTenantScope,

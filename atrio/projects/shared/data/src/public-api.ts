@@ -18,6 +18,7 @@ export * from './lib/models/professional';
 export * from './lib/models/service';
 export * from './lib/models/client';
 export * from './lib/models/client-account';
+export * from './lib/models/staff';
 export * from './lib/models/appointment';
 export * from './lib/models/finance';
 export * from './lib/models/money';
@@ -33,6 +34,8 @@ export * from './lib/demo/demo-seed';
 export * from './lib/demo/demo-store';
 export * from './lib/demo/demo-repositories';
 export * from './lib/demo/demo-auth';
+export * from './lib/demo/demo-staff-auth';
 
 export { provideSupabaseData } from './lib/supabase/supabase-auth';
+export { provideSupabaseStaffAuth } from './lib/supabase/supabase-staff-auth';
 export type { SupabaseDataConfig } from './lib/supabase/supabase-core';

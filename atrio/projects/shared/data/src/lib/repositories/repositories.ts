@@ -7,6 +7,7 @@ import {
   PaymentMethod,
 } from '../models/appointment';
 import { ClientAccount, NewClientAccount } from '../models/client-account';
+import { StaffSession } from '../models/staff';
 import { Cents, DateRange, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
 import { Professional } from '../models/professional';
@@ -189,5 +190,23 @@ export abstract class ClientAuth {
    * Pede o link de nova senha. Resolve igual exista a conta ou não: dizer
    * "esse e-mail não tem cadastro" entrega a quem perguntar quem é cliente.
    */
+  abstract sendPasswordReset(email: string): Promise<void>;
+}
+
+/**
+ * Login da equipe da barbearia (painel).
+ *
+ * Separado de ClientAuth de propósito: uma conta de cliente que entrasse
+ * aqui não acharia barbearia nenhuma — e é exatamente o que precisa
+ * acontecer. Quem decide quem é equipe é o vínculo no banco, não o app.
+ *
+ * Falhas que a tela precisa explicar chegam como `StaffAuthError`.
+ */
+export abstract class StaffAuth {
+  /** Sessão aberta neste aparelho; null quando ninguém entrou. */
+  abstract watchSession(): Observable<StaffSession | null>;
+  abstract signIn(email: string, password: string): Promise<StaffSession>;
+  abstract signOut(): Promise<void>;
+  /** Resolve igual exista a conta ou não. */
   abstract sendPasswordReset(email: string): Promise<void>;
 }

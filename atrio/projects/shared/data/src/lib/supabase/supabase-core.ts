@@ -1,5 +1,5 @@
 import { Injectable, InjectionToken, inject } from '@angular/core';
-import { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
+import { PostgrestError, SupabaseClient, createClient } from '@supabase/supabase-js';
 import {
   EMPTY,
   Observable,
@@ -26,6 +26,19 @@ export interface SupabaseDataConfig {
 
 export const SUPABASE_CONFIG = new InjectionToken<SupabaseDataConfig>('SUPABASE_CONFIG');
 export const SUPABASE_CLIENT = new InjectionToken<SupabaseClient>('SUPABASE_CLIENT');
+
+/**
+ * Um cliente Supabase com a sessão guardada sob uma chave própria do app.
+ *
+ * Chave por app porque, publicados no mesmo domínio, os dois dividiriam o
+ * armazenamento do navegador: o cliente logado para marcar um corte
+ * apareceria logado no painel da barbearia — e vice-versa.
+ */
+export function createSupabaseClient(url: string, key: string, storageKey: string): SupabaseClient {
+  return createClient(url, key, {
+    auth: { persistSession: true, autoRefreshToken: true, storageKey },
+  });
+}
 
 /**
  * Quando reconsultar.

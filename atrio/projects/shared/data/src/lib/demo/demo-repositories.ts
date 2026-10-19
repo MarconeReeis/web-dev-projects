@@ -23,10 +23,12 @@ import {
   FinanceRepository,
   ProfessionalRepository,
   ServiceRepository,
+  StaffAuth,
   TenantRepository,
   TimeBlockRepository,
 } from '../repositories/repositories';
 import { DemoClientAuth } from './demo-auth';
+import { DemoStaffAuth } from './demo-staff-auth';
 import { sortProfessionals } from './demo-seed';
 import {
   DemoStore,
@@ -448,6 +450,7 @@ export function provideDemoData(): Provider[] {
     { provide: TenantRepository, useClass: DemoTenantRepository },
     { provide: AvailabilityRepository, useClass: DemoAvailabilityRepository },
     { provide: ClientAuth, useClass: DemoClientAuth },
+    { provide: StaffAuth, useClass: DemoStaffAuth },
   ];
 }
 
