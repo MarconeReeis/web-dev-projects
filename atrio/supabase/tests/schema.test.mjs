@@ -757,3 +757,75 @@ describe('histórico do balcão ligado à conta', () => {
     assert.equal((await as(IMPOSTOR, `select id from public.appointments where id = $1`, [row.id])).length, 0);
   });
 });
+
+describe('excluir minha conta (LGPD)', () => {
+  let anaClient;
+  let paid;
+  let future;
+
+  before(async () => {
+    [{ id: anaClient }] = (await db.query(`select id from public.clients where user_id = $1`, [ANA])).rows;
+    // Um atendimento da Ana já pago (vira recebimento no caixa) e um futuro.
+    // Rafael: um teste anterior tirou a Barba do Diego (tela de Serviços).
+    [future] = await book(ANA, RAFAEL, BARBA, await nextWeek(2, '17:00'));
+    const [past] = (
+      await db.query(
+        `select id from public.appointments where client_id = $1 and status = 'agendado' and id <> $2 limit 1`,
+        [anaClient, future.id],
+      )
+    ).rows;
+    await as(STAFF, `select public.register_payment($1, 'pix')`, [past.id]);
+    paid = past.id;
+  });
+
+  test('anônimo não exclui nada; conta da equipe não sai pelo app', async () => {
+    assert.match(await fails(as(null, `select public.delete_my_account()`)), /permission denied/);
+    assert.equal(await fails(as(STAFF, `select public.delete_my_account()`)), 'conta_da_equipe');
+  });
+
+  test('o recebimento continua imutável fora da exclusão', async () => {
+    const reason = await fails(
+      as(STAFF, `update public.finance_entries set description = 'x' where appointment_id = $1`, [paid]),
+    );
+    assert.equal(reason, 'recebimento_imutavel');
+  });
+
+  test('a conta sai; o histórico fica sem o nome; o caixa fica com os valores', async () => {
+    const [before] = (await db.query(`select amount_cents from public.finance_entries where appointment_id = $1`, [paid])).rows;
+    const ids = (await db.query(`select id from public.appointments where client_id = $1`, [anaClient])).rows.map((r) => r.id);
+    assert.ok(ids.length >= 3);
+
+    await as(ANA, `select public.delete_my_account()`);
+
+    const { rows: user } = await db.query(`select 1 from auth.users where id = $1`, [ANA]);
+    const { rows: profile } = await db.query(`select 1 from public.profiles where id = $1`, [ANA]);
+    const { rows: clients } = await db.query(`select 1 from public.clients where user_id = $1 or id = $2`, [ANA, anaClient]);
+    assert.equal(user.length + profile.length + clients.length, 0);
+
+    // Os atendimentos da conta continuam existindo, sem nada que a identifique.
+    // (Um marcado no balcão com OUTRO telefone e nunca ligado à conta é da
+    // barbearia, não da conta — fica como está.)
+    const { rows: history } = await db.query(
+      `select client_id, client_name, client_phone, notes from public.appointments where id = any($1)`,
+      [ids],
+    );
+    assert.equal(history.length, ids.length);
+    for (const row of history) {
+      assert.deepEqual(row, { client_id: null, client_name: 'Cliente removido', client_phone: null, notes: null });
+    }
+
+    const [entry] = (await db.query(`select description, amount_cents from public.finance_entries where appointment_id = $1`, [paid])).rows;
+    assert.match(entry.description, /Cliente removido$/);
+    assert.equal(entry.amount_cents, before.amount_cents);
+
+    const [{ status }] = (await db.query(`select status from public.appointments where id = $1`, [future.id])).rows;
+    assert.equal(status, 'cancelado');
+  });
+
+  test('os dados de outros clientes ficam como estavam', async () => {
+    const { rows } = await db.query(`select 1 from public.appointments where client_name = 'Beto Lima'`);
+    assert.ok(rows.length > 0);
+    const { rows: beto } = await db.query(`select 1 from auth.users where id = $1`, [BETO]);
+    assert.equal(beto.length, 1);
+  });
+});
