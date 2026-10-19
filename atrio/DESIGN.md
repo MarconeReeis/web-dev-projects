@@ -389,8 +389,18 @@ botão.
 
 ### Tela inicial
 
-Ordem: cabeçalho com saudação → destaque → próximo agendamento (quando há) →
-agendar → **profissionais** → serviços → a barbearia → instalar.
+Ordem: cabeçalho com saudação → **próximo agendamento ou destaque** → agendar
+→ **profissionais** → serviços → a barbearia → instalar.
+
+**O topo é do próximo horário, quando há um.** Um card escuro — "Seu próximo
+agendamento", status, dia, início–fim, serviço e profissional, "Ver
+agendamento" — ocupa o lugar do banner da barbearia. Um ou outro, nunca os
+dois: quem tem horário marcado abre o app para achar o horário, e um banner
+acima empurraria o lembrete para baixo. Sem horário, o banner volta. O custo
+assumido é que o cliente fiel vê menos promoção.
+
+O lembrete fica até o atendimento **acabar**, não até começar: quem chega
+cinco minutos atrasado não deve ver o horário sumir da tela.
 
 Profissionais vêm antes dos serviços porque são o primeiro passo do
 agendamento. A seção pergunta "Com quem você quer agendar?" e usa cards em

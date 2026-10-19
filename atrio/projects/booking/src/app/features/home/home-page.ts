@@ -4,6 +4,7 @@ import { switchMap } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { InstallPrompt, TenantContext } from '@atrio/core';
 import {
+  APPOINTMENT_STATUS_LABEL,
   Appointment,
   AppointmentRepository,
   Professional,
@@ -16,7 +17,8 @@ import {
   formatTime,
   startOfDay,
 } from '@atrio/data';
-import { AtrButton, AtrCard, AtrIcon, initialsOf } from '@atrio/ui';
+import { AtrBadge, AtrBadgeTone, AtrButton, AtrCard, AtrIcon, initialsOf } from '@atrio/ui';
+import { STATUS_TONE } from '../appointments/appointment-rules';
 import { ClientSession } from '../../shared/client-session';
 
 const HORIZON_DAYS = 120;
@@ -31,11 +33,52 @@ const HORIZON_DAYS = 120;
 @Component({
   selector: 'bkg-home-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, AtrCard, AtrButton, AtrIcon],
+  imports: [RouterLink, AtrCard, AtrBadge, AtrButton, AtrIcon],
   host: { class: 'block' },
   template: `
-    <!-- Destaque da barbearia -->
-    @if (highlight(); as promo) {
+    <!-- Topo: o próximo horário do cliente, quando há; senão, o destaque da
+         barbearia. Um ou outro, nunca os dois: quem tem horário marcado
+         precisa achar o horário, e um banner acima empurraria o lembrete
+         para baixo. -->
+    @if (nextAppointment(); as next) {
+      <section class="rounded-surface relative overflow-hidden bg-ink p-5 text-ink-foreground">
+        <span
+          class="pointer-events-none absolute -top-16 -right-10 size-44 rounded-full bg-primary/25 blur-2xl"
+          aria-hidden="true"
+        ></span>
+
+        <div class="relative">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-xs font-bold tracking-wider text-ink-muted uppercase">
+              Seu próximo agendamento
+            </h2>
+            <atr-badge class="shrink-0" [tone]="tone(next)" [dot]="true">
+              {{ statusLabel(next) }}
+            </atr-badge>
+          </div>
+
+          <p class="mt-3 text-2xl leading-tight font-extrabold tracking-tight text-balance">
+            {{ dateLabel(next.startsAt) }}
+          </p>
+          <p class="tabular mt-1 font-bold text-primary">
+            {{ time(next.startsAt) }} – {{ time(next.endsAt) }}
+          </p>
+          <p class="mt-3 text-sm text-ink-muted">
+            {{ next.serviceName }} · {{ professionalName(next.professionalId) }}
+          </p>
+
+          <a
+            atrButton
+            class="mt-5"
+            [routerLink]="['/b', slug(), 'meus-horarios', next.id]"
+          >
+            Ver agendamento
+            <atr-icon name="chevron-right" [size]="16" />
+          </a>
+        </div>
+      </section>
+    } @else if (highlight(); as promo) {
+      <!-- Destaque da barbearia -->
       <section class="rounded-surface relative overflow-hidden bg-ink p-5 text-ink-foreground">
         <!-- Brilho decorativo: dá profundidade sem imagem, que a barbearia
              não tem como cadastrar ainda. -->
@@ -56,27 +99,6 @@ const HORIZON_DAYS = 120;
           }
         </div>
       </section>
-    }
-
-    <!-- Próximo agendamento -->
-    @if (nextAppointment(); as next) {
-      <a
-        class="mt-4 flex items-center gap-4 rounded-surface border border-primary bg-primary-soft p-4 transition-colors hover:brightness-97"
-        [routerLink]="['/b', slug(), 'meus-horarios']"
-      >
-        <span
-          class="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
-        >
-          <atr-icon name="calendar-check" [size]="20" />
-        </span>
-        <span class="min-w-0 flex-1">
-          <span class="block text-sm text-primary-soft-foreground">Seu próximo horário</span>
-          <span class="block truncate font-bold text-primary-soft-foreground">
-            {{ dateLabel(next.startsAt) }} · {{ time(next.startsAt) }}
-          </span>
-        </span>
-        <atr-icon name="chevron-right" [size]="18" class="shrink-0 text-primary-soft-foreground" />
-      </a>
     }
 
     <!-- Agendar -->
@@ -278,16 +300,32 @@ export class HomePage {
     return promo?.active ? promo : null;
   });
 
+  /**
+   * O horário que ainda não acabou — pelo FIM, não pelo início: quem chega
+   * cinco minutos atrasado não deve ver o lembrete sumir da tela.
+   */
   protected readonly nextAppointment = computed(() => {
     const now = Date.now();
     return (
       this.myAppointments().find(
         (appointment) =>
-          appointment.status === 'agendado' &&
-          new Date(appointment.startsAt).getTime() >= now,
+          (appointment.status === 'agendado' || appointment.status === 'em_atendimento') &&
+          new Date(appointment.endsAt).getTime() > now,
       ) ?? null
     );
   });
+
+  protected tone(appointment: Appointment): AtrBadgeTone {
+    return STATUS_TONE[appointment.status];
+  }
+
+  protected statusLabel(appointment: Appointment): string {
+    return APPOINTMENT_STATUS_LABEL[appointment.status];
+  }
+
+  protected professionalName(id: string): string {
+    return this.professionals().find((p) => p.id === id)?.name ?? '';
+  }
 
   private readonly serviceNames = computed(
     () => new Map(this.services().map((service) => [service.id, service.name])),
