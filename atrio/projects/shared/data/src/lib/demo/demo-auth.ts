@@ -102,6 +102,29 @@ export class DemoClientAuth extends ClientAuth {
     this.session$.next(null);
   }
 
+  /**
+   * Na demonstração não há link de e-mail: vale para quem está com a sessão
+   * aberta, o que basta para exercitar a tela.
+   */
+  async updatePassword(password: string): Promise<ClientAccount> {
+    await delay();
+    const current = this.session$.value;
+    if (!current) {
+      throw new ClientAuthError('link-invalido', 'Este link expirou ou já foi usado.');
+    }
+    // A conta fictícia mantém a senha fixa: o botão de acesso demonstrativo
+    // entra com ela, e trocá-la quebraria o botão para sempre neste aparelho.
+    if (current.id === DEMO_ACCOUNT.id) return current;
+
+    const accounts = await this.accounts();
+    const hash = await hashPassword(current.email, password);
+    write(
+      ACCOUNTS_KEY,
+      accounts.map((account) => (account.id === current.id ? { ...account, passwordHash: hash } : account)),
+    );
+    return current;
+  }
+
   async sendPasswordReset(): Promise<void> {
     // Nada é enviado no modo demonstração. A tela mostra a mesma mensagem que
     // mostrará com o Firebase — que também não diz se o e-mail existe.

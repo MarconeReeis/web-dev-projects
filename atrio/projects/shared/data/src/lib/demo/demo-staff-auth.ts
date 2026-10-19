@@ -58,6 +58,16 @@ export class DemoStaffAuth extends StaffAuth {
     this.session$.next(null);
   }
 
+  /** Na demonstração a senha é fixa; vale só para exercitar a tela. */
+  async updatePassword(): Promise<StaffSession> {
+    await delay();
+    const current = this.session$.value;
+    if (!current) {
+      throw new StaffAuthError('link-invalido', 'Este link expirou ou já foi usado.');
+    }
+    return current;
+  }
+
   async sendPasswordReset(): Promise<void> {
     await delay();
   }

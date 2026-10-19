@@ -95,10 +95,39 @@ export class SupabaseStaffAuth extends StaffAuth {
   }
 
   async sendPasswordReset(email: string): Promise<void> {
+    // Para a tela de nova senha, não para "Entrar": o link já abre a sessão,
+    // e mandar para "Entrar" levava a pessoa direto ao painel sem nunca
+    // definir a senha nova.
     const { error } = await this.client.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${location.origin}/entrar`,
+      redirectTo: `${location.origin}/nova-senha`,
     });
     if (error && error.status !== 400) throw translate(error);
+  }
+
+  async updatePassword(password: string): Promise<StaffSession> {
+    const { data: current } = await this.client.auth.getSession();
+    if (!current.session) {
+      throw new StaffAuthError('link-invalido', 'Este link expirou ou já foi usado. Peça um novo.');
+    }
+
+    const { data, error } = await this.client.auth.updateUser({ password });
+    if (error) {
+      if (error.code === 'same_password') {
+        throw new StaffAuthError('indisponivel', 'Escolha uma senha diferente da anterior.');
+      }
+      throw translate(error);
+    }
+
+    const staff = await this.staffOf(data.user);
+    if (!staff) {
+      await this.client.auth.signOut();
+      throw new StaffAuthError(
+        'sem-acesso',
+        'Senha alterada, mas esta conta não tem acesso a nenhuma barbearia.',
+      );
+    }
+    this.session$.next(staff);
+    return staff;
   }
 
   /**

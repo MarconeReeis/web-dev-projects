@@ -36,6 +36,7 @@ import {
 @Injectable()
 export class SupabaseClientAuth extends ClientAuth {
   private readonly client = inject(SUPABASE_CLIENT);
+  private readonly config = inject(SUPABASE_CONFIG);
 
   /** `undefined` até a sessão salva no aparelho ser lida. */
   private readonly session$ = new BehaviorSubject<ClientAccount | null | undefined>(undefined);
@@ -102,11 +103,29 @@ export class SupabaseClientAuth extends ClientAuth {
   }
 
   async sendPasswordReset(email: string): Promise<void> {
+    // O link do e-mail volta para a tela de nova senha DESTA barbearia. O
+    // endereço precisa estar em "Redirect URLs" no Supabase — senão ele
+    // manda para a Site URL e a pessoa cai fora do app.
     const { error } = await this.client.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: location.origin,
+      redirectTo: `${location.origin}/b/${this.config.tenantSlug()}/nova-senha`,
     });
     // Mesmo resultado exista a conta ou não; só falha de rede chega aqui.
     if (error && error.status !== 400) throw translate(error);
+  }
+
+  /**
+   * A sessão aberta pelo link do e-mail é a credencial: sem ela, o link
+   * venceu ou já foi usado.
+   */
+  async updatePassword(password: string): Promise<ClientAccount> {
+    const { data: current } = await this.client.auth.getSession();
+    if (!current.session) {
+      throw new ClientAuthError('link-invalido', 'Este link expirou ou já foi usado. Peça um novo.');
+    }
+
+    const { data, error } = await this.client.auth.updateUser({ password });
+    if (error) throw translate(error);
+    return this.publish(await this.accountOf(data.user));
   }
 
   private async accountOf(user: User): Promise<ClientAccount> {
@@ -141,6 +160,8 @@ function translate(error: AuthError): ClientAuthError {
       );
     case 'weak_password':
       return new ClientAuthError('indisponivel', 'Escolha uma senha mais forte.');
+    case 'same_password':
+      return new ClientAuthError('indisponivel', 'Escolha uma senha diferente da anterior.');
     default:
       console.error('[supabase auth]', error);
       return new ClientAuthError(

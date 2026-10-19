@@ -27,6 +27,8 @@ export type StaffAuthErrorCode =
   | 'credenciais'
   /** A conta existe, mas não pertence a nenhuma barbearia (um cliente, por exemplo). */
   | 'sem-acesso'
+  /** O link de nova senha venceu ou já foi usado. */
+  | 'link-invalido'
   | 'indisponivel';
 
 export class StaffAuthError extends Error {

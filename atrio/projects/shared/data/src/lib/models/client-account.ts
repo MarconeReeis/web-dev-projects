@@ -38,6 +38,8 @@ export type ClientAuthErrorCode =
   | 'email-em-uso'
   /** Conta criada, mas o provedor exige confirmar o e-mail antes de entrar. */
   | 'confirmacao-pendente'
+  /** O link de nova senha venceu ou já foi usado. */
+  | 'link-invalido'
   | 'indisponivel';
 
 export class ClientAuthError extends Error {

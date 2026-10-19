@@ -191,6 +191,12 @@ export abstract class ClientAuth {
    * "esse e-mail não tem cadastro" entrega a quem perguntar quem é cliente.
    */
   abstract sendPasswordReset(email: string): Promise<void>;
+
+  /**
+   * Define a senha nova. Vale na sessão aberta pelo link do e-mail — sem
+   * ela (link vencido ou já usado), falha com `link-invalido`.
+   */
+  abstract updatePassword(password: string): Promise<ClientAccount>;
 }
 
 /**
@@ -209,4 +215,7 @@ export abstract class StaffAuth {
   abstract signOut(): Promise<void>;
   /** Resolve igual exista a conta ou não. */
   abstract sendPasswordReset(email: string): Promise<void>;
+
+  /** Idem ClientAuth.updatePassword — e a conta continua precisando ser da equipe. */
+  abstract updatePassword(password: string): Promise<StaffSession>;
 }
