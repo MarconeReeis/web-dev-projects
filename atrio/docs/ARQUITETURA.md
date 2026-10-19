@@ -249,8 +249,12 @@ pela ficha ligada à conta — não pela tela, e não pelo telefone.
 gente troca de número, e ele é reatribuído —, e o da conta não é verificado.
 Por isso horários marcados no balcão antes de a pessoa ter conta não aparecem
 sozinhos em "Meus horários": ligar por telefone entregaria o histórico de
-outra pessoa a quem cadastrasse o número dela. A ligação fica para a equipe,
-ou para quando houver verificação por SMS. Entrar com Google e verificação do
+outra pessoa a quem cadastrasse o número dela. Quem liga é a equipe: no
+painel do atendimento, um horário do balcão cujo telefone bate com o de uma
+ficha do app **nesta barbearia** mostra a sugestão, e a equipe confirma. Daí
+em diante o histórico aparece para o cliente, e o que for marcado no balcão
+com aquele telefone já nasce ligado. Uma conta que só cadastrou o mesmo
+telefone, sem confirmação da equipe, não herda nada. Entrar com Google e verificação do
 e-mail ficam para quando o Supabase Auth entrar. O "Esqueci minha senha" do modo demonstração não
 envia nada; a mensagem é a mesma do real, que não revela se o e-mail tem
 conta.

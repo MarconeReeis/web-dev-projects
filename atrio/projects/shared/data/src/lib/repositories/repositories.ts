@@ -6,6 +6,7 @@ import {
   NewBooking,
   PaymentMethod,
 } from '../models/appointment';
+import { LinkSuggestion } from '../models/client';
 import { ClientAccount, NewClientAccount } from '../models/client-account';
 import { StaffSession } from '../models/staff';
 import { Cents, DateRange, Id, IsoDateTime } from '../models/common';
@@ -94,6 +95,20 @@ export abstract class AppointmentRepository {
     method: PaymentMethod,
     amount?: Cents,
   ): Promise<void>;
+
+  /**
+   * Para um agendamento do balcão, a ficha do app que parece ser da mesma
+   * pessoa — só entre quem já marcou nesta barbearia pelo app. Null quando
+   * não há.
+   */
+  abstract linkSuggestion(appointmentId: Id): Promise<LinkSuggestion | null>;
+
+  /**
+   * A equipe confirma: os agendamentos do balcão com o telefone da ficha
+   * passam a ser da conta (aparecem em "Meus horários"), e os próximos
+   * marcados no balcão já nascem ligados. Devolve quantos foram ligados.
+   */
+  abstract linkCounterHistory(clientId: Id): Promise<number>;
 }
 
 export abstract class ProfessionalRepository {

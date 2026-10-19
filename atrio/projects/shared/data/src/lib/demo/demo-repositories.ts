@@ -8,6 +8,7 @@ import {
   NewBooking,
   PaymentMethod,
 } from '../models/appointment';
+import { LinkSuggestion } from '../models/client';
 import { Cents, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
 import { Professional } from '../models/professional';
@@ -180,6 +181,18 @@ export class DemoAppointmentRepository extends AppointmentRepository {
 
   cancel(id: Id): Promise<void> {
     return this.changeStatus(id, 'cancelado');
+  }
+
+  /**
+   * Na demonstração os agendamentos do seed nascem sem conta, e "Meus
+   * horários" já casa pelo telefone (ver watchMine) — não há o que ligar.
+   */
+  async linkSuggestion(): Promise<LinkSuggestion | null> {
+    return null;
+  }
+
+  async linkCounterHistory(): Promise<number> {
+    return 0;
   }
 
   async changeStatus(id: Id, status: AppointmentStatus): Promise<void> {

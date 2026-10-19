@@ -53,10 +53,10 @@ e recebe.
 - [x] **Fotos no Storage** — feito em 19/10/2026. Foto de profissional e
       logo vão para o bucket `midia`, com envio só pela equipe da barbearia
       e na pasta dela; no banco fica o link.
-- [ ] **Ligar a ficha do balcão à conta do cliente** — M. Horários marcados
-      no balcão antes de a pessoa ter conta não aparecem em "Meus horários"
-      (de propósito: telefone não verificado não prova nada). A equipe
-      precisa de um jeito de fazer essa ligação.
+- [x] **Ligar a ficha do balcão à conta do cliente** — feito em
+      19/10/2026. No painel do atendimento, a equipe confirma "é a mesma
+      pessoa"; o histórico do balcão passa a aparecer no app e os próximos
+      já nascem ligados.
 
 ## Fase 2 — Segurança, LGPD e confiabilidade
 

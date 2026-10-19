@@ -1,5 +1,5 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs';
 import {
@@ -9,6 +9,7 @@ import {
   AppointmentStatus,
   Id,
   IsoDateTime,
+  LinkSuggestion,
   PAYMENT_METHOD_LABEL,
   PaymentMethod,
   ProfessionalRepository,
@@ -88,6 +89,47 @@ export interface AppointmentPanelData {
             }
           </div>
         </div>
+
+        <!-- Ficha do app para um cliente do balcão. Só sugestão: quem confirma
+             que a conta é mesmo dessa pessoa é a equipe, que a conhece. -->
+        @if (linked(); as count) {
+          <p
+            class="mt-4 flex items-start gap-2.5 rounded-2xl bg-success-soft px-4 py-3 text-sm text-success-soft-foreground"
+            role="status"
+          >
+            <atr-icon name="circle-check-big" [size]="18" class="mt-px shrink-0" />
+            <span>
+              Ligado à conta do app: {{ count }} horário{{ count === 1 ? '' : 's' }} do balcão
+              agora aparece{{ count === 1 ? '' : 'm' }} para o cliente, e os próximos também.
+            </span>
+          </p>
+        } @else if (suggestion(); as found) {
+          <div class="mt-4 rounded-2xl bg-primary-soft px-4 py-3.5 text-sm text-primary-soft-foreground">
+            <p class="flex items-start gap-2.5">
+              <atr-icon name="smartphone" [size]="18" class="mt-px shrink-0" />
+              <span>
+                <strong class="font-bold">{{ found.clientName }}</strong> tem conta no app com este
+                telefone. Ligar
+                {{ found.pending === 1 ? 'este horário' : 'este e mais ' + (found.pending - 1) + ' horários do balcão' }}
+                à conta? Eles passam a aparecer no app dele, e os próximos marcados no balcão também.
+              </span>
+            </p>
+            <div class="mt-3 flex gap-2">
+              <button
+                type="button"
+                atrButton
+                size="sm"
+                [disabled]="busy()"
+                (click)="linkToAccount(found.clientId)"
+              >
+                É a mesma pessoa, ligar
+              </button>
+              <button type="button" atrButton="ghost" size="sm" (click)="suggestion.set(null)">
+                Agora não
+              </button>
+            </div>
+          </div>
+        }
 
         <div class="mt-4 flex flex-wrap gap-2">
           <adm-status-badge [status]="appointment.status" />
@@ -315,6 +357,34 @@ export class AppointmentPanel {
     this.appointmentsRepo.watchById(this.data.appointmentId),
     { initialValue: null },
   );
+
+  /** Ficha do app que parece ser deste cliente do balcão (ver linkSuggestion). */
+  protected readonly suggestion = signal<LinkSuggestion | null>(null);
+  /** Quantos horários foram ligados, depois da confirmação. */
+  protected readonly linked = signal<number | null>(null);
+
+  constructor() {
+    // Só agendamento sem ficha (marcado no balcão) pede sugestão — e uma vez
+    // por painel aberto: o que chega depois pelo tempo real é o mesmo cliente.
+    let asked = false;
+    effect(() => {
+      const current = this.appointment();
+      if (!current || asked || current.client.clientId || !current.client.phone) return;
+      asked = true;
+      this.appointmentsRepo
+        .linkSuggestion(current.id)
+        .then((found) => this.suggestion.set(found))
+        .catch(() => undefined); // sem sugestão não é erro para mostrar
+    });
+  }
+
+  protected async linkToAccount(clientId: Id): Promise<void> {
+    await this.run(async () => {
+      const count = await this.appointmentsRepo.linkCounterHistory(clientId);
+      this.suggestion.set(null);
+      this.linked.set(count);
+    });
+  }
 
   private readonly professionals = toSignal(this.professionalsRepo.watchAll(true), {
     initialValue: [],

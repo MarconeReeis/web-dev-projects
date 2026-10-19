@@ -8,6 +8,7 @@ import {
   NewBooking,
   PaymentMethod,
 } from '../models/appointment';
+import { LinkSuggestion } from '../models/client';
 import { Cents, ClockTime, DateRange, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
 import { Professional } from '../models/professional';
@@ -387,6 +388,25 @@ export class SupabaseAppointmentRepository extends AppointmentRepository {
     if (error) throw toAppError(error);
     if (!data?.length) throw new Error('Agendamento não encontrado.');
     this.sync.changed();
+  }
+
+  async linkSuggestion(appointmentId: Id): Promise<LinkSuggestion | null> {
+    const { data, error } = await this.client.rpc('link_suggestion', {
+      p_appointment_id: appointmentId,
+    });
+    if (error) throw toAppError(error);
+
+    const row = (data as { client_id: string; client_name: string; client_phone: string | null; pending: number }[])[0];
+    return row
+      ? { clientId: row.client_id, clientName: row.client_name, clientPhone: row.client_phone, pending: row.pending }
+      : null;
+  }
+
+  async linkCounterHistory(clientId: Id): Promise<number> {
+    const { data, error } = await this.client.rpc('link_counter_history', { p_client_id: clientId });
+    if (error) throw toAppError(error);
+    this.sync.changed();
+    return data as number;
   }
 
   async registerPayment(id: Id, method: PaymentMethod, amount?: Cents): Promise<void> {

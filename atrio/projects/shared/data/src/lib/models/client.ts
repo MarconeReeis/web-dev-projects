@@ -30,3 +30,16 @@ export interface AppointmentClient {
   readonly name: string;
   readonly phone: string | null;
 }
+
+/**
+ * Uma ficha do app que parece ser a mesma pessoa de um agendamento do
+ * balcão (mesmo telefone, nesta barbearia). É sugestão: só vira ligação
+ * quando a equipe confirma — o telefone da conta não é verificado.
+ */
+export interface LinkSuggestion {
+  readonly clientId: Id;
+  readonly clientName: string;
+  readonly clientPhone: string | null;
+  /** Agendamentos do balcão com o mesmo telefone que iriam junto, este incluído. */
+  readonly pending: number;
+}
