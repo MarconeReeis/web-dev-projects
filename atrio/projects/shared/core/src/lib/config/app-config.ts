@@ -1,6 +1,6 @@
 import { InjectionToken, Provider } from '@angular/core';
 
-export type DataSource = 'demo' | 'firebase';
+export type DataSource = 'demo' | 'supabase';
 
 /**
  * Configuração do app, injetada na raiz.

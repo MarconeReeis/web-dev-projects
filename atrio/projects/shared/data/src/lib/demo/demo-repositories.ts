@@ -1,21 +1,23 @@
 import { Injectable, Provider, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, combineLatest, firstValueFrom, map } from 'rxjs';
 import {
   Appointment,
   AppointmentStatus,
   BLOCKING_STATUSES,
   NewAppointment,
+  NewBooking,
   PaymentMethod,
 } from '../models/appointment';
 import { Cents, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
 import { Professional } from '../models/professional';
-import { TimeBlock } from '../models/schedule';
+import { BusyInterval, TimeBlock } from '../models/schedule';
 import { Service } from '../models/service';
 import { Tenant } from '../models/tenant';
 import {
   AppointmentQuery,
   AppointmentRepository,
+  AvailabilityRepository,
   ClientAuth,
   FinanceQuery,
   FinanceRepository,
@@ -60,6 +62,7 @@ function digitsOf(phone: string | null): string {
 @Injectable()
 export class DemoAppointmentRepository extends AppointmentRepository {
   private readonly store = inject(DemoStore);
+  private readonly auth = inject(ClientAuth);
 
   watch(query: AppointmentQuery): Observable<readonly Appointment[]> {
     return this.store.appointments$().pipe(
@@ -81,21 +84,35 @@ export class DemoAppointmentRepository extends AppointmentRepository {
       .pipe(map((all) => all.find((a) => a.id === id) ?? null));
   }
 
-  watchByClientPhone(
-    phone: string,
-    range: { from: IsoDateTime; to: IsoDateTime },
-  ): Observable<readonly Appointment[]> {
-    const wanted = digitsOf(phone);
-    if (!wanted) return this.store.appointments$().pipe(map(() => []));
-
-    return this.store.appointments$().pipe(
-      map((all) =>
-        all
+  /**
+   * Na demonstração não há ficha ligada à conta: os agendamentos do seed
+   * nasceram sem conta. O telefone da conta logada faz as vezes da ligação —
+   * aqui é aceitável porque a conta e os dados são fictícios e do aparelho.
+   */
+  watchMine(range: { from: IsoDateTime; to: IsoDateTime }): Observable<readonly Appointment[]> {
+    return combineLatest([this.auth.watchSession(), this.store.appointments$()]).pipe(
+      map(([account, all]) => {
+        const wanted = digitsOf(account?.phone ?? '');
+        if (!wanted) return [];
+        return all
           .filter((appointment) => digitsOf(appointment.client.phone) === wanted)
           .filter((appointment) => withinRange(appointment.startsAt, range))
-          .sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
-      ),
+          .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+      }),
     );
+  }
+
+  async book(input: NewBooking): Promise<Appointment> {
+    const account = await firstValueFrom(this.auth.watchSession());
+    if (!account) throw new Error('Entre na sua conta para agendar.');
+
+    return this.create({
+      professionalId: input.professionalId,
+      serviceId: input.serviceId,
+      startsAt: input.startsAt,
+      notes: input.notes,
+      client: { clientId: null, name: account.name, phone: account.phone },
+    });
   }
 
   async create(input: NewAppointment): Promise<Appointment> {
@@ -157,6 +174,10 @@ export class DemoAppointmentRepository extends AppointmentRepository {
       endsAt: end.toISOString(),
       professionalId: professional,
     });
+  }
+
+  cancel(id: Id): Promise<void> {
+    return this.changeStatus(id, 'cancelado');
   }
 
   async changeStatus(id: Id, status: AppointmentStatus): Promise<void> {
@@ -334,6 +355,52 @@ export class DemoFinanceRepository extends FinanceRepository {
 }
 
 @Injectable()
+export class DemoAvailabilityRepository extends AvailabilityRepository {
+  private readonly store = inject(DemoStore);
+
+  /**
+   * Na demonstração tudo está no aparelho, mas o formato é o mesmo do
+   * servidor: o app do cliente aprende a calcular sem ver a agenda.
+   */
+  watchBusy(range: { from: IsoDateTime; to: IsoDateTime }): Observable<readonly BusyInterval[]> {
+    return combineLatest([this.store.appointments$(), this.store.blocks$()]).pipe(
+      map(([appointments, blocks]) => [
+        ...appointments
+          .filter((a) => BLOCKING_STATUSES.includes(a.status) && overlapsRange(a, range))
+          .map(
+            (a): BusyInterval => ({
+              kind: 'agendamento',
+              professionalId: a.professionalId,
+              startsAt: a.startsAt,
+              endsAt: a.endsAt,
+              // A demonstração não tem regras de acesso: todo id é "seu".
+              appointmentId: a.id,
+            }),
+          ),
+        ...blocks
+          .filter((b) => overlapsRange(b, range))
+          .map(
+            (b): BusyInterval => ({
+              kind: 'bloqueio',
+              professionalId: b.professionalId,
+              startsAt: b.startsAt,
+              endsAt: b.endsAt,
+              appointmentId: null,
+            }),
+          ),
+      ]),
+    );
+  }
+}
+
+function overlapsRange(
+  item: { startsAt: IsoDateTime; endsAt: IsoDateTime },
+  range: { from: IsoDateTime; to: IsoDateTime },
+): boolean {
+  return item.startsAt < range.to && item.endsAt > range.from;
+}
+
+@Injectable()
 export class DemoTimeBlockRepository extends TimeBlockRepository {
   private readonly store = inject(DemoStore);
 
@@ -379,6 +446,7 @@ export function provideDemoData(): Provider[] {
     { provide: FinanceRepository, useClass: DemoFinanceRepository },
     { provide: TimeBlockRepository, useClass: DemoTimeBlockRepository },
     { provide: TenantRepository, useClass: DemoTenantRepository },
+    { provide: AvailabilityRepository, useClass: DemoAvailabilityRepository },
     { provide: ClientAuth, useClass: DemoClientAuth },
   ];
 }

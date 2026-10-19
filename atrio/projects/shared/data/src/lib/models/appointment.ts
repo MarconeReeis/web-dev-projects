@@ -67,7 +67,19 @@ export interface Appointment extends TenantScoped, Audited {
   readonly notes: string | null;
 }
 
-/** Dados que o formulário de agendamento envia; o resto o servidor preenche. */
+/**
+ * O que o CLIENTE envia ao marcar pelo app. Sem dados do cliente nem preço:
+ * quem é vem da conta logada, e o preço, do catálogo — o servidor preenche
+ * os dois, para ninguém marcar em nome de outro nem com outro valor.
+ */
+export interface NewBooking {
+  readonly professionalId: Id;
+  readonly serviceId: Id;
+  readonly startsAt: IsoDateTime;
+  readonly notes: string | null;
+}
+
+/** Dados que a equipe envia ao marcar no balcão; o resto o servidor preenche. */
 export interface NewAppointment {
   readonly professionalId: Id;
   readonly serviceId: Id;

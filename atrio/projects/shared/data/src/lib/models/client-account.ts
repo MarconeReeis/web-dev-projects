@@ -36,6 +36,8 @@ export type ClientAuthErrorCode =
   /** E-mail ou senha errados — sem dizer qual, de propósito. */
   | 'credenciais'
   | 'email-em-uso'
+  /** Conta criada, mas o provedor exige confirmar o e-mail antes de entrar. */
+  | 'confirmacao-pendente'
   | 'indisponivel';
 
 export class ClientAuthError extends Error {

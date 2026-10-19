@@ -3,6 +3,7 @@ import {
   Appointment,
   AppointmentStatus,
   NewAppointment,
+  NewBooking,
   PaymentMethod,
 } from '../models/appointment';
 import { ClientAccount, NewClientAccount } from '../models/client-account';
@@ -10,7 +11,7 @@ import { Cents, DateRange, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
 import { Professional } from '../models/professional';
 import { Service } from '../models/service';
-import { TimeBlock } from '../models/schedule';
+import { BusyInterval, TimeBlock } from '../models/schedule';
 import { Tenant } from '../models/tenant';
 
 /**
@@ -18,15 +19,16 @@ import { Tenant } from '../models/tenant';
  *
  * São classes abstratas, não interfaces, porque assim servem de token de DI
  * sem um InjectionToken para cada uma — e o app passa a depender do contrato,
- * não do Firebase.
+ * não do backend.
  *
  * Na prática isso compra três coisas:
  *   - a UI inteira roda no modo demonstração, sem backend;
- *   - trocar Firestore por outro backend não encosta em componente;
- *   - teste injeta um fake sem emulador.
+ *   - trocar de backend não encosta em componente — já aconteceu uma vez,
+ *     de Firebase para Supabase, antes de existir uma linha de integração;
+ *   - teste injeta um fake sem banco.
  *
- * Leitura devolve Observable (o Firestore é realtime por natureza) e escrita
- * devolve Promise (operação pontual, com erro a tratar).
+ * Leitura devolve Observable (a tela acompanha mudanças) e escrita devolve
+ * Promise (operação pontual, com erro a tratar).
  */
 
 export interface AppointmentQuery {
@@ -41,35 +43,30 @@ export abstract class AppointmentRepository {
   abstract watchById(id: Id): Observable<Appointment | null>;
 
   /**
-   * Agendamentos de um cliente, identificado pelo telefone.
+   * Agendamentos do cliente logado, na barbearia atual.
    *
-   * O telefone é a chave porque o cliente da barbearia existe sem conta: ele
-   * é digitado no balcão. Enquanto não há autenticação, é também como o app
-   * do cliente reencontra o que a pessoa marcou.
-   *
-   * Em Firestore isto exige índice em `client.phone` + `startsAt`. E, quando
-   * a autenticação entrar, a consulta passa a ser por `client.clientId` —
-   * telefone é identificador fraco, duas pessoas trocam de número.
+   * Pela conta, nunca por telefone digitado: telefone não prova nada, e com
+   * ele qualquer um veria os horários de outro. Sem sessão, lista vazia.
    */
-  abstract watchByClientPhone(
-    phone: string,
-    range: DateRange,
-  ): Observable<readonly Appointment[]>;
+  abstract watchMine(range: DateRange): Observable<readonly Appointment[]>;
 
   /**
-   * Cria o agendamento.
+   * O cliente marca pelo app. Quem é e quanto custa, o servidor decide
+   * (ver NewBooking).
    *
-   * ATENÇÃO para a implementação Firebase: esta operação NÃO pode validar
-   * conflito no cliente. Dois celulares marcando o mesmo horário ao mesmo
-   * tempo passam pela validação local e gravam os dois. A checagem precisa
-   * acontecer dentro de uma transação no servidor (Cloud Function callable),
-   * e este método deve apenas chamá-la.
+   * Validação de conflito, expediente e bloqueio é do servidor — dois
+   * celulares no mesmo instante passariam por qualquer checagem local. Este
+   * método só chama a operação e devolve o agendamento gravado.
    */
+  abstract book(input: NewBooking): Promise<Appointment>;
+
+  /** A equipe marca no balcão: cliente por parâmetro, preço ajustável. */
   abstract create(input: NewAppointment): Promise<Appointment>;
 
   /**
-   * Move o agendamento. Mesma ressalva de `create`: no Firebase, o conflito
-   * é checado na transação do servidor, desconsiderando o próprio horário.
+   * Move o agendamento. O conflito é checado no servidor, desconsiderando o
+   * próprio horário. Cliente: só os próprios, com 2h de antecedência e sem
+   * trocar de profissional — a regra é do servidor.
    */
   abstract reschedule(
     id: Id,
@@ -77,13 +74,17 @@ export abstract class AppointmentRepository {
     professionalId?: Id,
   ): Promise<void>;
 
+  /** Mudança de status pela equipe (em atendimento, concluído…). */
   abstract changeStatus(id: Id, status: AppointmentStatus): Promise<void>;
+
+  /** Cancelamento — pelo cliente, com a regra das 2h; pela equipe, sem. */
+  abstract cancel(id: Id): Promise<void>;
 
   /**
    * Registra o pagamento e lança o recebimento no financeiro.
    *
    * As duas escritas são uma operação só: atendimento pago sem lançamento
-   * (ou o contrário) deixa o caixa errado. Em Firestore, batch ou transação.
+   * (ou o contrário) deixa o caixa errado: uma transação no servidor.
    *
    * `amount` ausente usa o preço congelado no agendamento.
    */
@@ -107,7 +108,7 @@ export abstract class ProfessionalRepository {
    * Existe porque o vínculo mora em `Professional.serviceIds` e a tela de
    * Serviços edita o outro lado dele. Como mexe em vários profissionais de
    * uma vez, é UMA operação: metade dos profissionais atualizados deixaria o
-   * catálogo discordando da equipe. Em Firestore, um batch.
+   * catálogo discordando da equipe.
    */
   abstract setServiceAssignment(
     serviceId: Id,
@@ -146,6 +147,17 @@ export abstract class FinanceRepository {
   abstract removeExpense(id: Id): Promise<void>;
 }
 
+/**
+ * Horários ocupados, para o cálculo de horários livres.
+ *
+ * Existe à parte da agenda porque o app do cliente não pode ler a agenda: ela
+ * tem nome e telefone de outros clientes e o motivo dos bloqueios. Este
+ * contrato entrega só quem está ocupado e quando (ver BusyInterval).
+ */
+export abstract class AvailabilityRepository {
+  abstract watchBusy(range: DateRange): Observable<readonly BusyInterval[]>;
+}
+
 export abstract class TimeBlockRepository {
   abstract watch(range: DateRange): Observable<readonly TimeBlock[]>;
   abstract create(block: Omit<TimeBlock, 'id'>): Promise<void>;
@@ -161,10 +173,9 @@ export abstract class TenantRepository {
 /**
  * Autenticação do cliente final (app de agendamento).
  *
- * Separada dos repositórios de dados porque o backend dela é outro — o
- * Firebase Auth, não o Firestore — e porque o painel da barbearia terá a sua,
- * com papéis e tenant na custom claim. Misturar as duas abriria a porta para
- * um cliente chegar ao painel.
+ * Separada dos repositórios de dados porque o painel da barbearia terá a
+ * sua, com papéis por barbearia. Misturar as duas abriria a porta para um
+ * cliente chegar ao painel.
  *
  * Falhas que a tela precisa explicar chegam como `ClientAuthError`.
  */

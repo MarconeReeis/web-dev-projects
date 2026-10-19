@@ -51,3 +51,21 @@ export function workingDay(
 ): DaySchedule {
   return { working: true, windows: [{ start, end }], breaks };
 }
+
+/**
+ * Um trecho ocupado da agenda, sem dizer de quem nem por quê.
+ *
+ * É o que o app do cliente recebe para calcular horários livres: a agenda de
+ * verdade tem nome e telefone de outros clientes, e o motivo dos bloqueios.
+ *
+ * `professionalId` nulo é bloqueio da barbearia inteira. `appointmentId` só
+ * vem preenchido nos agendamentos que quem pergunta pode ver — é o que deixa
+ * o reagendamento ignorar o próprio horário.
+ */
+export interface BusyInterval {
+  readonly kind: 'agendamento' | 'bloqueio';
+  readonly professionalId: Id | null;
+  readonly startsAt: IsoDateTime;
+  readonly endsAt: IsoDateTime;
+  readonly appointmentId: Id | null;
+}

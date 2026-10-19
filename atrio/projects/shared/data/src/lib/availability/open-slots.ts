@@ -1,9 +1,8 @@
 import { Appointment } from '../models/appointment';
 import { IsoDateTime } from '../models/common';
 import { Professional } from '../models/professional';
-import { TimeBlock } from '../models/schedule';
 import { Service } from '../models/service';
-import { availableSlots } from './availability';
+import { BusyAppointment, BusyBlock, availableSlots } from './availability';
 
 export interface OpenSlot {
   readonly startsAt: IsoDateTime;
@@ -16,8 +15,8 @@ export interface OpenSlotsParams {
   readonly service: Service;
   /** Candidatos. Quem não realiza o serviço é descartado aqui mesmo. */
   readonly professionals: readonly Professional[];
-  readonly existing: readonly Appointment[];
-  readonly blocks: readonly TimeBlock[];
+  readonly existing: readonly BusyAppointment[];
+  readonly blocks: readonly BusyBlock[];
   readonly now?: Date;
 }
 
@@ -78,7 +77,7 @@ export function openSlots(params: OpenSlotsParams): OpenSlot[] {
  */
 export function leastBusy(
   candidates: readonly Professional[],
-  dayAppointments: readonly Appointment[],
+  dayAppointments: readonly Pick<Appointment, 'professionalId' | 'status'>[],
 ): Professional | null {
   if (candidates.length === 0) return null;
 

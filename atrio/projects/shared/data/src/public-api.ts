@@ -7,8 +7,8 @@
  *   repositories/  contratos de leitura e escrita (classes abstratas = tokens de DI).
  *   demo/          implementação em memória para o modo demonstração.
  *
- * Quando o Firebase entrar, ele vira uma quarta pasta `firebase/` implementando
- * os mesmos contratos. Componente nenhum muda.
+ * `supabase/` implementa os mesmos contratos sobre o banco real. Componente
+ * nenhum muda.
  */
 
 export * from './lib/models/common';
@@ -25,6 +25,7 @@ export * from './lib/models/money';
 export * from './lib/period';
 export * from './lib/availability/availability';
 export * from './lib/availability/open-slots';
+export * from './lib/availability/busy';
 
 export * from './lib/repositories/repositories';
 
@@ -32,3 +33,6 @@ export * from './lib/demo/demo-seed';
 export * from './lib/demo/demo-store';
 export * from './lib/demo/demo-repositories';
 export * from './lib/demo/demo-auth';
+
+export { provideSupabaseData } from './lib/supabase/supabase-auth';
+export type { SupabaseDataConfig } from './lib/supabase/supabase-core';

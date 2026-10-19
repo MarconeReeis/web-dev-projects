@@ -37,13 +37,24 @@ export interface ConflictCandidate {
   readonly professionalId: Id;
 }
 
+/**
+ * O mínimo que o cálculo precisa de um atendimento: de quem, quando, e se
+ * ainda ocupa o horário. Aceitar só isso — e não o `Appointment` inteiro —
+ * é o que permite calcular sobre horários ocupados sem ver nome nem
+ * telefone de ninguém (ver BusyInterval).
+ */
+export type BusyAppointment = Pick<Appointment, 'professionalId' | 'status' | 'startsAt' | 'endsAt'>;
+
+/** Idem para bloqueio: o motivo não entra na conta. */
+export type BusyBlock = Pick<TimeBlock, 'professionalId' | 'startsAt' | 'endsAt'>;
+
 export interface AvailabilityParams {
   /** Dia a consultar; só a parte de calendário importa, a hora é ignorada. */
   readonly date: Date;
   readonly professional: Professional;
   readonly service: Service;
-  readonly existing: readonly Appointment[];
-  readonly blocks: readonly TimeBlock[];
+  readonly existing: readonly BusyAppointment[];
+  readonly blocks: readonly BusyBlock[];
   /** Instante atual. Passado, remove os horários que já vencerem. */
   readonly now?: Date;
   readonly granularityMinutes?: number;
@@ -114,8 +125,8 @@ export function expandWindows(day: DaySchedule): TimeWindow[] {
  */
 export function hasConflict(
   candidate: ConflictCandidate,
-  existing: readonly Appointment[],
-  blocks: readonly TimeBlock[],
+  existing: readonly BusyAppointment[],
+  blocks: readonly BusyBlock[],
 ): boolean {
   const start = Date.parse(candidate.startsAt);
   const end = Date.parse(candidate.endsAt);
