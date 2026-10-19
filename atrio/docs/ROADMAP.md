@@ -35,12 +35,10 @@ e recebe.
       `tenant_members`. Falta só a tela de equipe (convidar e remover
       pessoas): por enquanto a conta é criada no Supabase — ver
       `supabase/README.md`.
-- [ ] **Painel no banco** — G. Ligar ao Supabase o que hoje é demonstração:
-      - agenda (ler em tempo real, marcar no balcão, mudar status, receber
-        pagamento) — as funções do banco já existem;
-      - profissionais e serviços (salvar expediente e "quem faz o quê" numa
-        operação só — precisa de uma função nova no banco para ser atômico);
-      - bloqueios, financeiro (despesas) e configurações da barbearia.
+- [x] **Painel no banco** — feito em 19/10/2026. Agenda em tempo real,
+      marcar no balcão, status, pagamento, profissionais, serviços,
+      bloqueios, financeiro e configurações. As escritas que tocam várias
+      tabelas viraram funções do banco (uma transação cada).
 - [ ] **Cadastrar uma barbearia sem SQL** — M. Hoje barbearia nova e o
       primeiro dono entram por comando no banco. Para o piloto, basta um
       script ou uma tela interna; cadastro self-service fica para depois.

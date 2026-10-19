@@ -5,9 +5,10 @@ supabase/
 ├── migrations/
 │   ├── 20261019000100_schema.sql     tabelas, tipos, regra de horário duplo, gatilhos
 │   ├── 20261019000200_security.sql   RLS: quem enxerga e quem escreve o quê
-│   └── 20261019000300_booking.sql    marcar, reagendar, cancelar, receber, horários ocupados
+│   ├── 20261019000300_booking.sql    marcar, reagendar, cancelar, receber, horários ocupados
+│   └── 20261019000400_admin.sql      salvar profissional, serviço e configurações numa operação
 ├── seed.sql                          a Navalha & Co. do modo demonstração
-└── tests/schema.test.mjs             35 testes contra Postgres de verdade
+└── tests/schema.test.mjs             42 testes contra Postgres de verdade
 ```
 
 ## Testar
@@ -102,19 +103,26 @@ para o app decidir o que fazer:
 `sem_permissao` · `nao_pagavel` · `transicao_invalida` · `pagamento_imutavel` ·
 `campo_congelado` · `recebimento_imutavel` · `janela_invalida`
 
-## O app ligado ao banco
+## Os apps ligados ao banco
 
-`provideSupabaseData()` (em `@atrio/data`, pasta `lib/supabase/`) implementa os
-contratos do **app do cliente**: vitrine, horários ocupados, marcar,
-reagendar, cancelar, "Meus horários" e a conta (Supabase Auth). O app do
-cliente usa o banco quando `dataSource` é `'supabase'` em
-`projects/booking/src/environments/environment.ts`; `'demo'` volta ao modo
-demonstração, sem rede.
+Os dois apps usam os mesmos repositórios (`@atrio/data`, pasta
+`lib/supabase/`) — quem pode o quê é decidido pela RLS e pelas funções do
+banco, não pelo app. O que muda entre eles:
 
-**O painel continua no modo demonstração.** Ele depende do login da equipe,
-que ainda não existe — sem ele, as regras do banco não devolvem nada. As
-operações só da equipe (salvar profissional, receber pagamento…) respondem
-com um erro dizendo isso, em vez de falhar em silêncio.
+| | App do cliente (`provideSupabaseData`) | Painel (`provideSupabaseAdminData`) |
+| --- | --- | --- |
+| De qual barbearia | do endereço (`/b/:slug`) | do vínculo da conta da equipe |
+| Login | cliente (`profiles`) | equipe (`tenant_members`) |
+| Tempo real | não — reconsulta ao abrir, após escrever e ao voltar à aba | agenda, bloqueios e caixa, filtrados pela barbearia |
+| Sessão guardada em | `atrio.auth.cliente` | `atrio.auth.equipe` |
+
+Cada app escolhe a fonte em `src/environments/environment.ts`
+(`dataSource: 'supabase' | 'demo'`).
+
+As escritas do painel que tocam mais de uma tabela são funções
+(`20261019000400_admin.sql`), para nunca salvar pela metade:
+`save_professional` (dados, expediente e serviços), `set_service_professionals`
+e `save_tenant_settings` (só o dono).
 
 Três mudanças de contrato vieram do esquema:
 

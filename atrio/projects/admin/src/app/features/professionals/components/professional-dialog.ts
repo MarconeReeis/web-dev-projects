@@ -14,6 +14,7 @@ import {
   Weekday,
   clockToMinutes,
   workingDay,
+  newEntityId,
 } from '@atrio/data';
 import {
   AtrAvatar,
@@ -415,7 +416,7 @@ export class ProfessionalDialog {
 
     const stamp = new Date().toISOString();
     const professional: Professional = {
-      id: this.current?.id ?? `pro-${Date.now().toString(36)}`,
+      id: this.current?.id ?? newEntityId(),
       tenantId: this.current?.tenantId ?? this.tenant.id() ?? '',
       name: this.name().trim(),
       photoUrl: this.photoUrl(),

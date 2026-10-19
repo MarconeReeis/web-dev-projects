@@ -98,9 +98,10 @@ um cliente fictício que já tem histórico.
 
 **O painel administrativo e o fluxo do cliente estão completos.** O backend
 é Supabase: esquema, regras de acesso e operações de agenda estão em
-`supabase/`, testados com `npm run test:db`. **O app do cliente já usa o
-banco**; o painel continua no modo demonstração até existir o login da
-equipe. A seguir: login do painel, a tela de nova senha e o painel no banco.
+`supabase/`, testados com `npm run test:db`. **Os dois apps usam o banco**:
+o do cliente com conta de cliente, o painel com login da equipe e agenda em
+tempo real. O que falta até o lançamento está em
+[docs/ROADMAP.md](docs/ROADMAP.md).
 
 > Em modo demonstração os dois apps rodam em portas diferentes e, portanto, em
 > origens diferentes: cada um tem o seu `localStorage`. Um agendamento feito no

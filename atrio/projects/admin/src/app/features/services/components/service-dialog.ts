@@ -12,6 +12,7 @@ import {
   formatAmount,
   formatMoney,
   parseMoney,
+  newEntityId,
 } from '@atrio/data';
 import {
   AtrButton,
@@ -310,7 +311,7 @@ export class ServiceDialog {
 
     const stamp = new Date().toISOString();
     const service: Service = {
-      id: this.original?.id ?? `svc-${Date.now().toString(36)}`,
+      id: this.original?.id ?? newEntityId(),
       tenantId: this.original?.tenantId ?? this.tenant.id() ?? '',
       name: this.name().trim(),
       description: this.description().trim() || null,

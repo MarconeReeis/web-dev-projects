@@ -1,10 +1,26 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, isDevMode } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideAtrioConfig } from '@atrio/core';
-import { provideDemoData, provideSupabaseStaffAuth } from '@atrio/data';
+import { provideDemoData, provideSupabaseAdminData, provideSupabaseStaffAuth } from '@atrio/data';
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
 import { provideServiceWorker } from '@angular/service-worker';
+
+const supabase = { url: environment.supabaseUrl, key: environment.supabaseKey };
+
+/**
+ * De onde vêm dados e login.
+ *
+ * No modo demonstração com login real, o login vem DEPOIS dos dados para
+ * substituir o da demonstração: o último provider de um token é o que vale.
+ */
+function dataProviders() {
+  if (environment.dataSource === 'supabase') return provideSupabaseAdminData(supabase);
+  return [
+    provideDemoData(),
+    environment.auth === 'supabase' ? provideSupabaseStaffAuth(supabase) : [],
+  ];
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -34,13 +50,7 @@ export const appConfig: ApplicationConfig = {
       version: '0.1.0',
     }),
 
-    provideDemoData(),
-
-    // O login vem depois dos dados para substituir o da demonstração: o
-    // último provider registrado para um token é o que vale.
-    environment.auth === 'supabase'
-      ? provideSupabaseStaffAuth({ url: environment.supabaseUrl, key: environment.supabaseKey })
-      : [],
+    ...dataProviders(),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',
