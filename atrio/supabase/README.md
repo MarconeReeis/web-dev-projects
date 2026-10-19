@@ -10,9 +10,10 @@ supabase/
 │   ├── 20261019000500_onboarding.sql cadastrar barbearia (create_tenant)
 │   ├── 20261019000600_storage.sql    imagens: bucket "midia" e quem envia o quê
 │   ├── 20261019000700_client_link.sql histórico do balcão ligado à conta do cliente
-│   └── 20261019000800_delete_account.sql excluir minha conta (LGPD)
+│   ├── 20261019000800_delete_account.sql excluir minha conta (LGPD)
+│   └── 20261019000900_counter_pin.sql PIN do balcão
 ├── seed.sql                          a Navalha & Co. do modo demonstração
-└── tests/schema.test.mjs             62 testes contra Postgres de verdade
+└── tests/schema.test.mjs             70 testes contra Postgres de verdade
 ```
 
 ## Testar

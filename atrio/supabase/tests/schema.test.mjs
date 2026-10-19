@@ -48,7 +48,8 @@ const supabaseStandIn = `
   create table auth.users (
     id uuid primary key,
     email text,
-    raw_user_meta_data jsonb not null default '{}'::jsonb
+    raw_user_meta_data jsonb not null default '{}'::jsonb,
+    last_sign_in_at timestamptz
   );
   -- Como o Supabase: o usuário vem do JWT da requisição.
   create function auth.uid() returns uuid language sql stable as $$
@@ -827,5 +828,76 @@ describe('excluir minha conta (LGPD)', () => {
     assert.ok(rows.length > 0);
     const { rows: beto } = await db.query(`select 1 from auth.users where id = $1`, [BETO]);
     assert.equal(beto.length, 1);
+  });
+});
+
+describe('PIN do balcão', () => {
+  const status = (user = STAFF) => as(user, `select * from public.counter_pin_status($1)`, [TENANT]);
+  const verify = (pin, user = STAFF) => as(user, `select * from public.verify_counter_pin($1, $2)`, [TENANT, pin]).then((r) => r[0]);
+  const setPin = (next, current = null, user = STAFF) =>
+    as(user, `select * from public.set_counter_pin($1, $2, $3)`, [TENANT, next, current]).then((r) => r[0]);
+
+  test('começa sem PIN; criar o primeiro não pede nada', async () => {
+    assert.deepEqual((await status())[0], { configured: false, locked_until: null });
+    assert.equal((await setPin('1234')).ok, true);
+    assert.equal((await status())[0].configured, true);
+  });
+
+  test('PIN só de 4 números', async () => {
+    assert.equal(await fails(setPin('12a4', '1234')), 'pin_invalido');
+    assert.equal(await fails(setPin('12345', '1234')), 'pin_invalido');
+  });
+
+  test('ninguém lê o resumo do PIN — nem a própria equipe', async () => {
+    assert.match(await fails(as(STAFF, `select * from public.staff_pins`)), /permission denied/);
+  });
+
+  test('acerta; erra contando as tentativas', async () => {
+    assert.deepEqual(await verify('1234'), { ok: true, remaining: null, locked_until: null });
+    assert.deepEqual(await verify('0000'), { ok: false, remaining: 4, locked_until: null });
+    assert.deepEqual(await verify('1111'), { ok: false, remaining: 3, locked_until: null });
+    // Acertar zera a contagem.
+    assert.equal((await verify('1234')).ok, true);
+    assert.equal((await verify('0000')).remaining, 4);
+  });
+
+  test('5 erros travam por 5 minutos — até o PIN certo é recusado', async () => {
+    for (const pin of ['1111', '2222', '3333', '4444']) await verify(pin);
+    const locked = await verify('5555');
+    assert.equal(locked.ok, false);
+    assert.ok(new Date(locked.locked_until) > new Date());
+
+    const evenRight = await verify('1234');
+    assert.equal(evenRight.ok, false);
+    assert.ok(evenRight.locked_until);
+    assert.ok((await status())[0].locked_until);
+
+    // Passados os 5 minutos (simulado), volta a aceitar.
+    await db.query(`update public.staff_pins set locked_until = now() - interval '1 second'`);
+    assert.equal((await verify('1234')).ok, true);
+  });
+
+  test('trocar exige o PIN atual', async () => {
+    assert.deepEqual(await setPin('9876', '0000'), { ok: false, remaining: 4, locked_until: null });
+    assert.equal((await verify('1234')).ok, true); // não mudou
+
+    assert.equal((await setPin('9876', '1234')).ok, true);
+    assert.equal((await verify('9876')).ok, true);
+    assert.equal((await verify('1234')).ok, false);
+  });
+
+  test('esqueci o PIN: só depois de entrar com a senha há pouco', async () => {
+    const reset = () => as(STAFF, `select public.reset_counter_pin($1, '4321')`, [TENANT]);
+
+    assert.equal(await fails(reset()), 'reautenticar');
+
+    await db.query(`update auth.users set last_sign_in_at = now() where id = $1`, [STAFF]);
+    await reset();
+    assert.equal((await verify('4321')).ok, true);
+  });
+
+  test('outra barbearia e cliente não usam o PIN daqui', async () => {
+    assert.equal(await fails(status(OTHER_STAFF)), 'nao_encontrado');
+    assert.equal(await fails(verify('4321', BETO)), 'nao_encontrado');
   });
 });
