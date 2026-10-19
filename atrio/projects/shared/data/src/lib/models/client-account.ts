@@ -40,6 +40,8 @@ export type ClientAuthErrorCode =
   | 'confirmacao-pendente'
   /** O link de nova senha venceu ou já foi usado. */
   | 'link-invalido'
+  /** A conta é da equipe de uma barbearia: não sai pelo app do cliente. */
+  | 'conta-da-equipe'
   | 'indisponivel';
 
 export class ClientAuthError extends Error {

@@ -30,4 +30,9 @@ export class ClientSession {
   signOut(): Promise<void> {
     return this.auth.signOut();
   }
+
+  /** LGPD: conta fora, sessão encerrada. Ver ClientAuth.deleteAccount. */
+  deleteAccount(): Promise<void> {
+    return this.auth.deleteAccount();
+  }
 }

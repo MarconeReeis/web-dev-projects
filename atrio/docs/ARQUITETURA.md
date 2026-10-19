@@ -288,8 +288,13 @@ Nome e telefone de clientes finais são dados pessoais de terceiros sob
 responsabilidade da barbearia; o Átrio é operador. Antes de vender:
 
 - política de privacidade e consentimento no cadastro do cliente;
-- caminho de exclusão a pedido — apaga o cliente, anonimiza o nome nos
-  atendimentos passados e **preserva os valores do financeiro**;
+- caminho de exclusão a pedido — **feito**: "Excluir minha conta", em Meus
+  horários, apaga conta, perfil e fichas, cancela os horários futuros,
+  anonimiza nome, telefone e observações nos atendimentos passados e
+  **preserva os valores do financeiro** (o recebimento perde só o nome da
+  descrição — a única exceção à imutabilidade do caixa, e só dentro da
+  exclusão). Horários do balcão nunca ligados à conta são da barbearia, que
+  responde por eles;
 - a responsabilidade como operador precisa estar no contrato de assinatura.
 
 ---

@@ -212,6 +212,13 @@ export abstract class ClientAuth {
    * ela (link vencido ou já usado), falha com `link-invalido`.
    */
   abstract updatePassword(password: string): Promise<ClientAccount>;
+
+  /**
+   * Exclui a conta logada (LGPD): conta, perfil e fichas saem; horários
+   * futuros são cancelados; o histórico fica com a barbearia, sem o nome. A
+   * sessão termina junto.
+   */
+  abstract deleteAccount(): Promise<void>;
 }
 
 /**

@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { InstallPrompt, TenantContext } from '@atrio/core';
 import {
   APPOINTMENT_STATUS_LABEL,
@@ -39,6 +39,17 @@ const HORIZON_DAYS = 120;
          barbearia. Um ou outro, nunca os dois: quem tem horário marcado
          precisa achar o horário, e um banner acima empurraria o lembrete
          para baixo. -->
+    <!-- Volta da exclusão de conta: confirma que deu certo. -->
+    @if (accountDeleted()) {
+      <p
+        class="mb-4 flex items-start gap-3 rounded-2xl bg-success-soft px-4 py-3.5 text-sm text-success-soft-foreground"
+        role="status"
+      >
+        <atr-icon name="circle-check-big" [size]="18" class="mt-px shrink-0" />
+        Sua conta foi excluída. Obrigado por ter usado o app.
+      </p>
+    }
+
     @if (nextAppointment(); as next) {
       <section class="rounded-surface relative overflow-hidden bg-ink p-5 text-ink-foreground">
         <span
@@ -268,6 +279,11 @@ export class HomePage {
   protected readonly tenant = inject(TenantContext);
   protected readonly install = inject(InstallPrompt);
   private readonly session = inject(ClientSession);
+
+  /** Pelo estado da navegação, não pela URL: recarregar não repete o aviso. */
+  protected readonly accountDeleted = signal(
+    inject(Router).currentNavigation()?.extras.state?.['contaExcluida'] === true,
+  );
   private readonly servicesRepo = inject(ServiceRepository);
   private readonly professionalsRepo = inject(ProfessionalRepository);
   private readonly appointmentsRepo = inject(AppointmentRepository);

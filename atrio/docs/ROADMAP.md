@@ -60,10 +60,10 @@ e recebe.
 
 ## Fase 2 — Segurança, LGPD e confiabilidade
 
-- [ ] **LGPD** — M + revisão jurídica. Política de privacidade e termos de
-      uso; consentimento no cadastro; **excluir minha conta** no app (apaga a
-      conta, anonimiza o nome nos atendimentos e preserva os valores do
-      caixa); o papel do Átrio como operador no contrato com a barbearia.
+- [ ] **LGPD** — M + revisão jurídica. Feito em 19/10/2026: **excluir minha
+      conta** no app. Falta: política de privacidade e termos de uso,
+      consentimento no cadastro e o papel do Átrio como operador no contrato
+      com a barbearia.
 - [ ] **PIN no balcão** — M. O tablet fica logado o dia inteiro: Financeiro e
       ações destrutivas pedem um PIN por pessoa da equipe.
 - [ ] **Proteção contra abuso** — P. Captcha no cadastro (o Supabase aceita
@@ -78,9 +78,10 @@ e recebe.
 
 ## Fase 3 — Publicação
 
-- [ ] **Integração contínua** — M. GitHub Actions rodando build, `ng test` e
-      `npm run test:db` a cada push; migrações aplicadas no banco de produção
-      só a partir da `main`.
+- [x] **Integração contínua** — feito em 19/10/2026: GitHub Actions roda os
+      testes do banco, da camada de dados e os builds de produção a cada push
+      que toca `atrio/`. Falta, com o banco de produção: aplicar migrações a
+      partir da `main`.
 - [ ] **Banco de produção** — P. Criar o projeto em São Paulo, aplicar as
       migrações (sem o seed) e um `environment.prod.ts` em cada app apontando
       para ele.

@@ -128,6 +128,23 @@ export class SupabaseClientAuth extends ClientAuth {
     return this.publish(await this.accountOf(data.user));
   }
 
+  async deleteAccount(): Promise<void> {
+    const { error } = await this.client.rpc('delete_my_account');
+    if (error) {
+      if (error.hint === 'conta_da_equipe') {
+        throw new ClientAuthError('conta-da-equipe', error.message);
+      }
+      console.error('[supabase]', error);
+      throw new ClientAuthError(
+        'indisponivel',
+        'Não foi possível excluir a conta agora. Tente de novo em instantes.',
+      );
+    }
+    // A conta não existe mais: a sessão guardada no aparelho também sai.
+    await this.client.auth.signOut({ scope: 'local' });
+    this.session$.next(null);
+  }
+
   private async accountOf(user: User): Promise<ClientAccount> {
     const { data } = await this.client
       .from('profiles')

@@ -125,6 +125,19 @@ export class DemoClientAuth extends ClientAuth {
     return current;
   }
 
+  /**
+   * Na demonstração: a conta sai do aparelho e a sessão termina. A conta
+   * fictícia volta a existir no próximo acesso demonstrativo.
+   */
+  async deleteAccount(): Promise<void> {
+    await delay();
+    const current = this.session$.value;
+    if (!current) return;
+    const accounts = await this.accounts();
+    write(ACCOUNTS_KEY, accounts.filter((account) => account.id !== current.id));
+    await this.signOut();
+  }
+
   async sendPasswordReset(): Promise<void> {
     // Nada é enviado no modo demonstração. A tela mostra a mesma mensagem que
     // mostrará com o Firebase — que também não diz se o e-mail existe.
