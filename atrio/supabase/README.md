@@ -8,9 +8,10 @@ supabase/
 │   ├── 20261019000300_booking.sql    marcar, reagendar, cancelar, receber, horários ocupados
 │   ├── 20261019000400_admin.sql      salvar profissional, serviço e configurações numa operação
 │   ├── 20261019000500_onboarding.sql cadastrar barbearia (create_tenant)
-│   └── 20261019000600_storage.sql    imagens: bucket "midia" e quem envia o quê
+│   ├── 20261019000600_storage.sql    imagens: bucket "midia" e quem envia o quê
+│   └── 20261019000700_client_link.sql histórico do balcão ligado à conta do cliente
 ├── seed.sql                          a Navalha & Co. do modo demonstração
-└── tests/schema.test.mjs             52 testes contra Postgres de verdade
+└── tests/schema.test.mjs             58 testes contra Postgres de verdade
 ```
 
 ## Testar

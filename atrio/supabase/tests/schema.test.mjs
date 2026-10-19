@@ -676,3 +676,84 @@ describe('imagens no Storage', () => {
     assert.equal(own.length, 1);
   });
 });
+
+describe('histórico do balcão ligado à conta', () => {
+  // Ana tem conta e já marcou pelo app (ficha com user_id e telefone
+  // "(11) 91111-1111"). No balcão, a equipe digita o telefone de outro jeito.
+  const counter = async (clock, phone = '11 91111-1111') => {
+    const [row] = await as(
+      STAFF,
+      `select * from public.create_appointment($1, $2, $3, 'Ana (balcão)', $4)`,
+      [CAIO, CORTE, await nextWeek(4, clock), phone],
+    );
+    return row;
+  };
+  const anaSees = async (id) =>
+    (await as(ANA, `select id from public.appointments where id = $1`, [id])).length === 1;
+
+  let first;
+
+  test('antes da confirmação, o horário do balcão não é da conta', async () => {
+    first = await counter('10:00');
+    assert.equal(first.client_id, null);
+    assert.equal(await anaSees(first.id), false);
+  });
+
+  test('a equipe recebe a sugestão; a cliente e outra barbearia, não', async () => {
+    await counter('11:00', '+55 (11) 91111-1111'); // mesmo telefone, outro formato
+
+    const [suggestion] = await as(STAFF, `select * from public.link_suggestion($1)`, [first.id]);
+    assert.equal(suggestion.client_name, 'Ana Souza');
+    assert.equal(suggestion.pending, 2);
+
+    assert.equal((await as(ANA, `select * from public.link_suggestion($1)`, [first.id])).length, 0);
+    assert.equal((await as(OTHER_STAFF, `select * from public.link_suggestion($1)`, [first.id])).length, 0);
+  });
+
+  test('telefone sem ficha do app não sugere nada', async () => {
+    const stranger = await counter('12:00', '(11) 90000-0000');
+    assert.equal((await as(STAFF, `select * from public.link_suggestion($1)`, [stranger.id])).length, 0);
+  });
+
+  test('outra barbearia não confirma a ligação', async () => {
+    const [suggestion] = await as(STAFF, `select * from public.link_suggestion($1)`, [first.id]);
+    assert.equal(
+      await fails(as(OTHER_STAFF, `select public.link_counter_history($1)`, [suggestion.client_id])),
+      'nao_encontrado',
+    );
+    assert.equal(await anaSees(first.id), false);
+  });
+
+  test('confirmada, o histórico aparece para a cliente — e o que vier depois também', async () => {
+    const [suggestion] = await as(STAFF, `select * from public.link_suggestion($1)`, [first.id]);
+    const [{ count }] = await as(STAFF, `select public.link_counter_history($1) as count`, [suggestion.client_id]);
+
+    assert.equal(count, 2);
+    assert.equal(await anaSees(first.id), true);
+
+    // Marcado no balcão depois da confirmação: já nasce ligado.
+    const later = await counter('15:00', '(11) 91111-1111');
+    assert.equal(later.client_id, suggestion.client_id);
+    assert.equal(await anaSees(later.id), true);
+  });
+
+  test('conta que só cadastrou o mesmo telefone não herda nada', async () => {
+    // Alguém cria conta com o telefone do Beto e marca uma vez pelo app:
+    // a ficha existe, mas a equipe nunca confirmou — o balcão não liga.
+    const IMPOSTOR = '10000000-0000-4000-8000-000000000008';
+    await db.query(
+      `insert into auth.users (id, email, raw_user_meta_data)
+       values ($1, 'impostor@exemplo.com', '{"name":"Impostor","phone":"(11) 92222-2222"}')`,
+      [IMPOSTOR],
+    );
+    await book(IMPOSTOR, RAFAEL, BARBA, await nextWeek(5, '16:00'));
+
+    const [row] = await as(
+      STAFF,
+      `select * from public.create_appointment($1, $2, $3, 'Beto (balcão)', '(11) 92222-2222')`,
+      [DIEGO, CORTE, await nextWeek(4, '16:00')],
+    );
+    assert.equal(row.client_id, null);
+    assert.equal((await as(IMPOSTOR, `select id from public.appointments where id = $1`, [row.id])).length, 0);
+  });
+});
