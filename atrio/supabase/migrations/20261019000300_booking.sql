@@ -123,6 +123,9 @@ create function public.busy_intervals(
   p_to         timestamptz
 )
 returns table (
+  -- 'agendamento' ou 'bloqueio'. O app distribui o "qualquer profissional"
+  -- pela quantidade de atendimentos do dia, e bloqueio não é atendimento.
+  kind             text,
   professional_id  uuid,
   starts_at        timestamptz,
   ends_at          timestamptz,
@@ -142,7 +145,7 @@ begin
   end if;
 
   return query
-    select a.professional_id, a.starts_at, a.ends_at,
+    select 'agendamento'::text, a.professional_id, a.starts_at, a.ends_at,
            case
              when private.is_member(a.tenant_id) or private.is_own_client(a.client_id)
              then a.id
@@ -153,7 +156,7 @@ begin
       and a.starts_at < p_to and a.ends_at > p_from
     union all
     -- Bloqueio sem profissional vale para todos: professional_id nulo.
-    select b.professional_id, b.starts_at, b.ends_at, null::uuid
+    select 'bloqueio'::text, b.professional_id, b.starts_at, b.ends_at, null::uuid
     from public.time_blocks b
     where b.tenant_id = p_tenant_id
       and b.starts_at < p_to and b.ends_at > p_from;

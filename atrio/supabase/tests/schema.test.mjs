@@ -282,7 +282,11 @@ describe('quem vê o quê na agenda', () => {
     assert.ok(anon.every((r) => r.appointment_id === null));
     assert.ok(ana.some((r) => r.appointment_id !== null));
     // O bloqueio aparece como intervalo, sem o motivo.
-    assert.ok(anon.some((r) => r.professional_id === RAFAEL && Object.keys(r).length === 4));
+    const block = anon.find((r) => r.kind === 'bloqueio');
+    assert.deepEqual(Object.keys(block).sort(), [
+      'appointment_id', 'ends_at', 'kind', 'professional_id', 'starts_at',
+    ]);
+    assert.ok(anon.some((r) => r.kind === 'agendamento'));
   });
 
   test('horários ocupados não abrem janela maior que 62 dias', async () => {
