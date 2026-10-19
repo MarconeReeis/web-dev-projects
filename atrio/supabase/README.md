@@ -6,9 +6,10 @@ supabase/
 │   ├── 20261019000100_schema.sql     tabelas, tipos, regra de horário duplo, gatilhos
 │   ├── 20261019000200_security.sql   RLS: quem enxerga e quem escreve o quê
 │   ├── 20261019000300_booking.sql    marcar, reagendar, cancelar, receber, horários ocupados
-│   └── 20261019000400_admin.sql      salvar profissional, serviço e configurações numa operação
+│   ├── 20261019000400_admin.sql      salvar profissional, serviço e configurações numa operação
+│   └── 20261019000500_onboarding.sql cadastrar barbearia (create_tenant)
 ├── seed.sql                          a Navalha & Co. do modo demonstração
-└── tests/schema.test.mjs             42 testes contra Postgres de verdade
+└── tests/schema.test.mjs             47 testes contra Postgres de verdade
 ```
 
 ## Testar
@@ -50,10 +51,25 @@ Depois do `db push`, no painel do Supabase:
    O link leva a `/b/<barbearia>/nova-senha` (cliente) e a `/nova-senha`
    (painel).
 
+## Nova barbearia
+
+```bash
+npm run barbearia:nova -- --nome "Barbearia do Zé" --endereco barbearia-do-ze   --dono "José Silva" --email ze@exemplo.com [--telefone "(11) 95555-0000"] [--sem-catalogo]
+```
+
+Cria a conta do dono (senha temporária, mostrada no fim), a barbearia, o
+vínculo de dono e um catálogo inicial de serviços. As três últimas são uma
+transação só no banco (`create_tenant`), e se ela falhar a conta recém-criada
+é apagada. Se o e-mail já tiver conta, ela é reaproveitada sem mexer na senha.
+
+Precisa da chave **service_role** em `.env.local` (copie de `.env.example`;
+o Git ignora o arquivo). Essa chave ignora todas as regras do banco: só nesta
+máquina, só nos scripts de `tools/`, nunca em app nem em chat.
+
 ## Conta da equipe
 
-Não há cadastro aberto para o painel — de propósito. Até existir a tela de
-equipe, a conta nasce assim:
+Não há cadastro aberto para o painel — de propósito. Para pôr **mais gente**
+numa barbearia que já existe (até existir a tela de equipe):
 
 1. **Authentication → Users → Add user → Create new user**: e-mail, senha e
    **Auto Confirm User** marcado.

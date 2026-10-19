@@ -41,6 +41,8 @@ const ATTENDANT = '10000000-0000-4000-8000-000000000006';
 const supabaseStandIn = `
   create role anon nologin;
   create role authenticated nologin;
+  -- Como no Supabase: a chave de administrador ignora a RLS.
+  create role service_role nologin bypassrls;
   create schema extensions;
   create schema auth;
   create table auth.users (
@@ -58,11 +60,13 @@ const supabaseStandIn = `
 
 let db;
 
-/** Roda como `user` (null = anon), com a RLS valendo. */
+/** Roda como `user` (null = anon; 'service_role' = chave de administrador). */
 async function as(user, sql, params = []) {
   return db.transaction(async (tx) => {
-    await tx.query(`set local role ${user ? 'authenticated' : 'anon'}`);
-    await tx.query(`select set_config('request.jwt.claim.sub', $1, true)`, [user ?? '']);
+    const role = user === 'service_role' ? 'service_role' : user ? 'authenticated' : 'anon';
+    await tx.query(`set local role ${role}`);
+    const sub = user && user !== 'service_role' ? user : '';
+    await tx.query(`select set_config('request.jwt.claim.sub', $1, true)`, [sub]);
     return (await tx.query(sql, params)).rows;
   });
 }
@@ -556,5 +560,60 @@ describe('painel: escritas em mais de uma tabela', () => {
 
     assert.equal(await fails(save(ATTENDANT)), 'sem_permissao');
     assert.equal(await fails(save(OTHER_STAFF)), 'sem_permissao');
+  });
+});
+
+describe('cadastro de barbearia', () => {
+  const OWNER = '10000000-0000-4000-8000-000000000007';
+
+  before(async () => {
+    await db.query(`insert into auth.users (id, email) values ($1, 'ze@barbeariadoze.com')`, [OWNER]);
+  });
+
+  const create = (user, slug, email = 'ze@barbeariadoze.com', catalog = true) =>
+    as(
+      user,
+      `select public.create_tenant($1, 'Barbearia do Zé', $2, 'José Silva', '(11) 95555-0000', null, $3) as id`,
+      [slug, email, catalog],
+    );
+
+  test('só a chave de administrador cria barbearia', async () => {
+    assert.match(await fails(create(null, 'nao-deveria')), /permission denied/);
+    assert.match(await fails(create(STAFF, 'nao-deveria')), /permission denied/);
+  });
+
+  test('cria vitrine, ficha, dono e catálogo de uma vez', async () => {
+    const [{ id }] = await create('service_role', 'Barbearia-do-Ze');
+
+    const [tenant] = await as(null, `select slug, name from public.tenants where id = $1`, [id]);
+    assert.deepEqual(tenant, { slug: 'barbearia-do-ze', name: 'Barbearia do Zé' });
+
+    // O dono entra no painel dela — e só dela.
+    const members = await as(OWNER, `select tenant_id, role from public.tenant_members`);
+    assert.deepEqual(members, [{ tenant_id: id, role: 'dono' }]);
+    const [account] = await as(OWNER, `select admin_name, admin_email, subscription from public.tenant_accounts`);
+    assert.deepEqual(account, { admin_name: 'José Silva', admin_email: 'ze@barbeariadoze.com', subscription: 'trial' });
+
+    const services = await as(null, `select name from public.services where tenant_id = $1 order by price_cents`, [id]);
+    assert.deepEqual(services.map((s) => s.name), ['Acabamento', 'Barba', 'Corte', 'Corte + Barba']);
+  });
+
+  test('endereço repetido é recusado, e nada fica pela metade', async () => {
+    const before = await db.query(`select count(*)::int as n from public.tenants`);
+    assert.equal(await fails(create('service_role', 'barbearia-do-ze')), 'endereco_em_uso');
+    const after = await db.query(`select count(*)::int as n from public.tenants`);
+    assert.equal(after.rows[0].n, before.rows[0].n);
+  });
+
+  test('dono sem conta é recusado antes de criar qualquer coisa', async () => {
+    assert.equal(await fails(create('service_role', 'outra-do-ze', 'ninguem@exemplo.com')), 'dono_inexistente');
+    const rows = await db.query(`select 1 from public.tenants where slug = 'outra-do-ze'`);
+    assert.equal(rows.rows.length, 0);
+  });
+
+  test('sem catálogo inicial, quando pedido', async () => {
+    const [{ id }] = await create('service_role', 'segunda-do-ze', 'ze@barbeariadoze.com', false);
+    const services = await as(null, `select 1 from public.services where tenant_id = $1`, [id]);
+    assert.equal(services.length, 0);
   });
 });

@@ -10,7 +10,8 @@
     "build:booking": "ng build booking",
     "test": "ng test",
     "test:db": "node --test supabase/tests/schema.test.mjs",
-    "icons": "node tools/generate-icons.mjs"
+    "icons": "node tools/generate-icons.mjs",
+    "barbearia:nova": "node --env-file-if-exists=.env.local tools/nova-barbearia.mjs"
   },
   "private": true,
   "packageManager": "npm@11.19.1",

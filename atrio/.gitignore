@@ -42,3 +42,9 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Segredos locais — a chave service_role do Supabase mora aqui e nunca vai
+# para o Git (ver .env.example).
+.env
+.env.local
+.env.*.local

@@ -39,9 +39,9 @@ e recebe.
       marcar no balcão, status, pagamento, profissionais, serviços,
       bloqueios, financeiro e configurações. As escritas que tocam várias
       tabelas viraram funções do banco (uma transação cada).
-- [ ] **Cadastrar uma barbearia sem SQL** — M. Hoje barbearia nova e o
-      primeiro dono entram por comando no banco. Para o piloto, basta um
-      script ou uma tela interna; cadastro self-service fica para depois.
+- [x] **Cadastrar uma barbearia sem SQL** — feito em 19/10/2026:
+      `npm run barbearia:nova` (ver `supabase/README.md`). Cadastro
+      self-service, pela própria barbearia, fica para depois.
 - [x] **Tela de nova senha** — feito em 19/10/2026, nos dois apps. O link
       do e-mail leva a "Crie uma senha nova"; link vencido oferece pedir
       outro. Depende das Redirect URLs no Supabase (`supabase/README.md`).
