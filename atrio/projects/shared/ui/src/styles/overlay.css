@@ -17,6 +17,46 @@
   box-shadow: var(--shadow-strong);
 }
 
+/*
+ * A altura máxima do painel precisa chegar até o miolo rolável da moldura
+ * (atr-surface-shell). O CDK põe o limite no painel (max-height) e, entre
+ * ele e a moldura, ficam o contêiner do diálogo e o host do componente.
+ *
+ * Porcentagem não resolve: com o painel só com max-height, a altura dele é
+ * "indefinida", e o `h-full` da moldura vira altura do conteúdo. Só uma
+ * corrente de flex em coluna, com min-height: 0 em cada elo, deixa os
+ * filhos encolherem até o limite. Sem ela, a moldura passava do painel, o
+ * excesso era cortado e o miolo nunca rolava — num diálogo comprido, o
+ * rodapé com "Salvar" ficava fora da tela.
+ */
+.atr-overlay-panel,
+.atr-overlay-sheet {
+  display: flex;
+  flex-direction: column;
+}
+
+.atr-overlay-panel > .cdk-dialog-container,
+.atr-overlay-sheet > .cdk-dialog-container {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* O host do componente (adm-professional-dialog…) e a moldura dentro dele. */
+.atr-overlay-panel > .cdk-dialog-container > *,
+.atr-overlay-sheet > .cdk-dialog-container > * {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.atr-overlay-panel > .cdk-dialog-container > * > *,
+.atr-overlay-sheet > .cdk-dialog-container > * > * {
+  min-height: 0;
+}
+
 /* Painel lateral colado à direita */
 .atr-overlay-sheet {
   box-shadow: var(--shadow-strong);
