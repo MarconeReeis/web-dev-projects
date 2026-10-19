@@ -7,9 +7,10 @@ supabase/
 │   ├── 20261019000200_security.sql   RLS: quem enxerga e quem escreve o quê
 │   ├── 20261019000300_booking.sql    marcar, reagendar, cancelar, receber, horários ocupados
 │   ├── 20261019000400_admin.sql      salvar profissional, serviço e configurações numa operação
-│   └── 20261019000500_onboarding.sql cadastrar barbearia (create_tenant)
+│   ├── 20261019000500_onboarding.sql cadastrar barbearia (create_tenant)
+│   └── 20261019000600_storage.sql    imagens: bucket "midia" e quem envia o quê
 ├── seed.sql                          a Navalha & Co. do modo demonstração
-└── tests/schema.test.mjs             47 testes contra Postgres de verdade
+└── tests/schema.test.mjs             52 testes contra Postgres de verdade
 ```
 
 ## Testar
@@ -50,6 +51,19 @@ Depois do `db push`, no painel do Supabase:
 
    O link leva a `/b/<barbearia>/nova-senha` (cliente) e a `/nova-senha`
    (painel).
+
+## Imagens
+
+Foto de profissional e logo ficam no Storage, bucket `midia`, e no banco só o
+link. Leitura é pública (é a vitrine); envio e remoção, só a equipe da
+barbearia e só na pasta dela: `midia/<tenant_id>/profissionais/…` e
+`midia/<tenant_id>/marca/…`. Até 1 MB, JPEG, PNG ou WebP.
+
+As telas não mudaram: continuam produzindo a imagem embutida ao escolher o
+arquivo, e é o repositório que a envia ao salvar (`storeImage`), grava o
+link e apaga a anterior. Fotos antigas, gravadas como texto antes desta
+mudança, continuam aparecendo e migram sozinhas na próxima vez que o
+profissional (ou as configurações) for salvo.
 
 ## Nova barbearia
 

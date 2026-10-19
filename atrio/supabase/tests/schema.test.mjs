@@ -56,6 +56,22 @@ const supabaseStandIn = `
   $$;
   grant usage on schema auth to anon, authenticated;
   grant usage on schema public to anon, authenticated;
+
+  -- Storage: só o que as políticas usam. A RLS vem ligada, como no Supabase.
+  create schema storage;
+  create table storage.buckets (
+    id text primary key, name text, public boolean,
+    file_size_limit bigint, allowed_mime_types text[]
+  );
+  create table storage.objects (
+    id uuid primary key default gen_random_uuid(),
+    bucket_id text references storage.buckets (id),
+    name text not null,
+    owner uuid default auth.uid()
+  );
+  alter table storage.objects enable row level security;
+  grant usage on schema storage to anon, authenticated;
+  grant select, insert, update, delete on storage.objects to anon, authenticated;
 `;
 
 let db;
@@ -615,5 +631,48 @@ describe('cadastro de barbearia', () => {
     const [{ id }] = await create('service_role', 'segunda-do-ze', 'ze@barbeariadoze.com', false);
     const services = await as(null, `select 1 from public.services where tenant_id = $1`, [id]);
     assert.equal(services.length, 0);
+  });
+});
+
+describe('imagens no Storage', () => {
+  const OTHER_TENANT = '00000000-0000-4000-8000-000000000002';
+  const upload = (user, name) =>
+    as(user, `insert into storage.objects (bucket_id, name) values ('midia', $1) returning name`, [name]);
+
+  test('o bucket existe e é público para leitura', async () => {
+    const { rows } = await db.query(`select public, allowed_mime_types from storage.buckets where id = 'midia'`);
+    assert.deepEqual(rows[0], { public: true, allowed_mime_types: ['image/jpeg', 'image/png', 'image/webp'] });
+  });
+
+  test('equipe envia para a pasta da própria barbearia', async () => {
+    const [row] = await upload(STAFF, `${TENANT}/profissionais/foto.jpg`);
+    assert.equal(row.name, `${TENANT}/profissionais/foto.jpg`);
+  });
+
+  test('ninguém envia para a pasta de outra barbearia, nem fora do formato', async () => {
+    assert.match(await fails(upload(OTHER_STAFF, `${TENANT}/profissionais/intruso.jpg`)), /row-level security/);
+    assert.match(await fails(upload(ANA, `${TENANT}/profissionais/cliente.jpg`)), /row-level security/);
+    assert.match(await fails(upload(null, `${TENANT}/marca/anon.jpg`)), /row-level security/);
+    assert.match(await fails(upload(STAFF, `qualquer-coisa/foto.jpg`)), /row-level security/);
+  });
+
+  test('"../" no nome não escapa da pasta: o dono é sempre a primeira pasta', async () => {
+    // No Storage o nome é uma chave literal, sem navegação de diretório: este
+    // arquivo fica na pasta da OUTRA barbearia (quem enviou), com um nome
+    // esquisito — não na Navalha.
+    const name = `${OTHER_TENANT}/../${TENANT}/x.jpg`;
+    const { rows } = await db.query(`select private.tenant_of_path($1) as tenant`, [name]);
+    assert.equal(rows[0].tenant, OTHER_TENANT);
+  });
+
+  test('só a equipe dona remove', async () => {
+    const name = `${TENANT}/marca/logo.jpg`;
+    await upload(STAFF, name);
+
+    const other = await as(OTHER_STAFF, `delete from storage.objects where name = $1 returning name`, [name]);
+    assert.equal(other.length, 0);
+
+    const own = await as(STAFF, `delete from storage.objects where name = $1 returning name`, [name]);
+    assert.equal(own.length, 1);
   });
 });
