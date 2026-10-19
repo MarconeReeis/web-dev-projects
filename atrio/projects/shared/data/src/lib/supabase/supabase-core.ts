@@ -6,12 +6,14 @@ import {
   Subject,
   catchError,
   filter,
+  firstValueFrom,
   from,
   fromEvent,
   merge,
   of,
   switchMap,
 } from 'rxjs';
+import { StaffAuth } from '../repositories/repositories';
 
 export interface SupabaseDataConfig {
   readonly url: string;
@@ -88,13 +90,25 @@ export class SupabaseSync {
   }
 }
 
-/** A barbearia deste app, resolvida pelo slug uma vez só. */
+/**
+ * De qual barbearia são as consultas.
+ *
+ * Duas fontes, uma por app: no app do cliente, o endereço (/b/:slug); no
+ * painel, o vínculo da conta da equipe. Os repositórios não sabem qual —
+ * só pedem o id.
+ */
+export abstract class SupabaseTenantScope {
+  abstract id(): Promise<string>;
+  abstract row(): Promise<TenantRow | null>;
+}
+
+/** App do cliente: a barbearia do endereço, resolvida uma vez só. */
 @Injectable()
-export class SupabaseTenantScope {
+export class SlugTenantScope extends SupabaseTenantScope {
   private readonly client = inject(SUPABASE_CLIENT);
   private readonly slug = inject(SUPABASE_CONFIG).tenantSlug();
 
-  readonly row: Promise<TenantRow | null> = (async () => {
+  private readonly cached: Promise<TenantRow | null> = (async () => {
     const { data, error } = await this.client
       .from('tenants')
       .select('*')
@@ -104,10 +118,41 @@ export class SupabaseTenantScope {
     return data as TenantRow | null;
   })();
 
+  row(): Promise<TenantRow | null> {
+    return this.cached;
+  }
+
   async id(): Promise<string> {
-    const row = await this.row;
+    const row = await this.cached;
     if (!row) throw new Error(`Barbearia "${this.slug}" não encontrada.`);
     return row.id;
+  }
+}
+
+/**
+ * Painel: a barbearia da conta logada. Espera a sessão — antes do login não
+ * há de onde saber —, e relê a cada pedido, porque a sessão pode trocar
+ * (sair e entrar com outra conta) sem recarregar a página. A ficha da conta
+ * (responsável, assinatura) vem junto: a equipe pode lê-la.
+ */
+@Injectable()
+export class StaffTenantScope extends SupabaseTenantScope {
+  private readonly client = inject(SUPABASE_CLIENT);
+  private readonly auth = inject(StaffAuth);
+
+  async id(): Promise<string> {
+    const session = await firstValueFrom(this.auth.watchSession().pipe(filter(Boolean)));
+    return session.tenantId;
+  }
+
+  async row(): Promise<TenantRow | null> {
+    const { data, error } = await this.client
+      .from('tenants')
+      .select('*, tenant_accounts(subscription, admin_name, admin_email)')
+      .eq('id', await this.id())
+      .maybeSingle();
+    if (error) throw error;
+    return data as TenantRow | null;
   }
 }
 
@@ -129,13 +174,6 @@ export function toAppError(error: PostgrestError): Error {
   return new Error('Não foi possível concluir agora. Tente de novo em instantes.');
 }
 
-/** Para o que o painel ainda não faz pelo Supabase (ver supabase/README.md). */
-export function notWired(operation: string): Error {
-  return new Error(
-    `${operation}: o painel ainda não está ligado ao Supabase. Use o modo demonstração.`,
-  );
-}
-
 /** Instantes do banco ("…+00:00") no formato do app ("…Z"): o app compara como texto. */
 export function iso(value: string): string;
 export function iso(value: string | null): string | null;
@@ -155,6 +193,12 @@ export interface TenantRow {
   highlight: { title: string; subtitle: string | null; ctaLabel: string | null; active: boolean } | null;
   time_zone: string;
   created_at: string;
+  /** Só no painel: a equipe pode ler; o app do cliente, não. */
+  tenant_accounts?: {
+    subscription: 'trial' | 'ativa' | 'inadimplente' | 'cancelada';
+    admin_name: string;
+    admin_email: string;
+  } | null;
 }
 
 export interface ProfessionalRow {
@@ -212,4 +256,30 @@ export interface BusyRow {
   starts_at: string;
   ends_at: string;
   appointment_id: string | null;
+}
+
+export interface TimeBlockRow {
+  id: string;
+  tenant_id: string;
+  professional_id: string | null;
+  starts_at: string;
+  ends_at: string;
+  reason: string | null;
+}
+
+export interface FinanceRow {
+  id: string;
+  tenant_id: string;
+  kind: 'recebimento' | 'despesa';
+  description: string;
+  amount_cents: number;
+  occurred_at: string;
+  method: 'pix' | 'dinheiro' | 'cartao' | null;
+  appointment_id: string | null;
+  professional_id: string | null;
+  category:
+    | 'produtos' | 'aluguel' | 'energia' | 'agua' | 'internet' | 'manutencao' | 'marketing' | 'outros'
+    | null;
+  created_at: string;
+  updated_at: string;
 }

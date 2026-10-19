@@ -1,9 +1,40 @@
-import { Injectable, Provider, inject } from '@angular/core';
+import {
+  EnvironmentProviders,
+  Injectable,
+  Provider,
+  inject,
+  provideEnvironmentInitializer,
+} from '@angular/core';
 import { AuthError, User } from '@supabase/supabase-js';
 import { BehaviorSubject, Observable, filter } from 'rxjs';
 import { StaffAuthError, StaffRole, StaffSession } from '../models/staff';
-import { StaffAuth } from '../repositories/repositories';
-import { SUPABASE_CLIENT, createSupabaseClient } from './supabase-core';
+import {
+  AppointmentRepository,
+  AvailabilityRepository,
+  FinanceRepository,
+  ProfessionalRepository,
+  ServiceRepository,
+  StaffAuth,
+  TenantRepository,
+  TimeBlockRepository,
+} from '../repositories/repositories';
+import {
+  SUPABASE_CLIENT,
+  StaffTenantScope,
+  SupabaseSync,
+  SupabaseTenantScope,
+  createSupabaseClient,
+} from './supabase-core';
+import {
+  SupabaseAppointmentRepository,
+  SupabaseAvailabilityRepository,
+  SupabaseFinanceRepository,
+  SupabaseProfessionalRepository,
+  SupabaseRealtime,
+  SupabaseServiceRepository,
+  SupabaseTenantRepository,
+  SupabaseTimeBlockRepository,
+} from './supabase-repositories';
 
 /**
  * Login da equipe pelo Supabase Auth.
@@ -125,5 +156,31 @@ export function provideSupabaseStaffAuth(config: SupabaseStaffAuthConfig): Provi
       useFactory: () => createSupabaseClient(config.url, config.key, 'atrio.auth.equipe'),
     },
     { provide: StaffAuth, useClass: SupabaseStaffAuth },
+  ];
+}
+
+/**
+ * O painel inteiro no Supabase: login da equipe, dados da barbearia da conta
+ * e tempo real da agenda. Troca `provideDemoData()` no app.config do painel.
+ */
+export function provideSupabaseAdminData(
+  config: SupabaseStaffAuthConfig,
+): (Provider | EnvironmentProviders)[] {
+  return [
+    ...provideSupabaseStaffAuth(config),
+    SupabaseSync,
+    { provide: SupabaseTenantScope, useClass: StaffTenantScope },
+    { provide: TenantRepository, useClass: SupabaseTenantRepository },
+    { provide: ProfessionalRepository, useClass: SupabaseProfessionalRepository },
+    { provide: ServiceRepository, useClass: SupabaseServiceRepository },
+    { provide: AvailabilityRepository, useClass: SupabaseAvailabilityRepository },
+    { provide: AppointmentRepository, useClass: SupabaseAppointmentRepository },
+    { provide: TimeBlockRepository, useClass: SupabaseTimeBlockRepository },
+    { provide: FinanceRepository, useClass: SupabaseFinanceRepository },
+    SupabaseRealtime,
+    // Instancia o tempo real na partida: ninguém o injeta, ele só escuta.
+    provideEnvironmentInitializer(() => {
+      inject(SupabaseRealtime);
+    }),
   ];
 }

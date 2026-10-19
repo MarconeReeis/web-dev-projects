@@ -37,5 +37,5 @@ export * from './lib/demo/demo-auth';
 export * from './lib/demo/demo-staff-auth';
 
 export { provideSupabaseData } from './lib/supabase/supabase-auth';
-export { provideSupabaseStaffAuth } from './lib/supabase/supabase-staff-auth';
+export { provideSupabaseAdminData, provideSupabaseStaffAuth } from './lib/supabase/supabase-staff-auth';
 export type { SupabaseDataConfig } from './lib/supabase/supabase-core';

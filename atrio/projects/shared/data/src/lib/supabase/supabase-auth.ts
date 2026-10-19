@@ -15,6 +15,7 @@ import {
   SUPABASE_CONFIG,
   SupabaseDataConfig,
   SupabaseSync,
+  SlugTenantScope,
   SupabaseTenantScope,
   createSupabaseClient,
 } from './supabase-core';
@@ -150,10 +151,10 @@ function translate(error: AuthError): ClientAuthError {
 }
 
 /**
- * Liga o app ao Supabase. Troca `provideDemoData()` no app.config.
+ * Liga o app do CLIENTE ao Supabase. Troca `provideDemoData()` no app.config.
  *
- * Só o que o app do cliente usa: agenda da equipe, caixa e bloqueios dependem
- * do login do painel e continuam no modo demonstração.
+ * A barbearia vem do endereço (/b/:slug). O painel tem o seu:
+ * provideSupabaseAdminData.
  */
 export function provideSupabaseData(config: SupabaseDataConfig): Provider[] {
   return [
@@ -163,7 +164,7 @@ export function provideSupabaseData(config: SupabaseDataConfig): Provider[] {
       useFactory: () => createSupabaseClient(config.url, config.key, 'atrio.auth.cliente'),
     },
     SupabaseSync,
-    SupabaseTenantScope,
+    { provide: SupabaseTenantScope, useClass: SlugTenantScope },
     { provide: TenantRepository, useClass: SupabaseTenantRepository },
     { provide: ProfessionalRepository, useClass: SupabaseProfessionalRepository },
     { provide: ServiceRepository, useClass: SupabaseServiceRepository },
