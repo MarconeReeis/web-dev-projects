@@ -12,6 +12,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ATRIO_CONFIG, InstallPrompt, TenantContext } from '@atrio/core';
 import {
   Address,
+  CounterPin,
   DemoStore,
   Professional,
   ProfessionalRepository,
@@ -36,6 +37,7 @@ import {
 } from '@atrio/ui';
 import { readSquareAvatar } from '../../shared/photo';
 import { WEEKDAYS, daysLabel, groupWeek } from '../../shared/week-summary';
+import { PinGate } from '../../shared/pin/pin-gate';
 
 const EMPTY_ADDRESS: Address = {
   street: '',
@@ -255,6 +257,31 @@ const EMPTY_ADDRESS: Address = {
       </div>
     </atr-card>
 
+    <!-- PIN do balcão: fora do "Salvar" da tela — tem confirmação própria. -->
+    <atr-card
+      heading="PIN do balcão"
+      subheading="Protege o Financeiro e as ações que cancelam ou apagam, no tablet que fica logado o dia todo."
+      class="mt-4"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="text-sm text-muted-foreground">
+          @if (pinConfigured() === null) {
+            Conferindo…
+          } @else if (pinConfigured()) {
+            O PIN desta conta está ativo. Depois de digitado, vale por 5 minutos.
+          } @else {
+            Esta conta ainda não tem PIN. Ele será pedido ao abrir o Financeiro.
+          }
+        </p>
+        <button type="button" atrButton="outline" (click)="changePin()">
+          {{ pinConfigured() ? 'Trocar PIN' : 'Criar PIN' }}
+        </button>
+      </div>
+      @if (pinSaved()) {
+        <p class="mt-3 text-sm font-medium text-success" role="status">PIN salvo.</p>
+      }
+    </atr-card>
+
     <!-- Destaque do app do cliente -->
     <atr-card
       heading="Destaque no app do cliente"
@@ -358,6 +385,20 @@ export class SettingsPage {
   private readonly professionalsRepo = inject(ProfessionalRepository);
   private readonly overlay = inject(AtrOverlay);
   private readonly demo = inject(DemoStore);
+  private readonly pin = inject(CounterPin);
+  private readonly pinGate = inject(PinGate);
+
+  /** null enquanto confere. */
+  protected readonly pinConfigured = signal<boolean | null>(null);
+  protected readonly pinSaved = signal(false);
+
+  protected async changePin(): Promise<void> {
+    this.pinSaved.set(false);
+    if (await this.pinGate.change()) {
+      this.pinSaved.set(true);
+      this.pinConfigured.set(true);
+    }
+  }
 
   protected readonly tenant = inject(TenantContext);
   protected readonly config = inject(ATRIO_CONFIG);
@@ -386,7 +427,12 @@ export class SettingsPage {
   });
 
   constructor() {
-    // O tenant chega do repositório; com Firestore isso é assíncrono, então o
+    this.pin
+      .status()
+      .then((status) => this.pinConfigured.set(status.configured))
+      .catch(() => this.pinConfigured.set(false));
+
+    // O tenant chega do repositório; no banco isso é assíncrono, então o
     // formulário se preenche quando o dado chega, e não no construtor.
     //
     // O corpo vai dentro de untracked porque ele LÊ os campos do formulário

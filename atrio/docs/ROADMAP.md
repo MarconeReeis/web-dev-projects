@@ -64,8 +64,11 @@ e recebe.
       conta** no app. Falta: política de privacidade e termos de uso,
       consentimento no cadastro e o papel do Átrio como operador no contrato
       com a barbearia.
-- [ ] **PIN no balcão** — M. O tablet fica logado o dia inteiro: Financeiro e
-      ações destrutivas pedem um PIN por pessoa da equipe.
+- [x] **PIN no balcão** — feito em 19/10/2026. PIN de 4 números por conta
+      da equipe, conferido no servidor (5 erros travam por 5 minutos), pedido
+      para abrir o Financeiro e para cancelar atendimento, marcar falta,
+      remover bloqueio, excluir despesa e desativar profissional ou serviço
+      com horários futuros. Vale 5 minutos depois de digitado.
 - [ ] **Proteção contra abuso** — P. Captcha no cadastro (o Supabase aceita
       Cloudflare Turnstile e hCaptcha) — sem ele, um robô cria mil contas e
       enche a agenda.
@@ -88,9 +91,8 @@ e recebe.
 - [ ] **Hospedagem e domínio** — M. Os dois apps publicados com HTTPS
       (Cloudflare Pages, Vercel ou similar), domínio do Átrio, e o app do
       cliente em `…/b/<barbearia>`.
-- [ ] **PWA de verdade** — M. Testar instalação em Android e iPhone. O app
-      instalado precisa ter o nome e o ícone **da barbearia**, não do Átrio —
-      hoje o manifesto é fixo ("Agendar horário").
+- [ ] **PWA de verdade** — P. Testar a instalação em Android e iPhone com o
+      app publicado (HTTPS).
 - [ ] **Fuso da barbearia** — P/M. O banco já confere expediente no fuso da
       barbearia; o app ainda calcula no fuso do aparelho. Coincide em São
       Paulo, mas um cliente viajando veria horários errados.
@@ -118,6 +120,9 @@ e recebe.
 
 Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
 
+- **App instalado com o nome e o ícone da barbearia** — hoje, instalado, ele
+  aparece como "Agendar horário" com o ícone do Átrio. Deixado para depois
+  por decisão de 19/10/2026: não é necessário agora.
 - **Login com Google** — o botão já está na tela. Falta o cliente OAuth no
   Google Cloud, o provedor no Supabase e guardar as escolhas do agendamento
   durante o redirecionamento.

@@ -32,6 +32,7 @@ import { AppointmentPanel } from './components/appointment-panel';
 import { toDateInputValue } from '../../shared/date-input';
 import { BlockDialog, BlockDialogData } from '../../shared/block-dialog';
 import { NewAppointmentData, NewAppointmentDialog } from './components/new-appointment-dialog';
+import { PinGate } from '../../shared/pin/pin-gate';
 
 type View = 'dia' | 'semana';
 
@@ -190,6 +191,7 @@ export class AgendaPage {
   private readonly professionalsRepo = inject(ProfessionalRepository);
   private readonly blocksRepo = inject(TimeBlockRepository);
   private readonly overlay = inject(AtrOverlay);
+  private readonly pinGate = inject(PinGate);
 
   /** Parâmetro de rota vindo da Dashboard: ?agendamento=<id>. */
   readonly agendamento = input<string | undefined>(undefined);
@@ -380,7 +382,8 @@ export class AgendaPage {
       confirmLabel: 'Remover bloqueio',
       destructive: true,
     });
-    if (confirmed) await this.blocksRepo.remove(block.id);
+    if (!confirmed || !(await this.pinGate.ensure('remover o bloqueio'))) return;
+    await this.blocksRepo.remove(block.id);
   }
 }
 

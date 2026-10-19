@@ -35,6 +35,7 @@ export * from './lib/demo/demo-store';
 export * from './lib/demo/demo-repositories';
 export * from './lib/demo/demo-auth';
 export * from './lib/demo/demo-staff-auth';
+export * from './lib/demo/demo-counter-pin';
 
 export { provideSupabaseData } from './lib/supabase/supabase-auth';
 export { provideSupabaseAdminData, provideSupabaseStaffAuth } from './lib/supabase/supabase-staff-auth';

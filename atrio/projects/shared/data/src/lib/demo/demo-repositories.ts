@@ -20,6 +20,7 @@ import {
   AppointmentRepository,
   AvailabilityRepository,
   ClientAuth,
+  CounterPin,
   FinanceQuery,
   FinanceRepository,
   ProfessionalRepository,
@@ -29,6 +30,7 @@ import {
   TimeBlockRepository,
 } from '../repositories/repositories';
 import { DemoClientAuth } from './demo-auth';
+import { DemoCounterPin } from './demo-counter-pin';
 import { DemoStaffAuth } from './demo-staff-auth';
 import { sortProfessionals } from './demo-seed';
 import {
@@ -464,6 +466,7 @@ export function provideDemoData(): Provider[] {
     { provide: AvailabilityRepository, useClass: DemoAvailabilityRepository },
     { provide: ClientAuth, useClass: DemoClientAuth },
     { provide: StaffAuth, useClass: DemoStaffAuth },
+    { provide: CounterPin, useClass: DemoCounterPin },
   ];
 }
 

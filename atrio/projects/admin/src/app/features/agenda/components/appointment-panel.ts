@@ -25,6 +25,7 @@ import { AtrAvatar, AtrButton, AtrField, AtrIcon, AtrInput, AtrSurfaceShell } fr
 import { toDateInputValue } from '../../../shared/date-input';
 import { PaymentBadge, StatusBadge } from '../../../shared/status-badge';
 import { SlotPicker } from './slot-picker';
+import { PinGate } from '../../../shared/pin/pin-gate';
 
 const METHODS: readonly PaymentMethod[] = ['pix', 'dinheiro', 'cartao'];
 
@@ -335,6 +336,7 @@ export class AppointmentPanel {
   private readonly data = inject<AppointmentPanelData>(DIALOG_DATA);
 
   private readonly appointmentsRepo = inject(AppointmentRepository);
+  private readonly pinGate = inject(PinGate);
   private readonly professionalsRepo = inject(ProfessionalRepository);
   private readonly servicesRepo = inject(ServiceRepository);
   private readonly blocksRepo = inject(TimeBlockRepository);
@@ -471,6 +473,12 @@ export class AppointmentPanel {
   }
 
   protected async changeStatus(status: AppointmentStatus): Promise<void> {
+    // Cancelar e "não compareceu" liberam o horário e tiram o atendimento do
+    // faturamento: pedem o PIN do balcão.
+    if (status === 'cancelado' || status === 'nao_compareceu') {
+      const reason = status === 'cancelado' ? 'cancelar o atendimento' : 'marcar que não compareceu';
+      if (!(await this.pinGate.ensure(reason))) return;
+    }
     await this.run(() => this.appointmentsRepo.changeStatus(this.data.appointmentId, status));
   }
 

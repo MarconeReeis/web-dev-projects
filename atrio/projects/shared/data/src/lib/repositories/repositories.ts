@@ -8,7 +8,7 @@ import {
 } from '../models/appointment';
 import { LinkSuggestion } from '../models/client';
 import { ClientAccount, NewClientAccount } from '../models/client-account';
-import { StaffSession } from '../models/staff';
+import { PinCheck, PinStatus, StaffSession } from '../models/staff';
 import { Cents, DateRange, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
 import { Professional } from '../models/professional';
@@ -240,4 +240,19 @@ export abstract class StaffAuth {
 
   /** Idem ClientAuth.updatePassword — e a conta continua precisando ser da equipe. */
   abstract updatePassword(password: string): Promise<StaffSession>;
+}
+
+/**
+ * PIN do balcão: Financeiro e ações destrutivas no tablet compartilhado.
+ *
+ * Protege o TABLET de quem está diante dele, não a conta de quem tem a
+ * senha. A conferência e o limite de tentativas são do servidor.
+ */
+export abstract class CounterPin {
+  abstract status(): Promise<PinStatus>;
+  abstract verify(pin: string): Promise<PinCheck>;
+  /** Primeira vez: `current` nulo. Depois, só com o PIN atual certo. */
+  abstract change(next: string, current: string | null): Promise<PinCheck>;
+  /** Esqueci o PIN: a senha da conta autoriza criar outro. */
+  abstract reset(password: string, next: string): Promise<void>;
 }

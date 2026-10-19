@@ -23,6 +23,7 @@ import {
   AtrSurfaceShell,
   AtrSwitch,
 } from '@atrio/ui';
+import { PinGate } from '../../../shared/pin/pin-gate';
 
 /** Nenhum serviço de barbearia passa de oito horas. */
 const MAX_DURATION_MINUTES = 480;
@@ -203,6 +204,7 @@ export class ServiceDialog {
   private readonly professionalsRepo = inject(ProfessionalRepository);
   private readonly tenant = inject(TenantContext);
   private readonly overlay = inject(AtrOverlay);
+  private readonly pinGate = inject(PinGate);
 
   protected readonly original = this.data.service;
   protected readonly isNew = this.original === null;
@@ -306,7 +308,7 @@ export class ServiceDialog {
         confirmLabel: 'Desativar mesmo assim',
         destructive: true,
       });
-      if (!confirmed) return;
+      if (!confirmed || !(await this.pinGate.ensure('desativar o serviço'))) return;
     }
 
     const stamp = new Date().toISOString();

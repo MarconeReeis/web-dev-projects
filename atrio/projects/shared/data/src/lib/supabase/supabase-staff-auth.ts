@@ -11,6 +11,7 @@ import { StaffAuthError, StaffRole, StaffSession } from '../models/staff';
 import {
   AppointmentRepository,
   AvailabilityRepository,
+  CounterPin,
   FinanceRepository,
   ProfessionalRepository,
   ServiceRepository,
@@ -35,6 +36,7 @@ import {
   SupabaseTenantRepository,
   SupabaseTimeBlockRepository,
 } from './supabase-repositories';
+import { SupabaseCounterPin } from './supabase-counter-pin';
 
 /**
  * Login da equipe pelo Supabase Auth.
@@ -206,6 +208,7 @@ export function provideSupabaseAdminData(
     { provide: AppointmentRepository, useClass: SupabaseAppointmentRepository },
     { provide: TimeBlockRepository, useClass: SupabaseTimeBlockRepository },
     { provide: FinanceRepository, useClass: SupabaseFinanceRepository },
+    { provide: CounterPin, useClass: SupabaseCounterPin },
     SupabaseRealtime,
     // Instancia o tempo real na partida: ninguém o injeta, ele só escuta.
     provideEnvironmentInitializer(() => {

@@ -27,6 +27,7 @@ import {
   AtrSwitch,
 } from '@atrio/ui';
 import { readSquareAvatar } from '../../../shared/photo';
+import { PinGate } from '../../../shared/pin/pin-gate';
 
 const WEEKDAYS: readonly Weekday[] = [0, 1, 2, 3, 4, 5, 6];
 
@@ -276,6 +277,7 @@ export class ProfessionalDialog {
   private readonly servicesRepo = inject(ServiceRepository);
   private readonly tenant = inject(TenantContext);
   private readonly overlay = inject(AtrOverlay);
+  private readonly pinGate = inject(PinGate);
 
   private readonly current = this.data.professional;
   protected readonly isNew = this.current === null;
@@ -411,7 +413,7 @@ export class ProfessionalDialog {
         confirmLabel: 'Desativar mesmo assim',
         destructive: true,
       });
-      if (!confirmed) return;
+      if (!confirmed || !(await this.pinGate.ensure('desativar o profissional'))) return;
     }
 
     const stamp = new Date().toISOString();

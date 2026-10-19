@@ -26,6 +26,7 @@ import {
   ProfessionalDialog,
   ProfessionalDialogData,
 } from './components/professional-dialog';
+import { PinGate } from '../../shared/pin/pin-gate';
 
 /** Janela usada para "o que ainda está por vir". */
 const HORIZON_DAYS = 365;
@@ -101,6 +102,7 @@ export class ProfessionalsPage {
   private readonly appointmentsRepo = inject(AppointmentRepository);
   private readonly blocksRepo = inject(TimeBlockRepository);
   private readonly overlay = inject(AtrOverlay);
+  private readonly pinGate = inject(PinGate);
 
   /** Daqui até um ano: o que ainda está por vir, em agendamentos e bloqueios. */
   private readonly horizon = (() => {
@@ -196,6 +198,7 @@ export class ProfessionalsPage {
       confirmLabel: 'Remover bloqueio',
       destructive: true,
     });
-    if (confirmed) await this.blocksRepo.remove(block.id);
+    if (!confirmed || !(await this.pinGate.ensure('remover o bloqueio'))) return;
+    await this.blocksRepo.remove(block.id);
   }
 }

@@ -36,6 +36,7 @@ import {
   MovementTab,
   MovementsTable,
 } from './components/movements-table';
+import { PinGate } from '../../shared/pin/pin-gate';
 
 /**
  * Financeiro.
@@ -150,6 +151,7 @@ export class FinancePage {
   private readonly appointmentsRepo = inject(AppointmentRepository);
   private readonly professionalsRepo = inject(ProfessionalRepository);
   private readonly overlay = inject(AtrOverlay);
+  private readonly pinGate = inject(PinGate);
 
   protected money = formatMoney;
   protected readonly tabs = MOVEMENT_TABS;
@@ -290,7 +292,8 @@ export class FinancePage {
       confirmLabel: 'Excluir despesa',
       destructive: true,
     });
-    if (confirmed) await this.financeRepo.removeExpense(expense.id);
+    if (!confirmed || !(await this.pinGate.ensure('excluir a despesa'))) return;
+    await this.financeRepo.removeExpense(expense.id);
   }
 }
 

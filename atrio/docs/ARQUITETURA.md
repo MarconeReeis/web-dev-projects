@@ -277,8 +277,20 @@ O comportamento continua decidido assim:
 ## Segurança no balcão compartilhado
 
 O tablet fica logado o dia inteiro, ao alcance de qualquer um. A sessão da
-barbearia permanece aberta, mas **Financeiro e ações destrutivas** (cancelar,
-excluir despesa) devem pedir um PIN por usuário.
+barbearia permanece aberta, mas **Financeiro e ações destrutivas** pedem o
+PIN de 4 números da conta logada: abrir o Financeiro, cancelar atendimento,
+marcar falta, remover bloqueio, excluir despesa e desativar profissional ou
+serviço com horários futuros.
+
+- A conferência é no servidor (`verify_counter_pin`), com limite: 5 erros
+  travam por 5 minutos. O resumo do PIN fica numa tabela sem política de
+  leitura — com 4 dígitos, quem o tivesse acharia o PIN por tentativa.
+- Um PIN aceito libera por 5 minutos, renovados a cada ação protegida; o
+  desbloqueio mora só na memória (recarregar ou sair trava).
+- Trocar exige o PIN atual; esquecer exige a senha da conta (o banco confere
+  que houve login nos últimos 5 minutos).
+- O alcance é o tablet: quem tem a senha da conta tem acesso total, com ou
+  sem PIN.
 
 ---
 

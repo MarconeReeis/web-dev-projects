@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { Shell } from './layout/shell';
 import { guestOnly, staffOnly } from './features/auth/guards';
+import { pinRequired } from './shared/pin/pin-gate';
 
 /**
  * Rotas do painel.
@@ -63,6 +64,8 @@ export const routes: Routes = [
       {
         path: 'financeiro',
         title: 'Financeiro · Átrio',
+        // Valores e caixa num tablet que fica logado o dia inteiro.
+        canActivate: [pinRequired('abrir o Financeiro')],
         loadComponent: () =>
           import('./features/finance/finance-page').then((m) => m.FinancePage),
       },
