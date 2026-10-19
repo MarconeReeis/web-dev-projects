@@ -11,12 +11,12 @@ import {
   viewChild,
 } from '@angular/core';
 import {
-  Appointment,
+  BusyAppointment,
+  BusyBlock,
   IsoDateTime,
   OpenSlot,
   Professional,
   Service,
-  TimeBlock,
   formatTime,
   isSameDay,
   openSlots,
@@ -204,8 +204,8 @@ export class ScheduleStep {
   /** Já filtrados: quem o cliente escolheu, ou todos os habilitados. */
   readonly professionals = input.required<readonly Professional[]>();
   /** Da janela inteira de agendamento, não só do dia — ver BOOKING_HORIZON_DAYS. */
-  readonly existing = input.required<readonly Appointment[]>();
-  readonly blocks = input.required<readonly TimeBlock[]>();
+  readonly existing = input.required<readonly BusyAppointment[]>();
+  readonly blocks = input.required<readonly BusyBlock[]>();
   readonly date = input.required<Date>();
   readonly selected = input<IsoDateTime | null>(null);
 

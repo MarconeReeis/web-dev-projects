@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { InstallPrompt, TenantContext } from '@atrio/core';
 import {
@@ -288,9 +287,7 @@ export class HomePage {
   // Reativo à sessão: entrar ou sair em outra tela muda o card de "próximo
   // horário" sem precisar recarregar a vitrine.
   private readonly myAppointments = toSignal(
-    toObservable(this.session.phone).pipe(
-      switchMap((phone) => this.appointmentsRepo.watchByClientPhone(phone, horizon())),
-    ),
+    this.appointmentsRepo.watchMine(horizon()),
     { initialValue: [] as readonly Appointment[] },
   );
 

@@ -11,17 +11,17 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import {
-  Appointment,
   AppointmentRepository,
+  AvailabilityRepository,
+  BusyInterval,
   IsoDateTime,
   Professional,
   ProfessionalRepository,
   Service,
   ServiceRepository,
-  TimeBlock,
-  TimeBlockRepository,
   formatShortDay,
   formatTime,
+  splitBusy,
   startOfDay,
 } from '@atrio/data';
 import { AtrButton, AtrCard, AtrEmptyState } from '@atrio/ui';
@@ -142,7 +142,7 @@ export class ReschedulePage {
   private readonly repository = inject(AppointmentRepository);
   private readonly servicesRepo = inject(ServiceRepository);
   private readonly professionalsRepo = inject(ProfessionalRepository);
-  private readonly blocksRepo = inject(TimeBlockRepository);
+  private readonly availabilityRepo = inject(AvailabilityRepository);
   private readonly router = inject(Router);
 
   readonly slug = input<string>('');
@@ -171,14 +171,13 @@ export class ReschedulePage {
     return { from: from.toISOString(), to: to.toISOString() };
   })();
 
-  private readonly horizonAppointments = toSignal(
-    this.repository.watch({ range: this.horizon }),
-    { initialValue: [] as readonly Appointment[] },
-  );
-
-  protected readonly blocks = toSignal(this.blocksRepo.watch(this.horizon), {
-    initialValue: [] as readonly TimeBlock[],
+  /** Trechos ocupados — não a agenda, que o cliente não pode ler. */
+  private readonly occupied = toSignal(this.availabilityRepo.watchBusy(this.horizon), {
+    initialValue: [] as readonly BusyInterval[],
   });
+
+  private readonly split = computed(() => splitBusy(this.occupied()));
+  protected readonly blocks = computed(() => this.split().blocks);
 
   constructor() {
     // Abre no dia do horário atual, quando ele ainda está na janela: quem
@@ -231,7 +230,7 @@ export class ReschedulePage {
    * ocupado — por ele mesmo — e mudar 09:30 para 09:45 seria impossível.
    */
   protected readonly others = computed(() =>
-    this.horizonAppointments().filter((item) => item.id !== this.id()),
+    this.split().appointments.filter((item) => item.id !== this.id()),
   );
 
   protected readonly unchanged = computed(

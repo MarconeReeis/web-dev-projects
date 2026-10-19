@@ -14,14 +14,14 @@ import { Router, RouterLink } from '@angular/router';
 import {
   Appointment,
   AppointmentRepository,
+  AvailabilityRepository,
+  BusyInterval,
   Id,
   IsoDateTime,
   Professional,
   ProfessionalRepository,
   Service,
   ServiceRepository,
-  TimeBlock,
-  TimeBlockRepository,
   formatAddress,
   formatLongDate,
   formatMoney,
@@ -30,6 +30,7 @@ import {
   isSameDay,
   leastBusy,
   openSlots,
+  splitBusy,
   startOfDay,
 } from '@atrio/data';
 import {
@@ -587,7 +588,7 @@ export class BookingPage {
   private readonly servicesRepo = inject(ServiceRepository);
   private readonly professionalsRepo = inject(ProfessionalRepository);
   private readonly appointmentsRepo = inject(AppointmentRepository);
-  private readonly blocksRepo = inject(TimeBlockRepository);
+  private readonly availabilityRepo = inject(AvailabilityRepository);
   protected readonly session = inject(ClientSession);
   protected readonly tenant = inject(TenantContext);
   private readonly router = inject(Router);
@@ -705,14 +706,17 @@ export class BookingPage {
     return { from: from.toISOString(), to: to.toISOString() };
   })();
 
-  protected readonly horizonAppointments = toSignal(
-    this.appointmentsRepo.watch({ range: this.horizon }),
-    { initialValue: [] as readonly Appointment[] },
-  );
-
-  protected readonly horizonBlocks = toSignal(this.blocksRepo.watch(this.horizon), {
-    initialValue: [] as readonly TimeBlock[],
+  /**
+   * Os trechos ocupados da janela — não a agenda: o app do cliente não vê
+   * nome nem telefone de ninguém, só quem está ocupado e quando.
+   */
+  private readonly occupied = toSignal(this.availabilityRepo.watchBusy(this.horizon), {
+    initialValue: [] as readonly BusyInterval[],
   });
+
+  private readonly split = computed(() => splitBusy(this.occupied()));
+  protected readonly horizonAppointments = computed(() => this.split().appointments);
+  protected readonly horizonBlocks = computed(() => this.split().blocks);
 
   /** Só os do dia escolhido: é sobre eles que se mede quem está menos ocupado. */
   private readonly dayAppointments = computed(() =>
@@ -940,17 +944,11 @@ export class BookingPage {
 
     this.busy.set(true);
     try {
-      const created = await this.appointmentsRepo.create({
+      // Quem é o cliente, o servidor tira da conta logada — o app não tem
+      // como marcar em nome de outro.
+      const created = await this.appointmentsRepo.book({
         professionalId: professional.id,
         serviceId: service.id,
-        // `clientId` é o cadastro do cliente NA barbearia, não a conta. Quem
-        // liga um ao outro é o servidor ao gravar (Client.userId), para o
-        // app não poder se passar por outro cliente.
-        client: {
-          clientId: null,
-          name: account.name,
-          phone: account.phone,
-        },
         startsAt,
         notes: this.notes().trim() || null,
       });

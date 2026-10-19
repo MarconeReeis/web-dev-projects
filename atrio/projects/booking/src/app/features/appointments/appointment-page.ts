@@ -287,12 +287,17 @@ export class AppointmentPage {
     this.busy.set(true);
     this.error.set(null);
     try {
-      await this.repository.changeStatus(item.id, 'cancelado');
+      await this.repository.cancel(item.id);
       // Fica na página: o status muda para "Cancelado" na frente da pessoa,
       // que é a confirmação mais clara de que deu certo.
       this.notify('Agendamento cancelado.');
-    } catch {
-      this.error.set('Não foi possível cancelar agora. Tente de novo ou fale com a barbearia.');
+    } catch (cause) {
+      // O servidor explica o motivo (prazo de 2h, já cancelado…).
+      this.error.set(
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível cancelar agora. Tente de novo ou fale com a barbearia.',
+      );
     } finally {
       this.busy.set(false);
     }

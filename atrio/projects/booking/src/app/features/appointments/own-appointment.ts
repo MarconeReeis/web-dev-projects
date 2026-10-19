@@ -1,8 +1,7 @@
 import { Signal, inject } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Appointment, AppointmentRepository } from '@atrio/data';
-import { combineLatest, map, switchMap } from 'rxjs';
-import { ClientSession } from '../../shared/client-session';
+import { map, switchMap } from 'rxjs';
 import { clientWindow } from './appointment-rules';
 
 /**
@@ -17,14 +16,13 @@ import { clientWindow } from './appointment-rules';
  * duas coisas se mostram iguais, de propósito.
  */
 export function ownAppointment(id: Signal<string>): Signal<Appointment | null | undefined> {
-  const session = inject(ClientSession);
   const repository = inject(AppointmentRepository);
 
   return toSignal(
-    combineLatest([toObservable(session.phone), toObservable(id)]).pipe(
-      switchMap(([phone, wanted]) =>
+    toObservable(id).pipe(
+      switchMap((wanted) =>
         repository
-          .watchByClientPhone(phone, clientWindow())
+          .watchMine(clientWindow())
           .pipe(map((list) => list.find((item) => item.id === wanted) ?? null)),
       ),
     ),

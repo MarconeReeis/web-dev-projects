@@ -6,9 +6,8 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { switchMap } from 'rxjs';
 import {
   APPOINTMENT_STATUS_LABEL,
   Appointment,
@@ -173,9 +172,7 @@ export class AppointmentsPage {
   });
 
   private readonly appointments = toSignal(
-    toObservable(this.session.phone).pipe(
-      switchMap((phone) => this.repository.watchByClientPhone(phone, clientWindow())),
-    ),
+    this.repository.watchMine(clientWindow()),
     { initialValue: [] as readonly Appointment[] },
   );
 

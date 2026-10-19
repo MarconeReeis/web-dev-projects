@@ -81,24 +81,37 @@ para o app decidir o que fazer:
 `sem_permissao` · `nao_pagavel` · `transicao_invalida` · `pagamento_imutavel` ·
 `campo_congelado` · `recebimento_imutavel` · `janela_invalida`
 
-## O que isso muda no front (próximo passo)
+## O app ligado ao banco
 
-O esquema expôs três pontos em que o contrato atual dos repositórios não
-serve para um backend real:
+`provideSupabaseData()` (em `@atrio/data`, pasta `lib/supabase/`) implementa os
+contratos do **app do cliente**: vitrine, horários ocupados, marcar,
+reagendar, cancelar, "Meus horários" e a conta (Supabase Auth). O app do
+cliente usa o banco quando `dataSource` é `'supabase'` em
+`projects/booking/src/environments/environment.ts`; `'demo'` volta ao modo
+demonstração, sem rede.
 
-1. **Horários livres não podem ler a agenda.** Hoje o app do cliente lê
-   agendamentos e bloqueios da janela inteira (`watch({ range })`) e calcula.
-   Com banco de verdade, isso entregaria nome e telefone de outros clientes, e
-   o motivo dos bloqueios. O cálculo continua no app, mas sobre
-   `busy_intervals` — quem está ocupado e quando, nada mais. O contrato
-   precisa de um método para isso.
-2. **"Meus horários" deixa de ser por telefone.** Passa a ser pela ficha
-   ligada à conta (`clients.user_id`), e a RLS já filtra. Horários marcados
-   no balcão antes de a pessoa ter conta **não** aparecem sozinhos: ligar por
-   telefone sem verificá-lo entregaria o histórico de outra pessoa a quem
-   cadastrasse o número dela. A ligação fica para a equipe, ou para quando
-   houver verificação por SMS.
-3. **O app do cliente não recebe tempo real da agenda** — sem permissão de
-   leitura, não há o que transmitir. Ele reconsulta `busy_intervals` ao
-   abrir o passo de horário e ao voltar para a aba. O painel recebe tempo
-   real de agenda, bloqueios e caixa.
+**O painel continua no modo demonstração.** Ele depende do login da equipe,
+que ainda não existe — sem ele, as regras do banco não devolvem nada. As
+operações só da equipe (salvar profissional, receber pagamento…) respondem
+com um erro dizendo isso, em vez de falhar em silêncio.
+
+Três mudanças de contrato vieram do esquema:
+
+1. **Horários livres não leem a agenda.** O app calcula sobre
+   `AvailabilityRepository.watchBusy` — quem está ocupado e quando, sem nome,
+   telefone nem motivo de bloqueio (`busy_intervals` no banco).
+2. **"Meus horários" é pela conta** (`watchMine`), pela ficha ligada a ela —
+   não por telefone. Horários marcados no balcão antes de a pessoa ter conta
+   não aparecem sozinhos: ligar por telefone sem verificá-lo entregaria o
+   histórico de outra pessoa a quem cadastrasse o número dela.
+3. **O cliente marca com `book`**, sem dizer quem é nem quanto custa: o
+   servidor tira os dois da conta e do catálogo. `create`, com cliente e
+   preço por parâmetro, fica para a equipe.
+
+O app do cliente não recebe a agenda em tempo real (sem permissão de
+leitura, não há o que transmitir): cada consulta se refaz ao abrir a tela,
+depois de cada escrita do próprio app e quando a pessoa volta para a aba.
+
+**Pendente:** a página de "nova senha". O link de "Esqueci minha senha" já é
+enviado pelo Supabase, mas ainda não há tela no app para definir a senha nova
+ao voltar por ele.
