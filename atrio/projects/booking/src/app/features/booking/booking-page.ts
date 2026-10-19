@@ -43,7 +43,7 @@ import {
 } from '@atrio/ui';
 import { TenantContext } from '@atrio/core';
 import { ClientSession } from '../../shared/client-session';
-import { SignIn } from '../auth/sign-in';
+import { SignIn, SignInMode } from '../auth/sign-in';
 import { BOOKING_HORIZON_DAYS, ScheduleStep } from './components/schedule-step';
 
 type Step = 'profissional' | 'servico' | 'horario' | 'confirmar' | 'pronto';
@@ -398,6 +398,7 @@ type ProfessionalChoice = Id | typeof ANY | null;
             <bkg-sign-in
               heading="Entre para continuar"
               lead="Com uma conta você acompanha, reagenda e cancela seus horários. Suas escolhas estão salvas."
+              (modeChange)="authMode.set($event)"
             />
           } @else {
             <h2 class="text-2xl font-extrabold tracking-tight">Confira sua reserva</h2>
@@ -766,11 +767,16 @@ export class BookingPage {
 
   // ─── cabeçalho e rodapé ───────────────────────────────────────────────
 
-  protected readonly title = computed(() =>
-    this.step() === 'confirmar' && !this.session.signedIn()
-      ? 'Identificação'
-      : TITLES[this.step()],
-  );
+  /** O que a tela de identificação está mostrando — muda o título. */
+  protected readonly authMode = signal<SignInMode>('entrar');
+
+  protected readonly title = computed(() => {
+    if (this.step() === 'confirmar' && !this.session.signedIn()) {
+      const mode = this.authMode();
+      return mode === 'cadastro' ? 'Criar conta' : mode === 'recuperar' ? 'Recuperar senha' : 'Identificação';
+    }
+    return TITLES[this.step()];
+  });
 
   protected readonly stepNumber = computed(() => {
     const index = ORDER.indexOf(this.step());

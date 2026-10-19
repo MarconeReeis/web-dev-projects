@@ -4,13 +4,15 @@ import {
   computed,
   inject,
   input,
+  output,
   signal,
 } from '@angular/core';
 import { ATRIO_CONFIG } from '@atrio/core';
 import { ClientAuth, ClientAuthError, DEMO_CLIENT_CREDENTIALS } from '@atrio/data';
 import { AtrButton, AtrField, AtrIcon, AtrInput } from '@atrio/ui';
 
-type Mode = 'entrar' | 'cadastro' | 'recuperar';
+export type SignInMode = 'entrar' | 'cadastro' | 'recuperar';
+type Mode = SignInMode;
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -68,7 +70,6 @@ const MIN_PASSWORD = 6;
 
           <atr-field
             label="Telefone"
-            hint="A barbearia usa para falar com você se precisar."
             [error]="showErrors() ? phoneError() : null"
           >
             <input
@@ -76,7 +77,7 @@ const MIN_PASSWORD = 6;
               type="tel"
               inputmode="tel"
               autocomplete="tel"
-              placeholder="(11) 98888-7777"
+              placeholder="(11) 90000-0000"
               [invalid]="showErrors() && !!phoneError()"
               [value]="phone()"
               (input)="phone.set($any($event.target).value)"
@@ -101,7 +102,6 @@ const MIN_PASSWORD = 6;
         @if (mode() !== 'recuperar') {
           <atr-field
             label="Senha"
-            [hint]="mode() === 'cadastro' ? 'Pelo menos ' + minPassword + ' caracteres.' : null"
             [error]="showErrors() ? passwordError() : null"
           >
             <input
@@ -139,7 +139,9 @@ const MIN_PASSWORD = 6;
         </button>
       </form>
 
-      @if (mode() === 'entrar') {
+      <!-- Google tanto para entrar quanto para criar conta: com ele, as
+           duas coisas são o mesmo toque. -->
+      @if (mode() !== 'recuperar') {
         <div class="my-6 flex items-center gap-3 text-sm text-muted-foreground" aria-hidden="true">
           <span class="h-px flex-1 bg-border"></span>
           ou
@@ -173,7 +175,7 @@ const MIN_PASSWORD = 6;
         }
 
         <!-- Só na demonstração: entrar sem saber a senha da conta fictícia. -->
-        @if (demoMode) {
+        @if (demoMode && mode() === 'entrar') {
           <button
             type="button"
             class="mt-4 w-full text-center text-sm font-semibold text-muted-foreground underline underline-offset-4"
@@ -218,9 +220,11 @@ export class SignIn {
   readonly lead = input('Com uma conta você acompanha, reagenda e cancela seus horários.');
 
   protected readonly demoMode = inject(ATRIO_CONFIG).demoMode;
-  protected readonly minPassword = MIN_PASSWORD;
 
   protected readonly mode = signal<Mode>('entrar');
+
+  /** Para quem usa a tela ajustar o próprio título ("Criar conta"). */
+  readonly modeChange = output<Mode>();
   protected readonly name = signal('');
   protected readonly phone = signal('');
   protected readonly email = signal('');
@@ -246,7 +250,7 @@ export class SignIn {
   protected readonly subtitle = computed(() => {
     switch (this.mode()) {
       case 'cadastro':
-        return 'Leva menos de um minuto, e da próxima vez é só entrar.';
+        return 'Com uma conta você acompanha, reagenda e cancela seus horários.';
       case 'recuperar':
         return 'Informe o e-mail da conta e enviaremos um link para criar uma senha nova.';
       default:
@@ -311,6 +315,8 @@ export class SignIn {
     // O e-mail atravessa os modos: quem errou a senha e foi recuperar não
     // deveria digitá-lo de novo. A senha, não.
     this.mode.set(mode);
+    this.modeChange.emit(mode);
+    this.googleSoon.set(false);
     this.password.set('');
     this.showErrors.set(false);
     this.failure.set(null);
