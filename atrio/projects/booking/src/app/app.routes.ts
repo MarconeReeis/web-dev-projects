@@ -23,6 +23,14 @@ export const routes: Routes = [
       import('./features/booking/booking-page').then((m) => m.BookingPage),
   },
   {
+    // Destino do link de "Esqueci minha senha". Fora do shell: é um passo
+    // de conta, não uma seção do app.
+    path: 'b/:slug/nova-senha',
+    title: 'Nova senha',
+    loadComponent: () =>
+      import('./features/auth/new-password-page').then((m) => m.NewPasswordPage),
+  },
+  {
     // Detalhes e reagendamento também ficam fora do shell: têm o próprio
     // "voltar" e ações no pé da tela, que a barra inferior cobriria.
     path: 'b/:slug/meus-horarios/:id/reagendar',

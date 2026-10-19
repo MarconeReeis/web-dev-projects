@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal, computed } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { DEMO_STAFF_CREDENTIALS, StaffAuth, StaffAuthError } from '@atrio/data';
 import { AtrButton, AtrField, AtrIcon, AtrInput } from '@atrio/ui';
@@ -160,12 +168,19 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     </main>
   `,
 })
-export class LoginPage {
+export class LoginPage implements OnInit {
   private readonly auth = inject(StaffAuth);
   private readonly router = inject(Router);
 
   /** Para onde voltar depois de entrar (?voltar=/agenda). */
   readonly voltar = input<string | undefined>(undefined);
+
+  /** ?recuperar=1 abre direto em "Recuperar senha" (vindo do link vencido). */
+  readonly recuperar = input<string | undefined>(undefined);
+
+  ngOnInit(): void {
+    if (this.recuperar()) this.switchTo('recuperar');
+  }
 
   protected readonly demoLogin = environment.auth === 'demo';
 

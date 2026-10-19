@@ -39,6 +39,16 @@ Depois do `db push`, no painel do Supabase:
 1. **Authentication → Providers → Email**: ligado. O cadastro do app envia
    `name` e `phone` em `options.data`; o gatilho cria o perfil a partir disso.
 2. **A equipe da barbearia** (ver "Conta da equipe" abaixo).
+3. **Authentication → URL Configuration**: o link de "Esqueci minha senha"
+   só volta para o app se o endereço estiver liberado. Senão o Supabase
+   manda para a Site URL e a pessoa cai fora do app.
+   - **Site URL**: o endereço do app do cliente (em desenvolvimento,
+     `http://localhost:4300`).
+   - **Redirect URLs**: `http://localhost:4300/**` e `http://localhost:4200/**`
+     — e, ao publicar, os endereços de produção dos dois apps.
+
+   O link leva a `/b/<barbearia>/nova-senha` (cliente) e a `/nova-senha`
+   (painel).
 
 ## Conta da equipe
 

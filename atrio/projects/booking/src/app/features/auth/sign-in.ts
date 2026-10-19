@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  OnInit,
   inject,
   input,
   output,
@@ -48,7 +49,7 @@ const MIN_PASSWORD = 6;
         <atr-icon name="circle-check-big" [size]="20" class="mt-px shrink-0" />
         <span>
           Se houver uma conta com <strong class="font-bold">{{ email().trim() }}</strong>,
-          o link chega em alguns minutos. Confira também o spam.
+          as instruções chegam em alguns minutos. Confira também o spam.
         </span>
       </p>
       <button type="button" atrButton size="lg" class="mt-6 w-full" (click)="switchTo('entrar')">
@@ -202,7 +203,7 @@ const MIN_PASSWORD = 6;
             </button>
           }
           @case ('recuperar') {
-            Lembrou a senha?
+            Já tem conta?
             <button type="button" class="font-bold text-primary" (click)="switchTo('entrar')">
               Entrar
             </button>
@@ -212,7 +213,7 @@ const MIN_PASSWORD = 6;
     }
   `,
 })
-export class SignIn {
+export class SignIn implements OnInit {
   private readonly auth = inject(ClientAuth);
 
   /** Título e apoio do modo "entrar", que mudam conforme quem pede o login. */
@@ -225,8 +226,19 @@ export class SignIn {
 
   /** Para quem usa a tela ajustar o próprio título ("Criar conta"). */
   readonly modeChange = output<Mode>();
+
+  /**
+   * Em que modo a tela abre. "recuperar" é o destino do "Pedir outro link"
+   * da tela de nova senha, quando o link do e-mail já venceu.
+   */
+  readonly startIn = input<Mode>('entrar');
   protected readonly name = signal('');
   protected readonly phone = signal('');
+
+  /** Uma vez só, na abertura: depois o modo é de quem está usando a tela. */
+  ngOnInit(): void {
+    if (this.startIn() !== 'entrar') this.switchTo(this.startIn());
+  }
   protected readonly email = signal('');
   protected readonly password = signal('');
 
@@ -241,7 +253,7 @@ export class SignIn {
       case 'cadastro':
         return 'Crie sua conta';
       case 'recuperar':
-        return 'Recuperar senha';
+        return 'Esqueceu a senha?';
       default:
         return this.heading();
     }
@@ -252,7 +264,7 @@ export class SignIn {
       case 'cadastro':
         return 'Com uma conta você acompanha, reagenda e cancela seus horários.';
       case 'recuperar':
-        return 'Informe o e-mail da conta e enviaremos um link para criar uma senha nova.';
+        return 'Informe seu e-mail para receber instruções.';
       default:
         return this.lead();
     }
@@ -263,7 +275,7 @@ export class SignIn {
       case 'cadastro':
         return 'Criar conta';
       case 'recuperar':
-        return 'Enviar link';
+        return 'Enviar instruções';
       default:
         return 'Entrar';
     }

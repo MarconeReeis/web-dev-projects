@@ -22,6 +22,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login-page').then((m) => m.LoginPage),
   },
   {
+    // Destino do link de "Esqueci minha senha". Sem guarda: quem chega aqui
+    // tem só a sessão temporária do link, que serve para trocar a senha.
+    path: 'nova-senha',
+    title: 'Nova senha · Átrio',
+    loadComponent: () =>
+      import('./features/auth/new-password-page').then((m) => m.NewPasswordPage),
+  },
+  {
     path: '',
     component: Shell,
     canActivate: [staffOnly],

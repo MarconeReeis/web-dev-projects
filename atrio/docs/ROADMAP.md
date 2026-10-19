@@ -42,8 +42,9 @@ e recebe.
 - [ ] **Cadastrar uma barbearia sem SQL** — M. Hoje barbearia nova e o
       primeiro dono entram por comando no banco. Para o piloto, basta um
       script ou uma tela interna; cadastro self-service fica para depois.
-- [ ] **Tela de nova senha** — P. O e-mail de "Esqueci minha senha" já é
-      enviado, mas não há tela para definir a senha nova ao voltar pelo link.
+- [x] **Tela de nova senha** — feito em 19/10/2026, nos dois apps. O link
+      do e-mail leva a "Crie uma senha nova"; link vencido oferece pedir
+      outro. Depende das Redirect URLs no Supabase (`supabase/README.md`).
 - [ ] **E-mails de verdade** — P/M. O envio padrão do Supabase é para
       testes: limite baixo por hora e, pelo que sei, entrega só para e-mails
       da equipe do projeto (confirmar no painel). Antes de abrir para

@@ -56,6 +56,7 @@ type Tab = 'proximos' | 'historico';
     @if (!session.signedIn()) {
       <bkg-sign-in
         class="mt-5"
+        [startIn]="recuperar() ? 'recuperar' : 'entrar'"
         heading="Entre para ver seus horários"
         lead="Seus agendamentos ficam na sua conta, e só você consegue ver ou cancelar."
       />
@@ -158,6 +159,9 @@ export class AppointmentsPage {
 
   /** Os links são absolutos — ver o comentário de `slug` na home. */
   readonly slug = input<string>('');
+
+  /** ?recuperar=1 abre direto em "Esqueceu a senha?" (vindo do link vencido). */
+  readonly recuperar = input<string | undefined>(undefined);
 
   protected money = formatMoney;
 
