@@ -13,6 +13,7 @@ import {
   of,
   switchMap,
 } from 'rxjs';
+import { newEntityId } from '../models/common';
 import { StaffAuth } from '../repositories/repositories';
 
 export interface SupabaseDataConfig {
@@ -172,6 +173,59 @@ export function toAppError(error: PostgrestError): Error {
   }
   console.error('[supabase]', error);
   return new Error('Não foi possível concluir agora. Tente de novo em instantes.');
+}
+
+// ─── imagens ─────────────────────────────────────────────────────────────
+
+const MEDIA_BUCKET = 'midia';
+
+/**
+ * Leva uma imagem embutida (data URL, como as telas do painel produzem ao
+ * escolher a foto) para o Storage, e devolve o link público.
+ *
+ * Qualquer outro valor — link já no Storage, null — passa direto: salvar um
+ * profissional sem trocar a foto não envia nada.
+ *
+ * O nome é único a cada envio: o celular pode guardar a imagem em cache
+ * para sempre (cacheControl de um ano) sem nunca mostrar uma foto velha no
+ * lugar da nova, porque a nova tem outro endereço.
+ */
+export async function storeImage(
+  client: SupabaseClient,
+  tenantId: string,
+  folder: 'profissionais' | 'marca',
+  value: string | null,
+): Promise<string | null> {
+  if (!value?.startsWith('data:')) return value;
+
+  const blob = await (await fetch(value)).blob();
+  const extension = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
+  const path = `${tenantId}/${folder}/${newEntityId()}.${extension}`;
+
+  const { error } = await client.storage
+    .from(MEDIA_BUCKET)
+    .upload(path, blob, { contentType: blob.type, cacheControl: '31536000', upsert: false });
+  if (error) {
+    console.error('[supabase storage]', error);
+    throw new Error('Não foi possível enviar a imagem. Confira a internet e tente de novo.');
+  }
+  return client.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+/**
+ * Apaga uma imagem que saiu de uso. Só mexe no que é do bucket do Átrio —
+ * imagem embutida antiga ou link de fora não são arquivos nossos. Falha
+ * aqui não desfaz o que foi salvo: no pior caso, sobra um arquivo.
+ */
+export async function discardImage(client: SupabaseClient, previous: string | null, current: string | null) {
+  if (!previous || previous === current) return;
+  const marker = `/storage/v1/object/public/${MEDIA_BUCKET}/`;
+  const at = previous.indexOf(marker);
+  if (at < 0) return;
+
+  const path = decodeURIComponent(previous.slice(at + marker.length));
+  const { error } = await client.storage.from(MEDIA_BUCKET).remove([path]);
+  if (error) console.warn('[supabase storage] imagem antiga ficou para trás', error);
 }
 
 /** Instantes do banco ("…+00:00") no formato do app ("…Z"): o app compara como texto. */

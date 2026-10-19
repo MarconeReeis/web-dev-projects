@@ -46,7 +46,9 @@ import {
   SupabaseTenantScope,
   TenantRow,
   TimeBlockRow,
+  discardImage,
   iso,
+  storeImage,
   toAppError,
 } from './supabase-core';
 
@@ -74,17 +76,21 @@ export class SupabaseTenantRepository extends TenantRepository {
   }
 
   async save(tenant: Tenant): Promise<void> {
+    const previous = (await this.scope.row())?.branding?.logoUrl ?? null;
+    const logoUrl = await storeImage(this.client, tenant.id, 'marca', tenant.branding.logoUrl);
+
     const { error } = await this.client.rpc('save_tenant_settings', {
       p_tenant_id: tenant.id,
       p_name: tenant.name,
       p_phone: tenant.phone,
       p_address: tenant.address,
-      p_branding: tenant.branding,
+      p_branding: { ...tenant.branding, logoUrl },
       p_highlight: tenant.highlight,
       p_admin_name: tenant.admin.name,
       p_admin_email: tenant.admin.email,
     });
     if (error) throw toAppError(error);
+    await discardImage(this.client, previous, logoUrl);
     this.sync.changed();
   }
 }
@@ -119,13 +125,29 @@ export class SupabaseProfessionalRepository extends ProfessionalRepository {
     return this.watchAll(true).pipe(map((all) => all.find((p) => p.id === id) ?? null));
   }
 
-  /** Dados, expediente e serviços numa transação só (save_professional). */
+  /**
+   * Dados, expediente e serviços numa transação só (save_professional). A
+   * foto vai antes para o Storage; a antiga só é apagada depois que a nova
+   * foi salva.
+   */
   async save(professional: Professional): Promise<void> {
+    const { data: before } = await this.client
+      .from('professionals')
+      .select('photo_url')
+      .eq('id', professional.id)
+      .maybeSingle();
+    const photoUrl = await storeImage(
+      this.client,
+      professional.tenantId,
+      'profissionais',
+      professional.photoUrl,
+    );
+
     const { error } = await this.client.rpc('save_professional', {
       p_id: professional.id,
       p_tenant_id: professional.tenantId,
       p_name: professional.name,
-      p_photo_url: professional.photoUrl,
+      p_photo_url: photoUrl,
       p_phone: professional.phone,
       p_bio: professional.bio,
       p_about: professional.about,
@@ -134,6 +156,7 @@ export class SupabaseProfessionalRepository extends ProfessionalRepository {
       p_schedule: toScheduleRows(professional.schedule),
     });
     if (error) throw toAppError(error);
+    await discardImage(this.client, (before?.photo_url as string | null) ?? null, photoUrl);
     this.sync.changed();
   }
 

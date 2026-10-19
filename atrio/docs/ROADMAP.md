@@ -50,9 +50,9 @@ e recebe.
       da equipe do projeto (confirmar no painel). Antes de abrir para
       clientes: SMTP próprio (Resend, Brevo…), modelos em português e
       **"Confirm email" religado**.
-- [ ] **Fotos no Storage** — M. Hoje a foto do profissional vira texto
-      dentro do banco. Mover para o Supabase Storage, junto com o logo da
-      barbearia.
+- [x] **Fotos no Storage** — feito em 19/10/2026. Foto de profissional e
+      logo vão para o bucket `midia`, com envio só pela equipe da barbearia
+      e na pasta dela; no banco fica o link.
 - [ ] **Ligar a ficha do balcão à conta do cliente** — M. Horários marcados
       no balcão antes de a pessoa ter conta não aparecem em "Meus horários"
       (de propósito: telefone não verificado não prova nada). A equipe
