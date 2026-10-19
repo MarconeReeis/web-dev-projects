@@ -393,8 +393,13 @@ Ordem: cabeçalho com saudação → destaque → próximo agendamento (quando h
 agendar → **profissionais** → serviços → a barbearia → instalar.
 
 Profissionais vêm antes dos serviços porque são o primeiro passo do
-agendamento. Ficam numa faixa rolável de uma linha: cabe sem empurrar os
-serviços para baixo da dobra.
+agendamento. A seção pergunta "Com quem você quer agendar?" e usa cards em
+duas colunas, como os serviços: foto (ou iniciais) recortada dentro do card,
+nome, especialidade e "Ver serviços", que abre o agendamento já com a pessoa
+escolhida. Todos ficam à mostra — barbearia tem poucos profissionais, e a
+faixa rolável de antes escondia parte deles fora da tela. Por isso deixou de
+existir a página "Profissionais", que repetia a mesma lista; o endereço
+antigo redireciona para a vitrine.
 
 **O cabeçalho não tem borda.** Ele se dissolve no conteúdo, como na
 referência; uma linha separando saudação de conteúdo dividiria a tela em duas

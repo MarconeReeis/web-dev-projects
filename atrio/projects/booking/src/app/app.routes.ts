@@ -31,12 +31,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/home/home-page').then((m) => m.HomePage),
       },
       {
+        // A lista de profissionais virou seção da vitrine. Fica o
+        // redirecionamento para quem guardou o link ou o tem no histórico.
         path: 'profissionais',
-        title: 'Profissionais',
-        loadComponent: () =>
-          import('./features/professionals/professionals-page').then(
-            (m) => m.ProfessionalsPage,
-          ),
+        redirectTo: '',
       },
       {
         path: 'meus-horarios',

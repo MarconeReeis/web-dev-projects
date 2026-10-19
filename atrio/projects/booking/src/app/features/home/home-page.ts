@@ -16,7 +16,7 @@ import {
   formatTime,
   startOfDay,
 } from '@atrio/data';
-import { AtrAvatar, AtrButton, AtrCard, AtrIcon } from '@atrio/ui';
+import { AtrButton, AtrCard, AtrIcon, initialsOf } from '@atrio/ui';
 import { ClientSession } from '../../shared/client-session';
 
 const HORIZON_DAYS = 120;
@@ -31,7 +31,7 @@ const HORIZON_DAYS = 120;
 @Component({
   selector: 'bkg-home-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, AtrCard, AtrButton, AtrIcon, AtrAvatar],
+  imports: [RouterLink, AtrCard, AtrButton, AtrIcon],
   host: { class: 'block' },
   template: `
     <!-- Destaque da barbearia -->
@@ -85,46 +85,57 @@ const HORIZON_DAYS = 120;
       Agendar horário
     </a>
 
-    <!-- Profissionais: primeiro passo do agendamento, então vêm primeiro -->
+    <!-- Profissionais: primeiro passo do agendamento, então vêm primeiro.
+         Cards em duas colunas, como os serviços — e todos à mostra: uma
+         barbearia tem poucos profissionais, e a faixa rolável de antes
+         escondia parte deles fora da tela. -->
     @if (professionals().length > 0) {
-      <div class="mt-7 flex items-baseline justify-between gap-3">
-        <h2 class="text-lg font-bold">Quem atende</h2>
-        <a
-          class="text-sm font-semibold text-primary"
-          [routerLink]="['/b', slug(), 'profissionais']"
-          >Ver todos</a
-        >
-      </div>
+      <h2 class="mt-7 text-lg font-bold">Com quem você quer agendar?</h2>
 
-      <!-- Faixa rolável: cabe numa linha e não empurra os serviços para baixo
-           da dobra. -->
-      <div class="-mx-4 mt-3 overflow-x-auto px-4">
-        <ul class="flex gap-3 pb-1">
-          @for (professional of professionals(); track professional.id) {
-            <li>
-              <a
-                class="surface flex w-36 flex-col items-center gap-2 p-4 text-center transition-colors hover:border-primary"
-                [routerLink]="['/b', slug(), 'agendar']"
-                [queryParams]="{ profissional: professional.id }"
-              >
-                <atr-avatar
-                  [name]="professional.name"
-                  [photoUrl]="professional.photoUrl"
-                  size="lg"
+      <ul class="mt-3 grid grid-cols-2 gap-3">
+        @for (professional of professionals(); track professional.id) {
+          <li>
+            <a
+              class="surface flex h-full flex-col p-2 transition-colors hover:border-primary"
+              [routerLink]="['/b', slug(), 'agendar']"
+              [queryParams]="{ profissional: professional.id }"
+            >
+              @if (professional.photoUrl; as photo) {
+                <img
+                  [src]="photo"
+                  [alt]="professional.name"
+                  class="aspect-square w-full rounded-2xl object-cover"
                 />
-                <span class="w-full truncate text-sm font-bold">
-                  {{ professional.name }}
+              } @else {
+                <!-- Sem foto: iniciais grandes. A barbearia sobe a foto pelo
+                     painel. -->
+                <span
+                  class="flex aspect-square w-full items-center justify-center rounded-2xl bg-primary-soft text-3xl font-extrabold text-primary-soft-foreground"
+                  aria-hidden="true"
+                >
+                  {{ initials(professional.name) }}
                 </span>
-                @if (professional.bio) {
-                  <span class="line-clamp-2 text-xs leading-tight font-semibold text-primary">
-                    {{ professional.bio }}
-                  </span>
-                }
-              </a>
-            </li>
-          }
-        </ul>
-      </div>
+              }
+
+              <span class="flex flex-1 flex-col px-1.5 pt-3 pb-1.5">
+                <span class="font-bold text-balance">{{ professional.name }}</span>
+                <span class="mt-0.5 mb-3 text-sm text-balance text-muted-foreground">
+                  {{ describe(professional) }}
+                </span>
+
+                <!-- mt-auto: a especialidade ocupa uma ou duas linhas, e sem
+                     isso os botões da mesma fileira ficam desalinhados. -->
+                <span
+                  class="mt-auto inline-flex h-11 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary-soft-foreground"
+                  aria-hidden="true"
+                >
+                  Ver serviços
+                </span>
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
     }
 
     <!-- Serviços -->
@@ -242,6 +253,7 @@ export class HomePage {
 
   protected money = formatMoney;
   protected time = formatTime;
+  protected initials = initialsOf;
 
   protected readonly services = toSignal(this.servicesRepo.watchAll(), {
     initialValue: [] as readonly Service[],
@@ -276,6 +288,26 @@ export class HomePage {
       ) ?? null
     );
   });
+
+  private readonly serviceNames = computed(
+    () => new Map(this.services().map((service) => [service.id, service.name])),
+  );
+
+  /**
+   * Linha de apoio do card. A especialidade decide a escolha — a lista de
+   * serviços diz o que a pessoa PODE fazer, não o que faz bem. Sem
+   * especialidade cadastrada, cai nos serviços: melhor que um espaço vazio.
+   */
+  protected describe(professional: Professional): string {
+    if (professional.bio) return professional.bio;
+
+    const names = this.serviceNames();
+    const list = professional.serviceIds
+      .map((id) => names.get(id))
+      .filter((name): name is string => !!name);
+
+    return list.length > 0 ? list.join(', ') : 'Sem serviços cadastrados';
+  }
 
   protected readonly addressLabel = computed(() =>
     formatAddress(this.tenant.tenant()?.address),

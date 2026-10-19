@@ -115,10 +115,9 @@ export class Shell {
    * URL atual, como signal.
    *
    * `router.url` sozinho não é reativo, e `routerLinkActive` não dá conta
-   * aqui: a tela de profissionais é alcançada a partir do Início e precisa
-   * manter esse item aceso, mas o caminho dela não casa com "./" nem em modo
-   * exato nem em prefixo — sem isso a barra fica sem nenhum item ativo e
-   * parece morta.
+   * aqui: "./" em modo prefixo acende o Início em toda tela, e em modo exato
+   * apaga em qualquer tela alcançada a partir dele — a barra fica sem item
+   * ativo e parece morta. A regra é simples: fora de "Meus horários", Início.
    */
   private readonly url = toSignal(
     this.router.events.pipe(
