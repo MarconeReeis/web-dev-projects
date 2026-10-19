@@ -37,10 +37,31 @@ Depois do `db push`, no painel do Supabase:
 
 1. **Authentication → Providers → Email**: ligado. O cadastro do app envia
    `name` e `phone` em `options.data`; o gatilho cria o perfil a partir disso.
-2. **A equipe da barbearia**: criar o usuário em Authentication e ligar à
-   barbearia com
-   `insert into tenant_members (tenant_id, user_id, role) values (…, …, 'dono')`.
-   Não há tela para isso ainda.
+2. **A equipe da barbearia** (ver "Conta da equipe" abaixo).
+
+## Conta da equipe
+
+Não há cadastro aberto para o painel — de propósito. Até existir a tela de
+equipe, a conta nasce assim:
+
+1. **Authentication → Users → Add user → Create new user**: e-mail, senha e
+   **Auto Confirm User** marcado.
+2. **SQL Editor**, trocando o e-mail:
+
+   ```sql
+   -- Liga a conta à barbearia, como dono.
+   insert into public.tenant_members (tenant_id, user_id, role)
+   select '00000000-0000-4000-8000-000000000001', id, 'dono'
+   from auth.users where email = 'voce@exemplo.com';
+
+   -- Opcional: o nome que aparece na barra do painel.
+   update auth.users
+      set raw_user_meta_data = raw_user_meta_data || '{"name": "Seu Nome"}'
+    where email = 'voce@exemplo.com';
+   ```
+
+Uma conta sem esse vínculo (a de um cliente, por exemplo) passa pela senha e
+é barrada logo em seguida: "Esta conta não tem acesso a nenhuma barbearia".
 
 ## As regras, e onde moram
 

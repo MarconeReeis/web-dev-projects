@@ -18,25 +18,23 @@ sessão), **M** (médio, uma ou duas sessões), **G** (grande, várias). As fase
 
 ## Antes de tudo (não espere)
 
-- [ ] **Enviar o código para o GitHub** — P. São 42 commits só nesta
-      máquina. Um disco com defeito leva o projeto inteiro.
-- [ ] **Decidir a região do banco** — P. O projeto foi criado na Virgínia
-      (EUA). A região não muda depois de criado: trocar é criar outro projeto
-      e migrar. Hoje só há dados de teste — é o momento mais barato. Em São
-      Paulo, cada clique no tablet do balcão economiza ~120 ms, e os dados de
-      clientes brasileiros ficam no país (LGPD).
-- [ ] **Separar desenvolvimento de produção** — P. Hoje o mesmo projeto
-      Supabase serve para testar e serviria para vender. Dois projetos: um
-      para desenvolver (pode quebrar), outro para as barbearias (não pode).
+- [x] **Enviar o código para o GitHub** — feito em 19/10/2026.
+- [x] **Região e ambientes** — decidido em 19/10/2026. O projeto atual, na
+      Virgínia, vira o de **desenvolvimento**: dados fictícios, pode quebrar,
+      latência não importa. O de **produção** nasce em **São Paulo**, vazio,
+      na hora de publicar (fase 3) — sem migração nenhuma. As migrações vão
+      sempre para os dois; o seed, só para o de desenvolvimento.
 
 ## Fase 1 — Fechar o produto
 
 O que impede o fluxo de ponta a ponta: cliente marca → barbearia vê, atende
 e recebe.
 
-- [ ] **Login da equipe** — G. Tela de entrar no painel, sessão do tablet,
-      sair, e a barbearia vinda do vínculo em `tenant_members` (nunca da URL).
-      Papéis: dono e atendente.
+- [x] **Login da equipe** — feito em 19/10/2026. Tela de entrar, sessão no
+      tablet, "Sair", rotas protegidas e a barbearia vinda do vínculo em
+      `tenant_members`. Falta só a tela de equipe (convidar e remover
+      pessoas): por enquanto a conta é criada no Supabase — ver
+      `supabase/README.md`.
 - [ ] **Painel no banco** — G. Ligar ao Supabase o que hoje é demonstração:
       - agenda (ler em tempo real, marcar no balcão, mudar status, receber
         pagamento) — as funções do banco já existem;
@@ -84,6 +82,9 @@ e recebe.
 - [ ] **Integração contínua** — M. GitHub Actions rodando build, `ng test` e
       `npm run test:db` a cada push; migrações aplicadas no banco de produção
       só a partir da `main`.
+- [ ] **Banco de produção** — P. Criar o projeto em São Paulo, aplicar as
+      migrações (sem o seed) e um `environment.prod.ts` em cada app apontando
+      para ele.
 - [ ] **Hospedagem e domínio** — M. Os dois apps publicados com HTTPS
       (Cloudflare Pages, Vercel ou similar), domínio do Átrio, e o app do
       cliente em `…/b/<barbearia>`.
@@ -130,7 +131,7 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
 
 ## Ordem sugerida
 
-1. Código no GitHub, região e ambientes — antes de existir dado real.
+1. ~~Código no GitHub, região e ambientes~~ — feito.
 2. Login da equipe → painel no banco. Fecha o fluxo de ponta a ponta.
 3. E-mails, nova senha e cadastro de barbearia.
 4. LGPD, PIN, captcha, monitoramento, plano Pro.

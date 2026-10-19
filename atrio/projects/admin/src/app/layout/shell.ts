@@ -2,9 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  inject,
   signal,
 } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router, RouterOutlet } from '@angular/router';
+import { StaffAuth } from '@atrio/data';
+import { filter } from 'rxjs';
 import { Sidebar } from './sidebar';
 import { Topbar } from './topbar';
 
@@ -60,6 +64,22 @@ export class Shell {
 
   protected readonly collapsed = signal(Shell.readCollapsed());
   protected readonly drawerOpen = signal(false);
+
+  constructor() {
+    // A sessão pode acabar por fora — "Sair", expiração, saída em outra aba.
+    // Em todos os casos o painel some e volta a tela de entrar, sem deixar a
+    // agenda à mostra num tablet sem dono.
+    const router = inject(Router);
+    inject(StaffAuth)
+      .watchSession()
+      .pipe(
+        filter((session) => session === null),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => {
+        void router.navigate(['/entrar'], { replaceUrl: true });
+      });
+  }
 
   /** O mesmo botão recolhe em tela grande e abre a gaveta em tela pequena. */
   protected toggleMenu(): void {

@@ -1,7 +1,8 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, isDevMode } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideAtrioConfig } from '@atrio/core';
-import { provideDemoData } from '@atrio/data';
+import { provideDemoData, provideSupabaseStaffAuth } from '@atrio/data';
+import { environment } from '../environments/environment';
 import { routes } from './app.routes';
 import { provideServiceWorker } from '@angular/service-worker';
 
@@ -28,13 +29,18 @@ export const appConfig: ApplicationConfig = {
     provideAtrioConfig({
       productName: 'Átrio',
       appName: 'admin',
-      dataSource: 'demo',
-      demoMode: true,
+      dataSource: environment.dataSource,
+      demoMode: environment.dataSource === 'demo',
       version: '0.1.0',
     }),
 
-    // Única linha a trocar quando o Firebase entrar: provideFirebaseData().
     provideDemoData(),
+
+    // O login vem depois dos dados para substituir o da demonstração: o
+    // último provider registrado para um token é o que vale.
+    environment.auth === 'supabase'
+      ? provideSupabaseStaffAuth({ url: environment.supabaseUrl, key: environment.supabaseKey })
+      : [],
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',

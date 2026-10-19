@@ -264,6 +264,22 @@ se o que foi digitado chegou a ser gravado.
 
 ---
 
+## 10. Entrar no painel
+
+Dividida em duas no tablet em paisagem: à esquerda o painel grafite com a
+marca **Átrio** — antes de entrar, o painel ainda não sabe de qual barbearia é
+quem está diante dele —, à direita o formulário. No celular, só o formulário,
+com a marca em cima.
+
+| Decisão | Por quê |
+| --- | --- |
+| Sem "criar conta" | conta de equipe nasce pela barbearia; cadastro aberto deixaria qualquer um pedir acesso à agenda |
+| Conta sem barbearia é barrada depois da senha | um cliente tem conta no mesmo login; passar da senha não basta |
+| Volta para onde a pessoa ia (`?voltar=`), só dentro do painel | um `?voltar=//outro-site` não vira redirecionamento para fora |
+| A tela some sozinha quando a sessão acaba | expirou, saiu em outra aba: a agenda não fica à mostra num tablet sem dono |
+| "Sair" no menu da conta, na barra superior | o botão da conta existia e não fazia nada |
+| Na demonstração, já entra logado | quem conhece o produto vai direto à agenda; "Sair" mostra a tela de entrar, e o acesso demonstrativo devolve a sessão |
+
 ## 9. App do cliente
 
 Mesmos tokens, mesma fonte, mesmos componentes do painel. As referências de

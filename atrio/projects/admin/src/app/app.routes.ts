@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { Shell } from './layout/shell';
+import { guestOnly, staffOnly } from './features/auth/guards';
 
 /**
  * Rotas do painel.
@@ -13,8 +14,17 @@ import { Shell } from './layout/shell';
  */
 export const routes: Routes = [
   {
+    // Fora do shell: sem menu nem barra — ainda não se sabe de qual
+    // barbearia é quem está entrando.
+    path: 'entrar',
+    title: 'Entrar · Átrio',
+    canActivate: [guestOnly],
+    loadComponent: () => import('./features/auth/login-page').then((m) => m.LoginPage),
+  },
+  {
     path: '',
     component: Shell,
+    canActivate: [staffOnly],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
