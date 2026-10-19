@@ -36,6 +36,7 @@ const BETO = '10000000-0000-4000-8000-000000000002';
 const STAFF = '10000000-0000-4000-8000-000000000003';
 const OTHER_STAFF = '10000000-0000-4000-8000-000000000004';
 const NO_PROFILE = '10000000-0000-4000-8000-000000000005';
+const ATTENDANT = '10000000-0000-4000-8000-000000000006';
 
 const supabaseStandIn = `
   create role anon nologin;
@@ -108,8 +109,13 @@ before(async () => {
        ($2, 'beto@exemplo.com', '{"name":"Beto Lima","phone":"(11) 92222-2222"}'),
        ($3, 'equipe@navalha.com', '{}'),
        ($4, 'equipe@outra.com', '{}'),
-       ($5, 'semdados@exemplo.com', '{}')`,
-    [ANA, BETO, STAFF, OTHER_STAFF, NO_PROFILE],
+       ($5, 'semdados@exemplo.com', '{}'),
+       ($6, 'atendente@navalha.com', '{}')`,
+    [ANA, BETO, STAFF, OTHER_STAFF, NO_PROFILE, ATTENDANT],
+  );
+  await db.query(
+    `insert into public.tenant_members (tenant_id, user_id, role) values ($1, $2, 'atendente')`,
+    [TENANT, ATTENDANT],
   );
   await db.query(`insert into public.tenant_members (tenant_id, user_id, role) values ($1, $2, 'dono')`, [
     TENANT,
@@ -448,5 +454,107 @@ describe('isolamento entre barbearias', () => {
       ),
     );
     assert.match(reason, /foreign key/);
+  });
+});
+
+describe('painel: escritas em mais de uma tabela', () => {
+  const NEW_PRO = '20000000-0000-4000-8000-000000000001';
+  const schedule = [
+    { weekday: 1, kind: 'expediente', starts: '10:00', ends: '24:00' },
+    { weekday: 1, kind: 'intervalo', starts: '14:00', ends: '15:00' },
+  ];
+
+  const saveProfessional = (user, id, tenant, name, services, rows, active = true) =>
+    as(
+      user,
+      `select public.save_professional($1, $2, $3, null, null, null, null, $4, $5, $6) as id`,
+      [id, tenant, name, active, services, JSON.stringify(rows)],
+    );
+
+  test('cria profissional com expediente e serviços numa operação', async () => {
+    await saveProfessional(STAFF, NEW_PRO, TENANT, 'Novo', [CORTE, BARBA], schedule);
+
+    const rows = await as(
+      null,
+      `select p.name,
+              (select count(*)::int from public.professional_schedule s where s.professional_id = p.id) as horarios,
+              (select count(*)::int from public.professional_services l where l.professional_id = p.id) as servicos,
+              (select max(ends)::text from public.professional_schedule s where s.professional_id = p.id) as fecha
+         from public.professionals p where p.id = $1`,
+      [NEW_PRO],
+    );
+    assert.deepEqual(rows[0], { name: 'Novo', horarios: 2, servicos: 2, fecha: '24:00:00' });
+  });
+
+  test('salvar de novo substitui expediente e serviços, sem acumular', async () => {
+    await saveProfessional(STAFF, NEW_PRO, TENANT, 'Novo Nome', [CORTE], schedule.slice(0, 1));
+
+    const [row] = await as(
+      null,
+      `select p.name,
+              (select count(*)::int from public.professional_schedule s where s.professional_id = p.id) as horarios,
+              (select count(*)::int from public.professional_services l where l.professional_id = p.id) as servicos
+         from public.professionals p where p.id = $1`,
+      [NEW_PRO],
+    );
+    assert.deepEqual(row, { name: 'Novo Nome', horarios: 1, servicos: 1 });
+  });
+
+  test('o novo profissional já recebe agendamento dentro do expediente salvo', async () => {
+    // Segunda 22:00 só cabe porque o expediente salvo vai até 24:00; 09:00,
+    // antes de abrir às 10:00, não cabe.
+    await book(ANA, NEW_PRO, CORTE, await nextWeek(0, '22:00'));
+    assert.equal(await fails(book(ANA, NEW_PRO, CORTE, await nextWeek(0, '09:00'))), 'fora_do_expediente');
+  });
+
+  test('equipe de outra barbearia não salva nem "toma" o profissional', async () => {
+    const other = '00000000-0000-4000-8000-000000000002';
+    assert.equal(await fails(saveProfessional(OTHER_STAFF, NEW_PRO, TENANT, 'X', [], [])), 'nao_encontrado');
+    // Mesmo id, barbearia dela: não move o registro de dono.
+    assert.equal(await fails(saveProfessional(OTHER_STAFF, NEW_PRO, other, 'X', [], [])), 'nao_encontrado');
+
+    const [row] = await db.query(`select tenant_id, name from public.professionals where id = $1`, [NEW_PRO]).then((r) => r.rows);
+    assert.deepEqual(row, { tenant_id: TENANT, name: 'Novo Nome' });
+  });
+
+  test('erro no meio desfaz tudo', async () => {
+    // Serviço inexistente: o vínculo falha, e o nome não pode ter mudado.
+    const reason = await fails(
+      saveProfessional(STAFF, NEW_PRO, TENANT, 'Meio Salvo', ['30000000-0000-4000-8000-000000000009'], schedule),
+    );
+    assert.match(reason, /foreign key/);
+    const [row] = await db.query(`select name from public.professionals where id = $1`, [NEW_PRO]).then((r) => r.rows);
+    assert.equal(row.name, 'Novo Nome');
+  });
+
+  test('tela de Serviços define quem realiza', async () => {
+    await as(STAFF, `select public.set_service_professionals($1, $2)`, [BARBA, [RAFAEL, NEW_PRO]]);
+    const rows = await as(
+      null,
+      `select professional_id from public.professional_services where service_id = $1 order by professional_id`,
+      [BARBA],
+    );
+    assert.deepEqual(rows.map((r) => r.professional_id).sort(), [RAFAEL, NEW_PRO].sort());
+
+    assert.equal(
+      await fails(as(OTHER_STAFF, `select public.set_service_professionals($1, $2)`, [BARBA, []])),
+      'nao_encontrado',
+    );
+  });
+
+  test('configurações: dono salva; atendente e outra barbearia, não', async () => {
+    const save = (user) =>
+      as(
+        user,
+        `select public.save_tenant_settings($1, 'Navalha & Co.', '(11) 98888-1234', null, '{}', null, 'Novo Responsável', 'novo@navalha.com')`,
+        [TENANT],
+      );
+
+    await save(STAFF);
+    const [account] = await as(STAFF, `select admin_name, admin_email from public.tenant_accounts`);
+    assert.deepEqual(account, { admin_name: 'Novo Responsável', admin_email: 'novo@navalha.com' });
+
+    assert.equal(await fails(save(ATTENDANT)), 'sem_permissao');
+    assert.equal(await fails(save(OTHER_STAFF)), 'sem_permissao');
   });
 });
