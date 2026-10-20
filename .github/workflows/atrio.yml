@@ -58,6 +58,9 @@ jobs:
       - name: Regras do banco (Postgres em WebAssembly)
         run: npm run test:db
 
+      - name: E-mails do agendamento (modelos)
+        run: npm run test:emails
+
       - name: Camada de dados
         run: npx ng test @atrio/data
 

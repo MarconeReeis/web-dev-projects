@@ -12,10 +12,13 @@ supabase/
 │   ├── 20261019000700_client_link.sql histórico do balcão ligado à conta do cliente
 │   ├── 20261019000800_delete_account.sql excluir minha conta (LGPD)
 │   ├── 20261019000900_counter_pin.sql PIN do balcão
-│   └── 20261020000100_reserved_slugs.sql endereços reservados pelo Átrio
-├── templates/                        os e-mails (cadastro, senha, troca de e-mail)
+│   ├── 20261020000100_reserved_slugs.sql endereços reservados pelo Átrio
+│   ├── 20261020000200_appointment_emails.sql fila dos e-mails do agendamento
+│   └── 20261020000300_email_dispatch.sql a cada minuto, chama o envio
+├── functions/enviar-emails/          envia a fila pelo Resend (Edge Function)
+├── templates/                        os e-mails de conta (cadastro, senha, troca de e-mail)
 ├── seed.sql                          a Navalha & Co. do modo demonstração
-└── tests/schema.test.mjs             72 testes contra Postgres de verdade
+└── tests/schema.test.mjs             81 testes contra Postgres de verdade
 ```
 
 ## Testar
@@ -115,6 +118,61 @@ modelo aqui, cole de novo no painel — nos dois projetos, teste e produção.
 email**: ligado. O cadastro passa a responder "Enviamos um link para o seu
 e-mail"; o link volta para a página da barbearia (`/<barbearia>`), já
 logado — coberto pelo `/**` das Redirect URLs.
+
+## E-mails do agendamento
+
+Confirmação, aviso à barbearia, cancelamento, remarcação e lembrete da
+véspera. Quem recebe o quê está no topo de
+`migrations/20261020000200_appointment_emails.sql`.
+
+**Como funciona.** Marcar, cancelar ou remarcar grava um aviso na fila
+(`email_outbox`) — no banco, na mesma transação, sem depender de rede. A cada
+minuto o pg_cron roda `private.dispatch_emails()`: enfileira os lembretes e,
+se há algo na fila, chama a Edge Function `enviar-emails`, que monta cada
+e-mail (`functions/enviar-emails/render.ts`) e envia pelo Resend. O que falha
+volta para a fila, até 5 tentativas. Aviso que perdeu o sentido (horário
+cancelado antes de a confirmação sair) é descartado.
+
+**Configurar** (uma vez por projeto — teste e produção):
+
+1. **Chave do Resend.** resend.com → API Keys → Create: nome
+   `emails-agendamento-teste`, **Sending access**, domínio
+   `atrioagenda.com.br`. A chave aparece uma vez.
+2. **Um segredo** para o banco provar à função que é ele. Gere no terminal e
+   guarde para os passos 3 e 4:
+
+   ```bash
+   node -e "console.log(crypto.randomUUID())"
+   ```
+
+3. **Secrets da função.** Painel do Supabase → Edge Functions → Secrets:
+
+   | Nome | Valor |
+   | --- | --- |
+   | `RESEND_API_KEY` | a chave do passo 1 |
+   | `EMAILS_SECRET` | o segredo do passo 2 |
+   | `APP_URL` | `http://localhost:4300` (teste) ou `https://atrioagenda.com.br` |
+   | `PAINEL_URL` | `http://localhost:4200` (teste) ou o endereço do painel |
+
+4. **Vault.** SQL Editor, trocando o segredo:
+
+   ```sql
+   select vault.create_secret(
+     'https://<ref-do-projeto>.supabase.co/functions/v1/enviar-emails', 'emails_url');
+   select vault.create_secret('<o segredo do passo 2>', 'emails_secret');
+   ```
+
+5. **Publicar a função** (já feito no projeto de teste):
+
+   ```bash
+   npx supabase functions deploy enviar-emails --no-verify-jwt --use-api
+   ```
+
+Sem os passos 3 e 4 nada quebra: os avisos ficam na fila esperando.
+
+**Acompanhar.** Table Editor → `email_outbox`: `status` (`pendente`,
+`enviando`, `enviado`, `falhou`, `descartado`) e `last_error`. No Resend, em
+Emails, cada envio e se foi entregue.
 
 ## Imagens
 

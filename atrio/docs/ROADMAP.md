@@ -85,10 +85,11 @@ e recebe.
       da barbearia e "Confirm email" ligado; o cadastro mostra "Confirme seu
       e-mail" com reenviar. No banco de produção, repetir SMTP e modelos —
       passo a passo em `supabase/README.md`, "E-mails".
-- [ ] **E-mails do agendamento** — M. O que mais entrega valor ao plano Solo:
-      confirmação para o cliente, aviso de novo horário para a barbearia,
-      aviso de cancelamento e reagendamento, e lembrete na véspera. Disparo
-      pelo banco (função + Resend), com agendamento para o lembrete.
+- [x] **E-mails do agendamento** — feito em 20/10/2026: confirmação para o
+      cliente, aviso de novo horário, cancelamento e remarcação para o outro
+      lado, e lembrete na véspera. Fila no banco (gatilho), envio por Edge
+      Function + Resend a cada minuto (pg_cron). Configurar chave e segredo
+      em cada projeto — `supabase/README.md`, "E-mails do agendamento".
 - [x] **URL `atrioagenda.com.br/<barbearia>`** — feito em 20/10/2026. Sem
       o `/b/`; endereços reservados pelo Átrio recusados no banco; links
       antigos redirecionam com o resto do caminho.
@@ -212,7 +213,7 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
 3. ~~E-mails de conta, nova senha e cadastro de barbearia~~ — feito.
 4. ~~Decidir a cor e a regra de concorrentes → URL nova e marca Átrio~~ —
    feito.
-5. E-mails do agendamento → planos no banco → painel enxuto do Solo.
+5. ~~E-mails do agendamento~~ → planos no banco → painel enxuto do Solo.
 6. LGPD, captcha, monitoramento, plano Pro.
 7. Banco de produção, hospedagem, PWA.
 8. Estudo de preços → piloto → cobrança → lançamento.

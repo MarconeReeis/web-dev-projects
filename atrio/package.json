@@ -10,6 +10,7 @@
     "build:booking": "ng build booking",
     "test": "ng test",
     "test:db": "node --test supabase/tests/schema.test.mjs",
+    "test:emails": "node --test supabase/functions/enviar-emails/render.test.ts",
     "icons": "node tools/generate-icons.mjs",
     "barbearia:nova": "node --env-file-if-exists=.env.local tools/nova-barbearia.mjs"
   },
