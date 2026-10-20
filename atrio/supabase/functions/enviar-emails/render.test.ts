@@ -44,6 +44,11 @@ describe('e-mails do agendamento', () => {
     assert.match(mail.html, /href="https:\/\/atrioagenda\.com\.br\/navalha-e-co\/meus-horarios\/ap1"/);
   });
 
+  test('nome que já termina em ponto não ganha outro', () => {
+    assert.match(render(base, options).text, /Te esperamos na Navalha & Co\.\n/);
+    assert.match(render({ ...base, tenant_name: 'Barbearia do Zé' }, options).text, /Te esperamos na Barbearia do Zé\.\n/);
+  });
+
   test('a mesma hora em Rio Branco sai como 13:00', () => {
     const mail = render({ ...base, time_zone: 'America/Rio_Branco' }, options);
     assert.match(mail.subject, /às 13:00$/);

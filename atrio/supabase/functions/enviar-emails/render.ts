@@ -84,7 +84,7 @@ export function render(row: EmailRow, options: RenderOptions): RenderedEmail {
         subject: `Horário confirmado: ${when.shortDate} às ${when.start}`,
         brand: shop,
         heading: 'Seu horário está marcado',
-        lead: `Te esperamos na ${shop}.`,
+        lead: sentence(`Te esperamos na ${shop}`),
         details: clientDetails,
         action: ['Ver meu agendamento', myAppointment],
         footnote: `Precisa mudar? Reagende ou cancele pelo app até ${CHANGE_LIMIT_HOURS} horas antes.`,
@@ -213,6 +213,11 @@ function address(value: EmailRow['tenant_address']): string | null {
   const line = [street, value['complement'], value['district']].filter(Boolean).join(' · ');
   const city = [value['city'], value['state']].filter(Boolean).join(' - ');
   return [line, city].filter(Boolean).join(' — ') || null;
+}
+
+/** Fecha a frase com ponto — sem dobrar o de "Navalha & Co.". */
+function sentence(text: string): string {
+  return /[.!?]$/.test(text) ? text : `${text}.`;
 }
 
 function capitalize(text: string): string {
