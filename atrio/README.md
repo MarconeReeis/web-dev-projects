@@ -8,8 +8,9 @@ PWA sobre a mesma base:
 | **admin** | dono e atendentes da barbearia | tablet Android em paisagem, no balcão |
 | **booking** | cliente final | celular, instalável sem loja de aplicativos |
 
-O admin tem sempre a marca Átrio, identificando qual barbearia está logada. O
-booking é white-label: logo, nome e cor são da barbearia.
+Os dois têm a marca Átrio. O booking é o **Átrio Agenda**: um site só, com uma
+página por barbearia em `atrioagenda.com.br/<barbearia>` — ver
+docs/ARQUITETURA.md, "Marca".
 
 ## Rodando
 
@@ -44,7 +45,7 @@ projects/
 │       └── shared/         componentes reusados entre seções do admin
 ├── booking/                aplicação do cliente (prefixo bkg-)
 └── shared/
-    ├── core/   @atrio/core  configuração, tenant, white-label
+    ├── core/   @atrio/core  configuração, tenant, marca
     ├── data/   @atrio/data  modelos, repositórios, modo demonstração
     └── ui/     @atrio/ui    design system (componentes + tokens CSS)
 ```
@@ -67,7 +68,8 @@ durante o desenvolvimento.
 - **O horário da barbearia é derivado** da jornada dos profissionais, não um
   campo. Mesmo motivo.
 - **Componente não escreve cor crua.** Sempre um token semântico
-  (`bg-primary`, `text-muted-foreground`). É o que faz o white-label funcionar.
+  (`bg-primary`, `text-muted-foreground`). É o que deixa trocar a identidade
+  inteira num arquivo só.
 - **Conflito de horário é problema do banco.** Uma *exclusion constraint* no
   Postgres recusa dois atendimentos sobrepostos do mesmo profissional, mesmo
   com dois celulares marcando no mesmo instante — ver `supabase/README.md`.

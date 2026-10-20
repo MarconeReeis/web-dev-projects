@@ -84,8 +84,8 @@ type State = 'verificando' | 'formulario' | 'expirado' | 'pronto';
             <p class="mt-1 text-sm text-muted-foreground">Você já está conectado.</p>
           </div>
           <div class="mt-8 flex flex-col gap-2">
-            <a atrButton size="lg" class="w-full" [routerLink]="['/b', slug()]">Ir para o início</a>
-            <a atrButton="ghost" size="lg" class="w-full" [routerLink]="['/b', slug(), 'meus-horarios']">
+            <a atrButton size="lg" class="w-full" [routerLink]="['/', slug()]">Ir para o início</a>
+            <a atrButton="ghost" size="lg" class="w-full" [routerLink]="['/', slug(), 'meus-horarios']">
               Ver meus horários
             </a>
           </div>
@@ -108,7 +108,7 @@ type State = 'verificando' | 'formulario' | 'expirado' | 'pronto';
             atrButton
             size="lg"
             class="mt-8 w-full"
-            [routerLink]="['/b', slug(), 'meus-horarios']"
+            [routerLink]="['/', slug(), 'meus-horarios']"
             [queryParams]="{ recuperar: 1 }"
           >
             Pedir outro link
@@ -171,7 +171,7 @@ export class NewPasswordPage {
   }
 
   protected goHome(): void {
-    void this.router.navigate(['/b', this.slug()]);
+    void this.router.navigate(['/', this.slug()]);
   }
 
   /** O link abre a sessão sozinho, ao carregar o app; aqui só se espera por ela. */

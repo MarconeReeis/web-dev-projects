@@ -90,7 +90,7 @@ type Tab = 'proximos' | 'historico';
               heading="Nada marcado"
               description="Quando você agendar, seus horários aparecem aqui."
             >
-              <a atrButton class="mt-2" [routerLink]="['/b', slug(), 'agendar']">Agendar horário</a>
+              <a atrButton class="mt-2" [routerLink]="['/', slug(), 'agendar']">Agendar horário</a>
             </atr-empty-state>
           } @else {
             <atr-empty-state
@@ -107,7 +107,7 @@ type Tab = 'proximos' | 'historico';
               <a
                 class="surface block p-5 transition-colors hover:border-primary"
                 [attr.aria-label]="'Detalhes de ' + appointment.serviceName + ', ' + dayAndTime(appointment)"
-                [routerLink]="['/b', slug(), 'meus-horarios', appointment.id]"
+                [routerLink]="['/', slug(), 'meus-horarios', appointment.id]"
               >
                 <span class="flex items-start justify-between gap-3">
                   <span class="min-w-0">

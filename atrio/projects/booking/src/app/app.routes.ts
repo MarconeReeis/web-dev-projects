@@ -1,5 +1,17 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanMatchFn, Router, Routes } from '@angular/router';
 import { Shell } from './layout/shell';
+
+/**
+ * Links antigos (/b/<barbearia>/…) — divulgados, salvos ou dentro de um
+ * e-mail ainda não aberto — vão para o endereço novo, com o resto do
+ * caminho e os parâmetros.
+ */
+const legacyPath: CanMatchFn = (_route, segments) => {
+  const router = inject(Router);
+  const queryParams = router.currentNavigation()?.extractedUrl.queryParams ?? {};
+  return router.createUrlTree(['/', ...segments.slice(1).map((s) => s.path)], { queryParams });
+};
 
 /**
  * Rotas do app do cliente.
@@ -10,14 +22,16 @@ import { Shell } from './layout/shell';
  *
  * A rota mais específica vem primeiro — o roteador casa de cima para baixo.
  *
- * Na v1 a barbearia é identificada por caminho (/b/:slug) e não por
- * subdomínio: o Firebase Hosting resolve sem wildcard de DNS. Quando cada
- * barbearia precisar do próprio ícone na tela inicial do celular, o slug
- * passa para subdomínio e só o resolvedor de tenant muda.
+ * A barbearia é o primeiro trecho do caminho: atrioagenda.com.br/<barbearia>.
+ * Um produto só, o Átrio Agenda, com uma página por barbearia — e o link de
+ * cada uma leva só a ela. Os endereços que o Átrio usa para si (/planos,
+ * /entrar…) são reservados no banco (20261020000100_reserved_slugs.sql) e
+ * nenhuma barbearia os recebe.
  */
 export const routes: Routes = [
+  { path: 'b', canMatch: [legacyPath], children: [] },
   {
-    path: 'b/:slug/agendar',
+    path: ':slug/agendar',
     title: 'Agendar horário',
     loadComponent: () =>
       import('./features/booking/booking-page').then((m) => m.BookingPage),
@@ -25,7 +39,7 @@ export const routes: Routes = [
   {
     // Destino do link de "Esqueci minha senha". Fora do shell: é um passo
     // de conta, não uma seção do app.
-    path: 'b/:slug/nova-senha',
+    path: ':slug/nova-senha',
     title: 'Nova senha',
     loadComponent: () =>
       import('./features/auth/new-password-page').then((m) => m.NewPasswordPage),
@@ -33,32 +47,32 @@ export const routes: Routes = [
   {
     // Detalhes e reagendamento também ficam fora do shell: têm o próprio
     // "voltar" e ações no pé da tela, que a barra inferior cobriria.
-    path: 'b/:slug/meus-horarios/:id/reagendar',
+    path: ':slug/meus-horarios/:id/reagendar',
     title: 'Reagendar',
     loadComponent: () =>
       import('./features/appointments/reschedule-page').then((m) => m.ReschedulePage),
   },
   {
-    path: 'b/:slug/meus-horarios/:id',
+    path: ':slug/meus-horarios/:id',
     title: 'Agendamento',
     loadComponent: () =>
       import('./features/appointments/appointment-page').then((m) => m.AppointmentPage),
   },
   {
     // Política e termos: páginas de leitura, com o próprio "voltar".
-    path: 'b/:slug/privacidade',
+    path: ':slug/privacidade',
     title: 'Política de privacidade',
     data: { document: 'privacidade' },
     loadComponent: () => import('./features/profile/legal-page').then((m) => m.LegalPage),
   },
   {
-    path: 'b/:slug/termos',
+    path: ':slug/termos',
     title: 'Termos de uso',
     data: { document: 'termos' },
     loadComponent: () => import('./features/profile/legal-page').then((m) => m.LegalPage),
   },
   {
-    path: 'b/:slug',
+    path: ':slug',
     component: Shell,
     children: [
       {
@@ -87,6 +101,6 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '', pathMatch: 'full', redirectTo: 'b/navalha-e-co' },
-  { path: '**', redirectTo: 'b/navalha-e-co' },
+  { path: '', pathMatch: 'full', redirectTo: 'navalha-e-co' },
+  { path: '**', redirectTo: 'navalha-e-co' },
 ];

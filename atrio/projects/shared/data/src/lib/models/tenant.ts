@@ -96,7 +96,7 @@ export interface Tenant {
    * As Configurações exibem o horário derivado, em leitura.
    */
 
-  /** Identificador na URL pública: /b/barbearia-do-ze */
+  /** Identificador na URL pública: atrioagenda.com.br/barbearia-do-ze */
   readonly slug: string;
   readonly name: string;
   readonly phone: string | null;

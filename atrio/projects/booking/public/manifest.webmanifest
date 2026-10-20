@@ -1,15 +1,15 @@
 {
-  "name": "Agendar horário",
-  "short_name": "Agendar",
-  "description": "Agende seu horário na barbearia.",
+  "name": "Átrio Agenda",
+  "short_name": "Átrio",
+  "description": "Agende seu horário nas barbearias que usam o Átrio.",
   "lang": "pt-BR",
   "dir": "ltr",
   "display": "standalone",
   "orientation": "portrait",
   "scope": "./",
   "start_url": "./",
-  "background_color": "#F5F5F9",
-  "theme_color": "#20212B",
+  "background_color": "#F7F5F2",
+  "theme_color": "#2A2825",
   "categories": [
     "lifestyle"
   ],

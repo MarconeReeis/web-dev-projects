@@ -125,7 +125,7 @@ const appPainel = process.env.APP_PAINEL_URL ?? 'http://localhost:4200';
 console.log(`
 ✔ ${args.nome.trim()} cadastrada (${tenantId})
 
-  App do cliente   ${appCliente}/b/${slug}
+  App do cliente   ${appCliente}/${slug}
   Painel           ${appPainel}
 
   Login do dono    ${email}

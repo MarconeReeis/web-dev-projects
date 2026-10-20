@@ -12,7 +12,7 @@ consegue contar sozinho.
 admin / booking          telas, rotas, estado de tela
       ↓
 @atrio/ui                design system (não conhece o domínio)
-@atrio/core              configuração, tenant, white-label
+@atrio/core              configuração, tenant, marca
       ↓
 @atrio/data              modelos + contratos de repositório
       ↓
@@ -166,36 +166,27 @@ dia escolhido no calendário). Um vira o outro só por `shopInstant` e
 
 ---
 
-## White-label
+## Marca: Átrio Agenda, um produto só
 
-O **admin** tem sempre a marca Átrio, identificando qual barbearia está
-logada. O **booking** é que muda de cara.
+Decidido em 20/10/2026. O app do cliente é **um site do Átrio**, com uma
+página por barbearia — não um app com a cara de cada uma.
 
-Funciona assim: a barbearia escolhe UMA cor; `deriveBrandScale()` calcula
-hover, fundo suave e cor de texto em OKLCH, mantendo L e C da paleta padrão.
-O `BrandingService` sobrescreve as primitivas `--atr-brand-*` no `:root`, e
-toda a camada semântica segue junto.
+- **Endereço:** `atrioagenda.com.br/<barbearia>`, direto na raiz. Os
+  endereços que o Átrio usa para si (`/planos`, `/entrar`, `/painel`…) são
+  reservados no banco (`private.is_reserved_slug`, regra da tabela
+  `tenants`). Links antigos `/b/<barbearia>/…` redirecionam.
+- **Identidade:** a do Átrio para todas — cores, fontes, topo "Átrio Agenda",
+  nome do app instalado. A barbearia aparece pelo conteúdo: logo, nome,
+  profissionais, fotos. Por isso o app do cliente não aplica mais a cor da
+  barbearia (o `BrandingService` e o `branding.primaryColor` continuam no
+  código, sem uso, para uma eventual marca própria premium).
+- **Nunca mostrar concorrente:** a página de uma barbearia mostra só ela. O
+  link que a barbearia divulga leva aos clientes dela, e a nenhuma outra.
+- **A conta do cliente é uma só** para todas as barbearias — o que, com a
+  marca Átrio, passa a ser vantagem, não detalhe.
 
-OKLCH e não HSL porque em OKLCH o L é perceptual: fixar L e variar o matiz
-mantém o contraste. Em HSL, "L 55%" em amarelo e em azul têm luminosidade real
-muito diferente, e o texto ficaria ilegível em metade das marcas.
-
-A aplicação acontece em `provideAppInitializer`, antes da primeira pintura —
-senão o cliente veria o roxo do Átrio piscar antes da cor da barbearia.
-
-### Endereço do app do cliente
-
-**v1:** por caminho — `agenda.atrio.com.br/b/barbearia-do-ze`. Simples:
-qualquer hospedagem estática resolve sem wildcard de DNS. (O Supabase não
-hospeda o front; a escolha da hospedagem ainda está aberta.)
-
-**Depois:** por subdomínio — `barbearia-do-ze.atrio.com.br`. Cada barbearia
-vira uma origem isolada, com ícone, nome e armazenamento próprios na tela
-inicial do celular — a sensação de white-label que se vende. Custa wildcard DNS
-e certificado — Cloudflare na frente resolve, qualquer que seja a
-hospedagem.
-
-A migração é chata mas não bloqueia o lançamento.
+O **admin** continua com a marca Átrio, identificando qual barbearia está
+logada.
 
 ---
 

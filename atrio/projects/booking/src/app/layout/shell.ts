@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
-import { TenantContext } from '@atrio/core';
 import { AtrAvatar, AtrIcon } from '@atrio/ui';
 import { ClientSession } from '../shared/client-session';
 
@@ -17,8 +16,9 @@ import { ClientSession } from '../shared/client-session';
  * conta). A conta ganhou aba própria para "Sair" e "Excluir minha conta"
  * saírem de Meus horários, que é sobre horários.
  *
- * O topo é da barbearia — logo e nome —, porque o app é dela (white-label).
- * O avatar à direita leva ao Perfil.
+ * O topo é do Átrio — um produto só, o Átrio Agenda, com uma página por
+ * barbearia. A barbearia aparece no conteúdo (o topo do Início), e o link
+ * dela nunca mostra outra. O avatar à direita leva ao Perfil.
  */
 @Component({
   selector: 'bkg-shell',
@@ -26,32 +26,28 @@ import { ClientSession } from '../shared/client-session';
   imports: [RouterOutlet, RouterLink, AtrAvatar, AtrIcon],
   host: { class: 'flex min-h-dvh flex-col bg-background' },
   template: `
-    <header class="mx-auto w-full max-w-2xl px-5 pt-6">
-      <div class="flex items-center gap-3">
-        @if (tenant.branding()?.logoUrl; as logo) {
-          <img [src]="logo" alt="" class="size-12 shrink-0 rounded-full object-cover" />
-        } @else {
-          <span
-            class="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
-            aria-hidden="true"
-          >
-            <atr-icon name="scissors" [size]="22" />
-          </span>
-        }
-
-        <div class="min-w-0 flex-1">
-          <p class="text-xs text-muted-foreground">Sua barbearia</p>
-          <p class="truncate font-display text-xl font-bold tracking-tight">{{ tenant.name() }}</p>
-        </div>
+    <!-- Moldura do Átrio: a marca do produto, discreta. A barbearia é o
+         assunto de cada página (ver o topo do Início), não do cabeçalho. -->
+    <header class="mx-auto w-full max-w-2xl px-5 pt-5">
+      <div class="flex items-center gap-2.5">
+        <span
+          class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
+          aria-hidden="true"
+        >
+          <atr-icon name="scissors" [size]="18" />
+        </span>
+        <p class="min-w-0 flex-1 truncate font-display text-lg font-bold tracking-tight">
+          Átrio <span class="font-medium text-muted-foreground">Agenda</span>
+        </p>
 
         <a routerLink="./perfil" class="shrink-0 rounded-full" aria-label="Perfil">
           @if (session.signedIn()) {
-            <atr-avatar [name]="session.name()" [photoUrl]="session.photoUrl()" size="lg" />
+            <atr-avatar [name]="session.name()" [photoUrl]="session.photoUrl()" />
           } @else {
             <span
-              class="flex size-12 items-center justify-center rounded-full bg-card text-muted-foreground shadow-card"
+              class="flex size-10 items-center justify-center rounded-full bg-card text-muted-foreground shadow-card"
             >
-              <atr-icon name="user-round" [size]="22" />
+              <atr-icon name="user-round" [size]="20" />
             </span>
           }
         </a>
@@ -98,7 +94,6 @@ import { ClientSession } from '../shared/client-session';
   `,
 })
 export class Shell {
-  protected readonly tenant = inject(TenantContext);
   protected readonly session = inject(ClientSession);
 
   private readonly router = inject(Router);

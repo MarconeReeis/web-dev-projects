@@ -545,10 +545,10 @@ type ProfessionalChoice = Id | typeof ANY | null;
             </div>
 
             <div class="mt-auto flex flex-col gap-1 pt-10">
-              <a atrButton size="lg" class="w-full" [routerLink]="['/b', slug(), 'meus-horarios']">
+              <a atrButton size="lg" class="w-full" [routerLink]="['/', slug(), 'meus-horarios']">
                 Ver meu agendamento
               </a>
-              <a atrButton="ghost" size="lg" class="w-full" [routerLink]="['/b', slug()]">
+              <a atrButton="ghost" size="lg" class="w-full" [routerLink]="['/', slug()]">
                 Voltar ao início
               </a>
             </div>
@@ -912,7 +912,7 @@ export class BookingPage {
 
     // No primeiro passo, voltar sai do fluxo e devolve à vitrine.
     if (index <= 0) {
-      void this.router.navigate(['/b', this.slug()]);
+      void this.router.navigate(['/', this.slug()]);
       return;
     }
     this.step.set(ORDER[index - 1]);

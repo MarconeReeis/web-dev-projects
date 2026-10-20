@@ -41,14 +41,14 @@ Os valores ainda não existem: os que surgiram na conversa (R$ 200, R$ 100,
 R$ 60) eram exemplos. Saem do **estudo de preços** (fase 4), antes do
 lançamento.
 
-**Decisões em aberto:**
+**Decidido (20/10/2026):**
 
-- **Cor.** Identidade do Átrio para todas as barbearias (a barbearia aparece
-  pelo logo e pelas fotos), ou a cor de cada uma, como hoje. A primeira é mais
-  consistente e simples; a cor própria pode virar extra de plano maior.
-- **Nunca mostrar concorrente.** O medo do dono é o Átrio virar intermediário
-  e oferecer a barbearia vizinha aos clientes dele. Proposta: regra do
-  produto, escrita no contrato — a página de uma barbearia nunca mostra outra.
+- **Identidade do Átrio para todas as barbearias.** A barbearia aparece pelo
+  logo, nome e fotos; a cor é a do Átrio. Cor própria pode virar extra de
+  marca própria (premium).
+- **Nunca mostrar concorrente.** Regra do produto, a escrever no contrato: o
+  link que cada barbearia divulga leva só a ela — a página de uma barbearia
+  nunca mostra outra.
 
 ## Antes de tudo (não espere)
 
@@ -89,12 +89,13 @@ e recebe.
       confirmação para o cliente, aviso de novo horário para a barbearia,
       aviso de cancelamento e reagendamento, e lembrete na véspera. Disparo
       pelo banco (função + Resend), com agendamento para o lembrete.
-- [ ] **URL `atrioagenda.com.br/<barbearia>`** — P. Sem o `/b/`, com a lista
-      de nomes reservados (`perfil`, `entrar`, `painel`…) que nenhuma
-      barbearia pode usar. Os links antigos redirecionam.
-- [ ] **Marca Átrio no topo** — P. Átrio na moldura; logo, capa e nome da
-      barbearia no conteúdo. Depende da decisão da cor (ver "Direção do
-      produto").
+- [x] **URL `atrioagenda.com.br/<barbearia>`** — feito em 20/10/2026. Sem
+      o `/b/`; endereços reservados pelo Átrio recusados no banco; links
+      antigos redirecionam com o resto do caminho.
+- [x] **Marca Átrio no topo** — feito em 20/10/2026. "Átrio Agenda" na
+      moldura, a barbearia (logo, nome, saudação) no topo do Início, o app
+      instalado como "Átrio Agenda" e a cor do Átrio para todas. Falta a
+      foto de capa da barbearia, que ainda não tem onde cadastrar.
 - [ ] **Planos no banco** — M. Plano na assinatura (`tenant_accounts`) e o
       que cada um libera: o painel completo só no plano Barbearia. A regra
       vale no banco, não só na tela.
@@ -209,7 +210,8 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
 1. ~~Código no GitHub, região e ambientes~~ — feito.
 2. ~~Login da equipe → painel no banco~~ — feito.
 3. ~~E-mails de conta, nova senha e cadastro de barbearia~~ — feito.
-4. Decidir a cor e a regra de concorrentes → URL nova e marca Átrio no topo.
+4. ~~Decidir a cor e a regra de concorrentes → URL nova e marca Átrio~~ —
+   feito.
 5. E-mails do agendamento → planos no banco → painel enxuto do Solo.
 6. LGPD, captcha, monitoramento, plano Pro.
 7. Banco de produção, hospedagem, PWA.

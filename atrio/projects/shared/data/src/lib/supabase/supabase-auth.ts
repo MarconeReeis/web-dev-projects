@@ -124,7 +124,7 @@ export class SupabaseClientAuth extends ClientAuth {
     // endereço precisa estar em "Redirect URLs" no Supabase — senão ele
     // manda para a Site URL e a pessoa cai fora do app.
     const { error } = await this.client.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${location.origin}/b/${this.config.tenantSlug()}/nova-senha`,
+      redirectTo: `${location.origin}/${this.config.tenantSlug()}/nova-senha`,
     });
     // Mesmo resultado exista a conta ou não; só falha de rede chega aqui.
     if (error && error.status !== 400) throw translate(error);
@@ -184,7 +184,7 @@ export class SupabaseClientAuth extends ClientAuth {
   }
 
   private confirmationRedirect(): string {
-    return `${location.origin}/b/${this.config.tenantSlug()}`;
+    return `${location.origin}/${this.config.tenantSlug()}`;
   }
 
   /**
@@ -269,7 +269,7 @@ function translate(error: AuthError): ClientAuthError {
 /**
  * Liga o app do CLIENTE ao Supabase. Troca `provideDemoData()` no app.config.
  *
- * A barbearia vem do endereço (/b/:slug). O painel tem o seu:
+ * A barbearia vem do endereço (/:slug). O painel tem o seu:
  * provideSupabaseAdminData.
  */
 export function provideSupabaseData(config: SupabaseDataConfig): Provider[] {

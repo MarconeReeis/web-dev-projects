@@ -105,7 +105,7 @@ import { ownAppointment } from './own-appointment';
             heading="Agendamento não encontrado"
             description="Ele pode ter sido removido, ou pertencer a outra conta."
           >
-            <a atrButton class="mt-2" [routerLink]="['/b', slug(), 'meus-horarios']">
+            <a atrButton class="mt-2" [routerLink]="['/', slug(), 'meus-horarios']">
               Ver meus horários
             </a>
           </atr-empty-state>
@@ -251,7 +251,7 @@ export class ReschedulePage {
     return `${formatTime(startsAt)} – ${formatTime(ends)}`;
   });
 
-  protected readonly detailLink = computed(() => ['/b', this.slug(), 'meus-horarios', this.id()]);
+  protected readonly detailLink = computed(() => ['/', this.slug(), 'meus-horarios', this.id()]);
 
   protected chooseDate(date: Date): void {
     this.date.set(date);

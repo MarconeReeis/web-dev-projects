@@ -109,7 +109,7 @@ import { EditProfileDialog } from './edit-profile-dialog';
           @for (link of legalLinks; track link.path) {
             <a
               class="flex min-h-12 w-full items-center gap-3 rounded-full border border-border bg-card px-5 text-sm font-medium transition-colors hover:border-primary"
-              [routerLink]="['/b', slug(), link.path]"
+              [routerLink]="['/', slug(), link.path]"
             >
               <atr-icon name="file-text" [size]="18" class="shrink-0" />
               <span class="flex-1">{{ link.label }}</span>
@@ -231,7 +231,7 @@ export class ProfilePage {
     this.deleteError.set(null);
     try {
       await this.session.deleteAccount();
-      await this.router.navigate(['/b', this.slug()], { state: { contaExcluida: true } });
+      await this.router.navigate(['/', this.slug()], { state: { contaExcluida: true } });
     } catch (cause) {
       this.deleteError.set(
         cause instanceof ClientAuthError

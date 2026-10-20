@@ -5,30 +5,33 @@ import {
   provideBrowserGlobalErrorListeners,
   isDevMode,
 } from '@angular/core';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
-import { BrandingService, provideAtrioConfig } from '@atrio/core';
+import { TitleStrategy, provideRouter, withComponentInputBinding } from '@angular/router';
+import { provideAtrioConfig } from '@atrio/core';
 import { TenantRepository, provideDemoData, provideSupabaseData } from '@atrio/data';
 import { filter, firstValueFrom, timeout } from 'rxjs';
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
+import { AtrioTitleStrategy } from './shared/page-title';
 import { provideServiceWorker } from '@angular/service-worker';
 
 const demo = environment.dataSource === 'demo';
 
 /**
- * Barbearia deste acesso, pelo caminho: /b/<slug>/…
+ * Barbearia deste acesso, pelo caminho: /<slug>/… (ou o antigo /b/<slug>/…).
  *
  * Lida uma vez, na inicialização. Quem abre a raiz cai na barbearia padrão
  * — o mesmo destino do redirecionamento de app.routes.
  */
 function tenantSlugFromUrl(): string {
-  return location.pathname.match(/^\/b\/([^/]+)/)?.[1] ?? environment.defaultTenantSlug;
+  const [first, second] = location.pathname.split('/').filter(Boolean);
+  return (first === 'b' ? second : first) ?? environment.defaultTenantSlug;
 }
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
+    { provide: TitleStrategy, useClass: AtrioTitleStrategy },
 
     provideAtrioConfig({
       productName: 'Átrio',
@@ -47,26 +50,22 @@ export const appConfig: ApplicationConfig = {
         }),
 
     /**
-     * Aplica a identidade da barbearia antes da primeira pintura.
+     * Espera a barbearia antes da primeira tela, até um limite.
      *
-     * Se isso rodasse dentro de um componente, o cliente veria o roxo do
-     * Átrio piscar antes da cor da barbearia — o oposto do que um produto
-     * white-label deve parecer.
-     *
-     * Com o banco, a barbearia chega pela rede: a inicialização espera por
-     * ela, até um limite. Rede ruim não pode deixar a tela em branco — passado
-     * o limite, o app abre com a cor padrão e segue.
+     * A identidade visual é a do Átrio para todas (decisão de 20/10/2026) —
+     * a barbearia aparece pelo nome, logo e fotos, não pela cor. Esperar
+     * ainda vale pelo fuso: com ele já definido, "hoje" e os horários da
+     * primeira tela saem no relógio da barbearia (ver period.ts). Rede ruim
+     * não pode deixar a tela em branco: passado o limite, o app abre e segue.
      */
     provideAppInitializer(async () => {
       const tenants = inject(TenantRepository);
-      const branding = inject(BrandingService);
       try {
-        const tenant = await firstValueFrom(
+        await firstValueFrom(
           tenants.watchCurrent().pipe(filter(Boolean), timeout({ first: 2500 })),
         );
-        branding.apply(tenant.branding);
       } catch {
-        // Sem barbearia a tempo: segue com a identidade padrão.
+        // Sem barbearia a tempo: segue com o fuso padrão.
       }
     }),
     provideServiceWorker('ngsw-worker.js', {

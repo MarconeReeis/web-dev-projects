@@ -32,7 +32,8 @@ const HORIZON_DAYS = 120;
  * Ordem da tela (referência em especificacoes-navalla-co.md): saudação, a
  * ação de agendar, o próximo horário do cliente e o destaque da barbearia,
  * o catálogo de serviços, os profissionais e, no fim, onde e quando — com
- * "Como chegar" e WhatsApp. O topo com a marca fica no shell.
+ * "Como chegar" e WhatsApp. O topo da página é a barbearia — logo, nome e
+ * saudação —; a marca Átrio fica na moldura (shell).
  */
 @Component({
   selector: 'bkg-home-page',
@@ -51,13 +52,29 @@ const HORIZON_DAYS = 120;
       </p>
     }
 
-    <p class="text-sm text-muted-foreground">{{ greeting() }}</p>
+    <!-- A barbearia: o assunto desta página. -->
+    <section class="flex items-center gap-4">
+      @if (tenant.branding()?.logoUrl; as logo) {
+        <img [src]="logo" alt="" class="size-16 shrink-0 rounded-full object-cover shadow-card" />
+      } @else {
+        <span
+          class="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary-soft font-display text-xl font-bold text-primary-soft-foreground"
+          aria-hidden="true"
+        >
+          {{ initials(tenant.name()) }}
+        </span>
+      }
+      <div class="min-w-0">
+        <h1 class="text-2xl leading-tight font-bold text-balance">{{ tenant.name() }}</h1>
+        <p class="mt-0.5 text-sm text-muted-foreground">{{ greeting() }}</p>
+      </div>
+    </section>
 
     <a
       atrButton
       size="lg"
       class="mt-4 h-14 w-full text-base shadow-cta"
-      [routerLink]="['/b', slug(), 'agendar']"
+      [routerLink]="['/', slug(), 'agendar']"
     >
       <atr-icon name="calendar-plus" [size]="20" />
       Agendar horário
@@ -88,7 +105,7 @@ const HORIZON_DAYS = 120;
 
         <a
           class="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold"
-          [routerLink]="['/b', slug(), 'meus-horarios', next.id]"
+          [routerLink]="['/', slug(), 'meus-horarios', next.id]"
         >
           Ver agendamento
           <atr-icon name="chevron-right" [size]="16" />
@@ -100,7 +117,7 @@ const HORIZON_DAYS = 120;
     @if (highlight(); as promo) {
       <a
         class="rounded-surface mt-4 flex items-center gap-4 bg-ink p-5 text-ink-foreground transition-transform hover:-translate-y-0.5"
-        [routerLink]="['/b', slug(), 'agendar']"
+        [routerLink]="['/', slug(), 'agendar']"
       >
         <span
           class="flex size-12 shrink-0 items-center justify-center rounded-full bg-ink-elevated text-primary"
@@ -131,7 +148,7 @@ const HORIZON_DAYS = 120;
           <li>
             <a
               class="surface flex items-center gap-3 border-transparent px-5 py-4 transition-transform hover:-translate-y-0.5"
-              [routerLink]="['/b', slug(), 'agendar']"
+              [routerLink]="['/', slug(), 'agendar']"
               [queryParams]="{ servico: service.id }"
             >
               <span class="min-w-0 flex-1">
@@ -163,7 +180,7 @@ const HORIZON_DAYS = 120;
           <li>
             <a
               class="surface group flex h-full flex-col border-transparent p-2 transition-transform hover:-translate-y-0.5"
-              [routerLink]="['/b', slug(), 'agendar']"
+              [routerLink]="['/', slug(), 'agendar']"
               [queryParams]="{ profissional: professional.id }"
             >
               <span class="block aspect-[4/4.2] overflow-hidden rounded-2xl">
@@ -248,7 +265,7 @@ export class HomePage {
    *
    * Os links desta tela são ABSOLUTOS de propósito. A home é o filho de
    * caminho vazio de `b/:slug` e não contribui com segmento nenhum de URL,
-   * então um `../agendar` come o slug e produz `/b/agendar` — rota que não
+   * então um `../agendar` come o slug e produz `/agendar` — rota que não
    * existe, cai no `**` e devolve para a própria home. O botão parecia morto.
    */
   readonly slug = input<string>('');

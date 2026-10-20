@@ -57,6 +57,6 @@ export class LegalPage {
   protected readonly title = computed(() => TITLE[this.document()]);
 
   protected back(): void {
-    void this.router.navigate(['/b', this.slug(), 'perfil']);
+    void this.router.navigate(['/', this.slug(), 'perfil']);
   }
 }

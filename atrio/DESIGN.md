@@ -55,7 +55,8 @@ Use a utility `tabular` em colunas de valores que precisam alinhar.
 Duas camadas. Componentes só tocam na segunda.
 
 **Primitivas** (`--atr-*`): a paleta crua, em OKLCH. É a única camada com cor
-literal. O white-label sobrescreve `--atr-brand-*` em tempo de execução.
+literal. O app do cliente usa a identidade do Átrio para todas as
+barbearias; `--atr-brand-*` só seria sobrescrito numa marca própria.
 
 **Semânticas**: `--primary`, `--background`, `--card`, `--ink`, `--border`,
 `--muted-foreground` e companhia, todas apontando para primitivas.

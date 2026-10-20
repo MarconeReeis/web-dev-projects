@@ -146,7 +146,7 @@ const TOAST_MS = 3000;
                 atrButton
                 size="lg"
                 class="w-full"
-                [routerLink]="['/b', slug(), 'meus-horarios', item.id, 'reagendar']"
+                [routerLink]="['/', slug(), 'meus-horarios', item.id, 'reagendar']"
               >
                 Reagendar
               </a>
@@ -191,7 +191,7 @@ const TOAST_MS = 3000;
             heading="Agendamento não encontrado"
             description="Ele pode ter sido removido, ou pertencer a outra conta."
           >
-            <a atrButton class="mt-2" [routerLink]="['/b', slug(), 'meus-horarios']">
+            <a atrButton class="mt-2" [routerLink]="['/', slug(), 'meus-horarios']">
               Ver meus horários
             </a>
           </atr-empty-state>
@@ -270,7 +270,7 @@ export class AppointmentPage {
   }
 
   protected back(): void {
-    void this.router.navigate(['/b', this.slug(), 'meus-horarios']);
+    void this.router.navigate(['/', this.slug(), 'meus-horarios']);
   }
 
   protected async cancel(item: Appointment): Promise<void> {

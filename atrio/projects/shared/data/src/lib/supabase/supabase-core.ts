@@ -22,7 +22,7 @@ export interface SupabaseDataConfig {
   readonly key: string;
   /**
    * De qual barbearia é este app. No app do cliente, o slug vem da URL
-   * (/b/:slug); a função é chamada uma vez, na inicialização.
+   * (/:slug); a função é chamada uma vez, na inicialização.
    */
   readonly tenantSlug: () => string;
 }
@@ -94,7 +94,7 @@ export class SupabaseSync {
 /**
  * De qual barbearia são as consultas.
  *
- * Duas fontes, uma por app: no app do cliente, o endereço (/b/:slug); no
+ * Duas fontes, uma por app: no app do cliente, o endereço (/:slug); no
  * painel, o vínculo da conta da equipe. Os repositórios não sabem qual —
  * só pedem o id.
  */
