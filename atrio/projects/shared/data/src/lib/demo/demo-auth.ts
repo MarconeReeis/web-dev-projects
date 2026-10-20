@@ -144,6 +144,11 @@ export class DemoClientAuth extends ClientAuth {
     await delay();
   }
 
+  async resendConfirmation(): Promise<void> {
+    // A demonstração não pede confirmação de e-mail: não há o que reenviar.
+    await delay();
+  }
+
   // ─── interno ──────────────────────────────────────────────────────────
 
   private open(stored: StoredAccount): ClientAccount {

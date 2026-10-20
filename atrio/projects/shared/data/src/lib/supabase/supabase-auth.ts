@@ -84,7 +84,7 @@ export class SupabaseClientAuth extends ClientAuth {
           ...(tenant ? { barbearia: tenant.name } : {}),
         },
         // O link de confirmação volta para esta barbearia, já logado.
-        emailRedirectTo: `${location.origin}/b/${this.config.tenantSlug()}`,
+        emailRedirectTo: this.confirmationRedirect(),
       },
     });
     if (error) throw translate(error);
@@ -123,6 +123,25 @@ export class SupabaseClientAuth extends ClientAuth {
     });
     // Mesmo resultado exista a conta ou não; só falha de rede chega aqui.
     if (error && error.status !== 400) throw translate(error);
+  }
+
+  async resendConfirmation(email: string): Promise<void> {
+    const { error } = await this.client.auth.resend({
+      type: 'signup',
+      email: email.trim(),
+      options: { emailRedirectTo: this.confirmationRedirect() },
+    });
+    if (!error) return;
+    // O limite de envios tem resposta própria. O resto — conta que não
+    // existe ou já confirmada — resolve calado, como o "esqueci a senha".
+    if (error.code === 'over_email_send_rate_limit' || error.status === 429) {
+      throw new ClientAuthError('indisponivel', TOO_MANY_EMAILS);
+    }
+    if (error.status !== 400 && error.status !== 422) throw translate(error);
+  }
+
+  private confirmationRedirect(): string {
+    return `${location.origin}/b/${this.config.tenantSlug()}`;
   }
 
   /**
@@ -175,6 +194,8 @@ export class SupabaseClientAuth extends ClientAuth {
   }
 }
 
+const TOO_MANY_EMAILS = 'Muitos e-mails em pouco tempo. Espere alguns minutos e tente de novo.';
+
 function translate(error: AuthError): ClientAuthError {
   switch (error.code) {
     case 'invalid_credentials':
@@ -189,6 +210,8 @@ function translate(error: AuthError): ClientAuthError {
       );
     case 'weak_password':
       return new ClientAuthError('indisponivel', 'Escolha uma senha mais forte.');
+    case 'over_email_send_rate_limit':
+      return new ClientAuthError('indisponivel', TOO_MANY_EMAILS);
     case 'same_password':
       return new ClientAuthError('indisponivel', 'Escolha uma senha diferente da anterior.');
     default:

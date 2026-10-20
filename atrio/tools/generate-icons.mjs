@@ -24,7 +24,7 @@ const ICONS = [
   'circle-alert', 'ban', 'user-x', 'calendar-x', 'calendar-off', 'circle-pause',
   // entidades
   'user', 'user-round', 'phone', 'map-pin', 'image', 'store', 'bell',
-  'lock', 'smartphone', 'download', 'info',
+  'lock', 'smartphone', 'download', 'info', 'mail-check',
 ];
 
 const ICONS_DIR = resolve('node_modules/lucide-static/icons');

@@ -55,6 +55,51 @@ const MIN_PASSWORD = 6;
       <button type="button" atrButton size="lg" class="mt-6 w-full" (click)="switchTo('entrar')">
         Voltar para entrar
       </button>
+    } @else if (confirmSent()) {
+      <!-- Cadastro feito, falta confirmar o e-mail. Não é erro: é o passo
+           seguinte, e a tela diz para onde foi o link e o que fazer se não
+           chegar. -->
+      <div class="mt-6 flex flex-col items-center rounded-3xl bg-secondary px-6 py-7 text-center" role="status">
+        <span class="flex size-14 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
+          <atr-icon name="mail-check" [size]="26" />
+        </span>
+        <p class="mt-4 text-sm text-muted-foreground">Enviamos um link de confirmação para</p>
+        <p class="mt-1 font-bold break-all">{{ email().trim() }}</p>
+        <p class="mt-3 text-sm text-balance text-muted-foreground">
+          Toque nele para ativar a conta: ele abre a barbearia com você já logado. Pode levar
+          alguns minutos — confira também o spam.
+        </p>
+      </div>
+
+      <button type="button" atrButton size="lg" class="mt-6 w-full" (click)="switchTo('entrar')">
+        Já confirmei, entrar
+      </button>
+
+      @if (failure(); as message) {
+        <p
+          class="mt-4 rounded-xl bg-destructive-soft px-4 py-3 text-sm font-medium text-destructive-soft-foreground"
+          role="alert"
+        >
+          {{ message }}
+        </p>
+      }
+
+      <p class="mt-6 text-center text-sm" aria-live="polite">
+        @if (resent()) {
+          <span class="font-medium text-success">Enviamos de novo. Confira a caixa de entrada.</span>
+        } @else {
+          Não chegou?
+          <button type="button" class="font-bold text-primary" [disabled]="busy()" (click)="resendConfirmation()">
+            {{ busy() ? 'Reenviando…' : 'Reenviar e-mail' }}
+          </button>
+        }
+      </p>
+      <p class="mt-2 text-center text-sm">
+        E-mail errado?
+        <button type="button" class="font-bold text-primary" (click)="switchTo('cadastro')">
+          Corrigir
+        </button>
+      </p>
     } @else {
       <form class="mt-6 flex flex-col gap-4" novalidate (submit)="$event.preventDefault(); submit()">
         @if (mode() === 'cadastro') {
@@ -132,6 +177,18 @@ const MIN_PASSWORD = 6;
             role="alert"
           >
             {{ message }}
+            <!-- Tentou entrar sem ter confirmado: o link pode ter vencido ou
+                 ido para o spam. Reenviar daqui poupa um cadastro novo. -->
+            @if (unconfirmed()) {
+              <button
+                type="button"
+                class="mt-1 block font-bold underline underline-offset-4"
+                [disabled]="busy()"
+                (click)="resendConfirmation()"
+              >
+                Reenviar o link de confirmação
+              </button>
+            }
           </p>
         }
 
@@ -246,9 +303,16 @@ export class SignIn implements OnInit {
   protected readonly showErrors = signal(false);
   protected readonly failure = signal<string | null>(null);
   protected readonly resetSent = signal(false);
+  /** Cadastro feito, aguardando o clique no link do e-mail. */
+  protected readonly confirmSent = signal(false);
+  /** O link de confirmação foi reenviado nesta tela. */
+  protected readonly resent = signal(false);
+  /** A última tentativa de entrar parou na falta de confirmação. */
+  protected readonly unconfirmed = signal(false);
   protected readonly googleSoon = signal(false);
 
   protected readonly title = computed(() => {
+    if (this.confirmSent()) return 'Confirme seu e-mail';
     switch (this.mode()) {
       case 'cadastro':
         return 'Crie sua conta';
@@ -260,6 +324,7 @@ export class SignIn implements OnInit {
   });
 
   protected readonly subtitle = computed(() => {
+    if (this.confirmSent()) return 'Falta só um passo para terminar o cadastro.';
     switch (this.mode()) {
       case 'cadastro':
         return 'Com uma conta você acompanha, reagenda e cancela seus horários.';
@@ -333,6 +398,9 @@ export class SignIn implements OnInit {
     this.showErrors.set(false);
     this.failure.set(null);
     this.resetSent.set(false);
+    this.confirmSent.set(false);
+    this.resent.set(false);
+    this.unconfirmed.set(false);
   }
 
   protected async submit(): Promise<void> {
@@ -343,12 +411,22 @@ export class SignIn implements OnInit {
     await this.run(async () => {
       switch (this.mode()) {
         case 'cadastro':
-          await this.auth.signUp({
-            name: this.name(),
-            phone: this.phone(),
-            email: this.email(),
-            password: this.password(),
-          });
+          try {
+            await this.auth.signUp({
+              name: this.name(),
+              phone: this.phone(),
+              email: this.email(),
+              password: this.password(),
+            });
+          } catch (cause) {
+            // Com "Confirm email" ligado, a conta nasce sem sessão: não é
+            // falha, é o passo de confirmar.
+            if (cause instanceof ClientAuthError && cause.code === 'confirmacao-pendente') {
+              this.confirmSent.set(true);
+              return;
+            }
+            throw cause;
+          }
           return;
         case 'recuperar':
           await this.auth.sendPasswordReset(this.email().trim());
@@ -357,6 +435,16 @@ export class SignIn implements OnInit {
         default:
           await this.auth.signIn(this.email(), this.password());
       }
+    });
+  }
+
+  protected async resendConfirmation(): Promise<void> {
+    this.failure.set(null);
+    await this.run(async () => {
+      await this.auth.resendConfirmation(this.email().trim());
+      this.unconfirmed.set(false);
+      this.confirmSent.set(true);
+      this.resent.set(true);
     });
   }
 
@@ -372,6 +460,9 @@ export class SignIn implements OnInit {
     try {
       await action();
     } catch (cause) {
+      this.unconfirmed.set(
+        cause instanceof ClientAuthError && cause.code === 'confirmacao-pendente',
+      );
       this.failure.set(
         cause instanceof ClientAuthError
           ? cause.message

@@ -208,6 +208,13 @@ export abstract class ClientAuth {
   abstract sendPasswordReset(email: string): Promise<void>;
 
   /**
+   * Manda de novo o link de confirmação do cadastro — o primeiro pode ter
+   * ido para o spam ou vencido. Resolve igual exista a conta ou não, pelo
+   * mesmo motivo de sendPasswordReset.
+   */
+  abstract resendConfirmation(email: string): Promise<void>;
+
+  /**
    * Define a senha nova. Vale na sessão aberta pelo link do e-mail — sem
    * ela (link vencido ou já usado), falha com `link-invalido`.
    */
