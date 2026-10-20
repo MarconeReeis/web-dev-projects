@@ -183,6 +183,21 @@ describe('conta nova', () => {
     const rows = await as(ANA, `select name from public.profiles`);
     assert.deepEqual(rows.map((r) => r.name), ['Ana Souza']);
   });
+
+  test('cada um edita só o próprio perfil, e com dados válidos', async () => {
+    const mine = await as(ANA, `update public.profiles set name = 'Ana S.' where id = $1 returning name`, [ANA]);
+    assert.deepEqual(mine.map((r) => r.name), ['Ana S.']);
+    await as(ANA, `update public.profiles set name = 'Ana Souza' where id = $1`, [ANA]);
+
+    // O do outro não aparece para ela: o update não acha linha nenhuma.
+    const other = await as(ANA, `update public.profiles set name = 'Invasor' where id = $1 returning id`, [BETO]);
+    assert.equal(other.length, 0);
+
+    assert.match(
+      await fails(as(ANA, `update public.profiles set phone = '123' where id = $1`, [ANA])),
+      /check constraint/,
+    );
+  });
 });
 
 describe('horário duplo', () => {

@@ -1,7 +1,12 @@
 import { Injectable, Provider, inject } from '@angular/core';
 import { AuthError, User } from '@supabase/supabase-js';
 import { BehaviorSubject, Observable, filter } from 'rxjs';
-import { ClientAccount, ClientAuthError, NewClientAccount } from '../models/client-account';
+import {
+  ClientAccount,
+  ClientAuthError,
+  ClientProfileChanges,
+  NewClientAccount,
+} from '../models/client-account';
 import {
   AppointmentRepository,
   AvailabilityRepository,
@@ -138,6 +143,44 @@ export class SupabaseClientAuth extends ClientAuth {
       throw new ClientAuthError('indisponivel', TOO_MANY_EMAILS);
     }
     if (error.status !== 400 && error.status !== 422) throw translate(error);
+  }
+
+  async updateProfile(changes: ClientProfileChanges): Promise<ClientAccount> {
+    const { data: auth } = await this.client.auth.getUser();
+    if (!auth.user) throw new ClientAuthError('indisponivel', 'Entre na sua conta para editar.');
+
+    // A regra de quem edita o quê é do banco (RLS: cada um, o seu perfil);
+    // o formato também — nome com 2 letras, telefone com DDD.
+    const { error } = await this.client
+      .from('profiles')
+      .update({ name: changes.name.trim(), phone: changes.phone.trim() })
+      .eq('id', auth.user.id);
+    if (error) {
+      console.error('[supabase]', error);
+      throw new ClientAuthError(
+        'indisponivel',
+        error.code === '23514'
+          ? 'Confira o nome e o telefone com DDD.'
+          : 'Não foi possível salvar agora. Tente de novo em instantes.',
+      );
+    }
+    return this.publish(await this.accountOf(auth.user));
+  }
+
+  /**
+   * A senha atual é conferida entrando de novo com ela; só então a nova é
+   * gravada. O Supabase avisa por e-mail que a senha mudou.
+   */
+  async changePassword(current: string, next: string): Promise<void> {
+    const { data: auth } = await this.client.auth.getUser();
+    const email = auth.user?.email;
+    if (!email) throw new ClientAuthError('indisponivel', 'Entre na sua conta para trocar a senha.');
+
+    const { error: checkError } = await this.client.auth.signInWithPassword({ email, password: current });
+    if (checkError) throw new ClientAuthError('credenciais', 'Senha atual incorreta.');
+
+    const { error } = await this.client.auth.updateUser({ password: next });
+    if (error) throw translate(error);
   }
 
   private confirmationRedirect(): string {

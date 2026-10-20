@@ -7,7 +7,7 @@ import {
   PaymentMethod,
 } from '../models/appointment';
 import { LinkSuggestion } from '../models/client';
-import { ClientAccount, NewClientAccount } from '../models/client-account';
+import { ClientAccount, ClientProfileChanges, NewClientAccount } from '../models/client-account';
 import { PinCheck, PinStatus, StaffSession } from '../models/staff';
 import { Cents, DateRange, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
@@ -213,6 +213,15 @@ export abstract class ClientAuth {
    * mesmo motivo de sendPasswordReset.
    */
   abstract resendConfirmation(email: string): Promise<void>;
+
+  /** Nome e telefone da conta logada (o e-mail não muda por aqui). */
+  abstract updateProfile(changes: ClientProfileChanges): Promise<ClientAccount>;
+
+  /**
+   * Troca a senha de quem está logado. Pede a atual: o aparelho pode estar
+   * aberto na mão de outra pessoa. Senha atual errada falha com `credenciais`.
+   */
+  abstract changePassword(current: string, next: string): Promise<void>;
 
   /**
    * Define a senha nova. Vale na sessão aberta pelo link do e-mail — sem

@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { avatarColors, initialsOf } from '../util/identity';
 
-export type AtrAvatarSize = 'sm' | 'default' | 'lg';
+export type AtrAvatarSize = 'sm' | 'default' | 'lg' | 'xl';
 
 const SIZE: Record<AtrAvatarSize, string> = {
   sm: 'size-8 text-[0.6875rem]',
   default: 'size-10 text-xs',
   lg: 'size-12 text-sm',
+  xl: 'size-24 text-2xl',
 };
 
 /** Avatar circular com iniciais; usa a foto quando houver. */

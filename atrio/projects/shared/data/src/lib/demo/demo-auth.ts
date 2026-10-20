@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import {
   ClientAccount,
   ClientAuthError,
+  ClientProfileChanges,
   NewClientAccount,
 } from '../models/client-account';
 import { ClientAuth } from '../repositories/repositories';
@@ -123,6 +124,41 @@ export class DemoClientAuth extends ClientAuth {
       accounts.map((account) => (account.id === current.id ? { ...account, passwordHash: hash } : account)),
     );
     return current;
+  }
+
+  async updateProfile(changes: ClientProfileChanges): Promise<ClientAccount> {
+    await delay();
+    const current = this.session$.value;
+    if (!current) throw new ClientAuthError('indisponivel', 'Entre na sua conta para editar.');
+
+    const updated = { ...current, name: changes.name.trim(), phone: changes.phone.trim() };
+    const accounts = await this.accounts();
+    write(
+      ACCOUNTS_KEY,
+      accounts.map((account) => (account.id === current.id ? { ...account, ...updated } : account)),
+    );
+    this.session$.next(updated);
+    return updated;
+  }
+
+  async changePassword(currentPassword: string, next: string): Promise<void> {
+    await delay();
+    const current = this.session$.value;
+    if (!current) throw new ClientAuthError('indisponivel', 'Entre na sua conta para trocar a senha.');
+
+    const accounts = await this.accounts();
+    const stored = accounts.find((account) => account.id === current.id);
+    if (stored?.passwordHash !== (await hashPassword(current.email, currentPassword))) {
+      throw new ClientAuthError('credenciais', 'Senha atual incorreta.');
+    }
+    // A conta fictícia mantém a senha fixa — ver updatePassword.
+    if (current.id === DEMO_ACCOUNT.id) return;
+
+    const hash = await hashPassword(current.email, next);
+    write(
+      ACCOUNTS_KEY,
+      accounts.map((account) => (account.id === current.id ? { ...account, passwordHash: hash } : account)),
+    );
   }
 
   /**

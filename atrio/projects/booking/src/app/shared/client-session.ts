@@ -1,6 +1,6 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ClientAccount, ClientAuth } from '@atrio/data';
+import { ClientAccount, ClientAuth, ClientProfileChanges } from '@atrio/data';
 
 /**
  * Quem está usando o app do cliente.
@@ -29,6 +29,14 @@ export class ClientSession {
 
   signOut(): Promise<void> {
     return this.auth.signOut();
+  }
+
+  updateProfile(changes: ClientProfileChanges): Promise<ClientAccount> {
+    return this.auth.updateProfile(changes);
+  }
+
+  changePassword(current: string, next: string): Promise<void> {
+    return this.auth.changePassword(current, next);
   }
 
   /** LGPD: conta fora, sessão encerrada. Ver ClientAuth.deleteAccount. */

@@ -18,6 +18,12 @@ export interface ClientAccount {
   readonly photoUrl: string | null;
 }
 
+/** O que o cliente pode mudar na própria conta pelo Perfil. */
+export interface ClientProfileChanges {
+  readonly name: string;
+  readonly phone: string;
+}
+
 export interface NewClientAccount {
   readonly name: string;
   readonly email: string;
