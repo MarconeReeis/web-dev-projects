@@ -66,6 +66,12 @@ export const routes: Routes = [
             (m) => m.AppointmentsPage,
           ),
       },
+      {
+        path: 'perfil',
+        title: 'Perfil',
+        loadComponent: () =>
+          import('./features/profile/profile-page').then((m) => m.ProfilePage),
+      },
     ],
   },
   { path: '', pathMatch: 'full', redirectTo: 'b/navalha-e-co' },

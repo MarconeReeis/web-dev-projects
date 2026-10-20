@@ -7,12 +7,11 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import {
   APPOINTMENT_STATUS_LABEL,
   Appointment,
   AppointmentRepository,
-  ClientAuthError,
   Professional,
   ProfessionalRepository,
   formatMoney,
@@ -26,7 +25,6 @@ import {
   AtrCard,
   AtrEmptyState,
   AtrIcon,
-  AtrOverlay,
 } from '@atrio/ui';
 import { ClientSession } from '../../shared/client-session';
 import { SignIn } from '../auth/sign-in';
@@ -53,7 +51,7 @@ type Tab = 'proximos' | 'historico';
   imports: [RouterLink, AtrCard, AtrBadge, AtrButton, AtrIcon, AtrEmptyState, SignIn],
   host: { class: 'block' },
   template: `
-    <h1 class="text-3xl font-extrabold tracking-tight">Meus horários</h1>
+    <h1 class="text-2xl font-bold">Meus horários</h1>
 
     @if (!session.signedIn()) {
       <bkg-sign-in
@@ -141,34 +139,6 @@ type Tab = 'proximos' | 'historico';
         </ul>
       }
 
-      <button
-        type="button"
-        atrButton="ghost"
-        size="sm"
-        class="mt-8 w-full"
-        (click)="session.signOut()"
-      >
-        Sair da conta
-      </button>
-
-      <!-- Discreto de propósito: é um direito (LGPD), não uma ação do dia a
-           dia — e não pode ficar a um toque acidental do "Sair". -->
-      @if (deleteError(); as message) {
-        <p
-          class="mt-4 rounded-xl bg-destructive-soft px-4 py-3 text-sm font-medium text-destructive-soft-foreground"
-          role="alert"
-        >
-          {{ message }}
-        </p>
-      }
-      <button
-        type="button"
-        class="mt-6 w-full text-center text-sm text-muted-foreground underline underline-offset-4 hover:text-destructive"
-        [disabled]="deleting()"
-        (click)="deleteAccount()"
-      >
-        {{ deleting() ? 'Excluindo conta…' : 'Excluir minha conta' }}
-      </button>
     }
   `,
 })
@@ -177,46 +147,6 @@ export class AppointmentsPage {
   private readonly professionalsRepo = inject(ProfessionalRepository);
 
   protected readonly session = inject(ClientSession);
-  private readonly overlay = inject(AtrOverlay);
-  private readonly router = inject(Router);
-
-  protected readonly deleting = signal(false);
-  protected readonly deleteError = signal<string | null>(null);
-
-  /**
-   * Exclusão de conta (LGPD). A confirmação diz exatamente o que acontece —
-   * inclusive o que NÃO sai (o histórico, sem o nome, fica com a barbearia).
-   */
-  protected async deleteAccount(): Promise<void> {
-    const confirmed = await this.overlay.confirm({
-      heading: 'Excluir sua conta?',
-      message:
-        'Seu e-mail, nome e telefone serão apagados, e seus horários futuros, cancelados. ' +
-        'Os atendimentos que já aconteceram ficam com a barbearia, sem o seu nome. ' +
-        'Isso não pode ser desfeito.',
-      confirmLabel: 'Sim, excluir minha conta',
-      cancelLabel: 'Manter conta',
-      destructive: true,
-      stacked: true,
-    });
-    if (!confirmed) return;
-
-    this.deleting.set(true);
-    this.deleteError.set(null);
-    try {
-      await this.session.deleteAccount();
-      await this.router.navigate(['/b', this.slug()], { state: { contaExcluida: true } });
-    } catch (cause) {
-      this.deleteError.set(
-        cause instanceof ClientAuthError
-          ? cause.message
-          : 'Não foi possível excluir a conta agora. Tente de novo em instantes.',
-      );
-    } finally {
-      this.deleting.set(false);
-    }
-  }
-
   /** Os links são absolutos — ver o comentário de `slug` na home. */
   readonly slug = input<string>('');
 

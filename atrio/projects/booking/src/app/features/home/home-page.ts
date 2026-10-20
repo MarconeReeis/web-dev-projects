@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import { InstallPrompt, TenantContext } from '@atrio/core';
+import { TenantContext } from '@atrio/core';
 import {
   APPOINTMENT_STATUS_LABEL,
   Appointment,
@@ -10,14 +10,17 @@ import {
   ProfessionalRepository,
   Service,
   ServiceRepository,
+  Weekday,
+  clockToMinutes,
+  dayRange,
+  expandWindows,
   formatAddress,
   formatLongDate,
   formatMoney,
-  dayRange,
   formatTime,
   shopDay,
 } from '@atrio/data';
-import { AtrBadge, AtrBadgeTone, AtrButton, AtrCard, AtrIcon, initialsOf } from '@atrio/ui';
+import { AtrBadge, AtrBadgeTone, AtrButton, AtrIcon, initialsOf } from '@atrio/ui';
 import { STATUS_TONE } from '../appointments/appointment-rules';
 import { ClientSession } from '../../shared/client-session';
 
@@ -26,20 +29,17 @@ const HORIZON_DAYS = 120;
 /**
  * Vitrine da barbearia e ponto de partida do agendamento.
  *
- * Ordem da tela: destaque da barbearia, o que já está marcado (quando há),
- * a ação de agendar e o catálogo. A saudação subiu para o cabeçalho — ver
- * o shell.
+ * Ordem da tela (referência em especificacoes-navalla-co.md): saudação, a
+ * ação de agendar, o próximo horário do cliente e o destaque da barbearia,
+ * o catálogo de serviços, os profissionais e, no fim, onde e quando — com
+ * "Como chegar" e WhatsApp. O topo com a marca fica no shell.
  */
 @Component({
   selector: 'bkg-home-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, AtrCard, AtrBadge, AtrButton, AtrIcon],
+  imports: [RouterLink, AtrBadge, AtrButton, AtrIcon],
   host: { class: 'block' },
   template: `
-    <!-- Topo: o próximo horário do cliente, quando há; senão, o destaque da
-         barbearia. Um ou outro, nunca os dois: quem tem horário marcado
-         precisa achar o horário, e um banner acima empurraria o lembrete
-         para baixo. -->
     <!-- Volta da exclusão de conta: confirma que deu certo. -->
     @if (accountDeleted()) {
       <p
@@ -51,118 +51,143 @@ const HORIZON_DAYS = 120;
       </p>
     }
 
-    @if (nextAppointment(); as next) {
-      <section class="rounded-surface relative overflow-hidden bg-ink p-5 text-ink-foreground">
-        <span
-          class="pointer-events-none absolute -top-16 -right-10 size-44 rounded-full bg-primary/25 blur-2xl"
-          aria-hidden="true"
-        ></span>
+    <p class="text-sm text-muted-foreground">{{ greeting() }}</p>
 
-        <div class="relative">
-          <div class="flex items-center justify-between gap-3">
-            <h2 class="text-xs font-bold tracking-wider text-ink-muted uppercase">
-              Seu próximo agendamento
-            </h2>
-            <atr-badge class="shrink-0" [tone]="tone(next)" [dot]="true">
-              {{ statusLabel(next) }}
-            </atr-badge>
-          </div>
-
-          <p class="mt-3 text-2xl leading-tight font-extrabold tracking-tight text-balance">
-            {{ dateLabel(next.startsAt) }}
-          </p>
-          <p class="tabular mt-1 font-bold text-primary">
-            {{ time(next.startsAt) }} – {{ time(next.endsAt) }}
-          </p>
-          <p class="mt-3 text-sm text-ink-muted">
-            {{ next.serviceName }} · {{ professionalName(next.professionalId) }}
-          </p>
-
-          <a
-            atrButton
-            class="mt-5"
-            [routerLink]="['/b', slug(), 'meus-horarios', next.id]"
-          >
-            Ver agendamento
-            <atr-icon name="chevron-right" [size]="16" />
-          </a>
-        </div>
-      </section>
-    } @else if (highlight(); as promo) {
-      <!-- Destaque da barbearia -->
-      <section class="rounded-surface relative overflow-hidden bg-ink p-5 text-ink-foreground">
-        <!-- Brilho decorativo: dá profundidade sem imagem, que a barbearia
-             não tem como cadastrar ainda. -->
-        <span
-          class="pointer-events-none absolute -top-16 -right-10 size-44 rounded-full bg-primary/30 blur-2xl"
-          aria-hidden="true"
-        ></span>
-
-        <div class="relative">
-          <h2 class="text-xl font-extrabold text-balance">{{ promo.title }}</h2>
-          @if (promo.subtitle) {
-            <p class="mt-1.5 text-sm text-balance text-ink-muted">{{ promo.subtitle }}</p>
-          }
-          @if (promo.ctaLabel) {
-            <a atrButton size="sm" class="mt-4" [routerLink]="['/b', slug(), 'agendar']">
-              {{ promo.ctaLabel }}
-            </a>
-          }
-        </div>
-      </section>
-    }
-
-    <!-- Agendar -->
-    <a atrButton size="lg" class="mt-4 w-full" [routerLink]="['/b', slug(), 'agendar']">
-      <atr-icon name="plus" [size]="18" />
+    <a
+      atrButton
+      size="lg"
+      class="mt-4 h-14 w-full text-base shadow-cta"
+      [routerLink]="['/b', slug(), 'agendar']"
+    >
+      <atr-icon name="calendar-plus" [size]="20" />
       Agendar horário
     </a>
 
-    <!-- Profissionais: primeiro passo do agendamento, então vêm primeiro.
-         Cards em duas colunas, como os serviços — e todos à mostra: uma
-         barbearia tem poucos profissionais, e a faixa rolável de antes
-         escondia parte deles fora da tela. -->
-    @if (professionals().length > 0) {
-      <h2 class="mt-7 text-lg font-bold">Com quem você quer agendar?</h2>
+    <!-- O próximo horário do cliente: quem tem horário marcado abre o app
+         para conferir quando é. -->
+    @if (nextAppointment(); as next) {
+      <section class="rounded-surface mt-4 bg-ink p-5 text-ink-foreground">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="font-sans text-sm font-semibold tracking-normal text-ink-muted">
+            Seu próximo horário
+          </h2>
+          <atr-badge class="shrink-0" [tone]="tone(next)" [dot]="true">
+            {{ statusLabel(next) }}
+          </atr-badge>
+        </div>
 
-      <ul class="mt-3 grid grid-cols-2 gap-3">
+        <p class="mt-3 font-display text-2xl leading-tight font-semibold tracking-tight text-balance">
+          {{ dateLabel(next.startsAt) }}
+        </p>
+        <p class="tabular mt-1 font-semibold text-primary">
+          {{ time(next.startsAt) }} – {{ time(next.endsAt) }}
+        </p>
+        <p class="mt-2 text-sm text-ink-muted">
+          {{ next.serviceName }} · {{ professionalName(next.professionalId) }}
+        </p>
+
+        <a
+          class="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold"
+          [routerLink]="['/b', slug(), 'meus-horarios', next.id]"
+        >
+          Ver agendamento
+          <atr-icon name="chevron-right" [size]="16" />
+        </a>
+      </section>
+    }
+
+    <!-- Destaque da barbearia, quando ela tem algo a dizer. -->
+    @if (highlight(); as promo) {
+      <a
+        class="rounded-surface mt-4 flex items-center gap-4 bg-ink p-5 text-ink-foreground transition-transform hover:-translate-y-0.5"
+        [routerLink]="['/b', slug(), 'agendar']"
+      >
+        <span
+          class="flex size-12 shrink-0 items-center justify-center rounded-full bg-ink-elevated text-primary"
+          aria-hidden="true"
+        >
+          <atr-icon name="scissors" [size]="22" />
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block text-xs text-ink-muted">Em destaque</span>
+          <span class="mt-0.5 block font-display text-xl font-semibold tracking-tight text-balance">
+            {{ promo.title }}
+          </span>
+          @if (promo.subtitle) {
+            <span class="mt-0.5 block text-xs text-ink-muted">{{ promo.subtitle }}</span>
+          }
+        </span>
+        <atr-icon name="chevron-right" [size]="20" class="shrink-0" />
+      </a>
+    }
+
+    <!-- Serviços: lista compacta. O catálogo inteiro cabe em poucas rolagens,
+         e o preço fica alinhado à direita, onde se compara de relance. -->
+    @if (services().length > 0) {
+      <h2 class="mt-8 text-xl font-semibold">Serviços</h2>
+
+      <ul class="mt-3 flex flex-col gap-3">
+        @for (service of services(); track service.id) {
+          <li>
+            <a
+              class="surface flex items-center gap-3 border-transparent px-5 py-4 transition-transform hover:-translate-y-0.5"
+              [routerLink]="['/b', slug(), 'agendar']"
+              [queryParams]="{ servico: service.id }"
+            >
+              <span class="min-w-0 flex-1">
+                <span class="block font-display font-semibold text-balance">{{ service.name }}</span>
+                <span class="tabular mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <atr-icon name="clock" [size]="14" />
+                  {{ service.durationMinutes }} min
+                </span>
+              </span>
+              <span class="tabular shrink-0 font-display font-bold">{{ money(service.price) }}</span>
+              <span
+                class="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground"
+                aria-hidden="true"
+              >
+                <atr-icon name="plus" [size]="20" />
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    }
+
+    <!-- Profissionais: tocar abre o agendamento já com a pessoa escolhida. -->
+    @if (professionals().length > 0) {
+      <h2 class="mt-8 text-xl font-semibold">Nossos profissionais</h2>
+
+      <ul class="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
         @for (professional of professionals(); track professional.id) {
           <li>
             <a
-              class="surface flex h-full flex-col p-2 transition-colors hover:border-primary"
+              class="surface group flex h-full flex-col border-transparent p-2 transition-transform hover:-translate-y-0.5"
               [routerLink]="['/b', slug(), 'agendar']"
               [queryParams]="{ profissional: professional.id }"
             >
-              @if (professional.photoUrl; as photo) {
-                <img
-                  [src]="photo"
-                  [alt]="professional.name"
-                  class="aspect-square w-full rounded-2xl object-cover"
-                />
-              } @else {
-                <!-- Sem foto: iniciais grandes. A barbearia sobe a foto pelo
-                     painel. -->
-                <span
-                  class="flex aspect-square w-full items-center justify-center rounded-2xl bg-primary-soft text-3xl font-extrabold text-primary-soft-foreground"
-                  aria-hidden="true"
-                >
-                  {{ initials(professional.name) }}
-                </span>
-              }
+              <span class="block aspect-[4/4.2] overflow-hidden rounded-2xl">
+                @if (professional.photoUrl; as photo) {
+                  <img
+                    [src]="photo"
+                    [alt]="professional.name"
+                    class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                } @else {
+                  <!-- Sem foto: iniciais. A barbearia sobe a foto pelo painel. -->
+                  <span
+                    class="flex size-full items-center justify-center bg-primary-soft font-display text-3xl font-bold text-primary-soft-foreground"
+                    aria-hidden="true"
+                  >
+                    {{ initials(professional.name) }}
+                  </span>
+                }
+              </span>
 
-              <span class="flex flex-1 flex-col px-1.5 pt-3 pb-1.5">
-                <span class="font-bold text-balance">{{ professional.name }}</span>
-                <span class="mt-0.5 mb-3 text-sm text-balance text-muted-foreground">
+              <span class="px-1.5 pt-3 pb-2">
+                <span class="block font-display font-semibold text-balance">{{ professional.name }}</span>
+                <span class="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
                   {{ describe(professional) }}
-                </span>
-
-                <!-- mt-auto: a especialidade ocupa uma ou duas linhas, e sem
-                     isso os botões da mesma fileira ficam desalinhados. -->
-                <span
-                  class="mt-auto inline-flex h-11 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary-soft-foreground"
-                  aria-hidden="true"
-                >
-                  Ver serviços
                 </span>
               </span>
             </a>
@@ -171,99 +196,50 @@ const HORIZON_DAYS = 120;
       </ul>
     }
 
-    <!-- Serviços -->
-    <div class="mt-7 flex items-baseline justify-between gap-3">
-      <h2 class="text-lg font-bold">Serviços</h2>
-      <a class="text-sm font-semibold text-primary" [routerLink]="['/b', slug(), 'agendar']">Ver todos</a>
-    </div>
-
-    <ul class="mt-3 grid grid-cols-2 gap-3">
-      @for (service of services(); track service.id) {
-        <li>
-          <a
-            class="surface flex h-full flex-col overflow-hidden transition-colors hover:border-primary"
-            [routerLink]="['/b', slug(), 'agendar']"
-            [queryParams]="{ servico: service.id }"
-          >
-            <span
-              class="flex h-24 items-center justify-center bg-primary-soft text-primary-soft-foreground"
-            >
-              <atr-icon name="scissors" [size]="30" />
-            </span>
-
-            <span class="flex flex-1 flex-col p-3.5">
-              <span class="font-bold text-balance">{{ service.name }}</span>
-              <span class="tabular mt-0.5 text-sm text-muted-foreground">
-                {{ service.durationMinutes }} min
-              </span>
-
-              <span class="mt-3 flex items-center justify-between gap-2">
-                <span class="tabular font-extrabold">{{ money(service.price) }}</span>
-                <span
-                  class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
-                  aria-hidden="true"
-                >
-                  <atr-icon name="plus" [size]="16" />
-                </span>
-              </span>
-            </span>
-          </a>
-        </li>
-      }
-    </ul>
-
     <!-- Onde e quando -->
-    <atr-card heading="A barbearia" class="mt-4">
-      <dl class="flex flex-col gap-4 text-sm">
+    <section class="mt-8 border-t border-border pt-6">
+      <h2 class="text-xl font-semibold">A barbearia</h2>
+
+      <dl class="mt-4 flex flex-col gap-3.5 text-sm">
         @if (addressLabel(); as address) {
           <div class="flex items-start gap-3">
-            <atr-icon name="map-pin" [size]="18" class="mt-0.5 shrink-0 text-muted-foreground" />
-            <div>
-              <dt class="sr-only">Endereço</dt>
-              <dd>{{ address }}</dd>
-            </div>
+            <atr-icon name="map-pin" [size]="18" class="mt-px shrink-0 text-primary" />
+            <dt class="sr-only">Endereço</dt>
+            <dd>{{ address }}</dd>
           </div>
         }
+        <div class="flex items-start gap-3">
+          <atr-icon name="clock" [size]="18" class="mt-px shrink-0 text-primary" />
+          <dt class="sr-only">Horário de hoje</dt>
+          <dd>
+            <span class="text-muted-foreground">Hoje ·&nbsp;</span>
+            <span class="font-bold">{{ todayHours() }}</span>
+          </dd>
+        </div>
         @if (tenant.tenant()?.phone; as phone) {
           <div class="flex items-start gap-3">
-            <atr-icon name="phone" [size]="18" class="mt-0.5 shrink-0 text-muted-foreground" />
-            <div>
-              <dt class="sr-only">Telefone</dt>
-              <dd><a class="hover:text-primary" [href]="'tel:' + phone">{{ phone }}</a></dd>
-            </div>
+            <atr-icon name="phone" [size]="18" class="mt-px shrink-0 text-primary" />
+            <dt class="sr-only">Telefone</dt>
+            <dd><a class="hover:text-primary" [href]="'tel:' + digits(phone)">{{ phone }}</a></dd>
           </div>
         }
       </dl>
-    </atr-card>
 
-    <!-- Instalação -->
-    @if (install.state() !== 'instalado') {
-      <atr-card class="mt-4">
-        <div class="flex items-start gap-3">
-          <span
-            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground"
-          >
-            <atr-icon name="smartphone" [size]="18" />
-          </span>
-          <div class="min-w-0 flex-1">
-            <p class="font-bold">Deixe na tela inicial</p>
-            <p class="mt-0.5 text-sm text-muted-foreground">
-              {{
-                install.state() === 'disponivel'
-                  ? 'Abre como aplicativo, sem passar pela loja.'
-                  : 'No menu do navegador, toque em "Adicionar à tela de início".'
-              }}
-            </p>
-            @if (install.state() === 'disponivel') {
-              <button type="button" atrButton="soft" size="sm" class="mt-3" (click)="addToHome()">
-                <atr-icon name="download" [size]="15" />
-                Adicionar
-              </button>
-            }
-          </div>
-        </div>
-      </atr-card>
-    }
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        @if (mapsUrl(); as maps) {
+          <a atrButton="outline" size="lg" [href]="maps" target="_blank" rel="noopener">
+            <atr-icon name="navigation" [size]="18" />
+            Como chegar
+          </a>
+        }
+        @if (whatsappUrl(); as whatsapp) {
+          <a atrButton="soft" size="lg" [href]="whatsapp" target="_blank" rel="noopener">
+            <atr-icon name="message-circle" [size]="18" />
+            WhatsApp
+          </a>
+        }
+      </div>
+    </section>
   `,
 })
 export class HomePage {
@@ -278,7 +254,6 @@ export class HomePage {
   readonly slug = input<string>('');
 
   protected readonly tenant = inject(TenantContext);
-  protected readonly install = inject(InstallPrompt);
   private readonly session = inject(ClientSession);
 
   /** Pelo estado da navegação, não pela URL: recarregar não repete o aviso. */
@@ -308,7 +283,13 @@ export class HomePage {
     { initialValue: [] as readonly Appointment[] },
   );
 
-  /** Banner só aparece quando a barbearia tem algo a dizer. */
+  /** "Olá, Lucas" com conta; quem ainda não entrou é bem-vindo. */
+  protected readonly greeting = computed(() => {
+    const first = this.session.firstName();
+    return first ? `Olá, ${first}` : 'Bem-vindo!';
+  });
+
+  /** Destaque só aparece quando a barbearia tem algo a dizer. */
   protected readonly highlight = computed(() => {
     const promo = this.tenant.tenant()?.highlight;
     return promo?.active ? promo : null;
@@ -365,14 +346,53 @@ export class HomePage {
     formatAddress(this.tenant.tenant()?.address),
   );
 
+  /**
+   * O horário de hoje é a união das jornadas de quem trabalha hoje — a
+   * barbearia não tem horário à parte (ver Tenant), e um campo próprio
+   * anunciaria horas em que ninguém atende.
+   */
+  protected readonly todayHours = computed(() => {
+    const weekday = shopDay().getDay() as Weekday;
+    let open = Infinity;
+    let close = -Infinity;
+    for (const professional of this.professionals()) {
+      for (const window of expandWindows(professional.schedule[weekday])) {
+        open = Math.min(open, clockToMinutes(window.start));
+        close = Math.max(close, clockToMinutes(window.end));
+      }
+    }
+    return Number.isFinite(open) ? `${hoursLabel(open)} às ${hoursLabel(close)}` : 'fechado';
+  });
+
+  protected readonly mapsUrl = computed(() => {
+    const address = this.addressLabel();
+    return address
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+      : null;
+  });
+
+  /** WhatsApp pelo telefone da barbearia, com o 55 do Brasil na frente. */
+  protected readonly whatsappUrl = computed(() => {
+    const digits = this.digits(this.tenant.tenant()?.phone ?? '');
+    if (digits.length < 10) return null;
+    return `https://wa.me/${digits.length <= 11 ? `55${digits}` : digits}`;
+  });
+
+  protected digits(phone: string): string {
+    return phone.replace(/\D/g, '');
+  }
+
   protected dateLabel(instant: string): string {
     const label = formatLongDate(instant);
     return label.charAt(0).toUpperCase() + label.slice(1);
   }
+}
 
-  protected async addToHome(): Promise<void> {
-    await this.install.install();
-  }
+/** 540 → "09h", 570 → "09h30". */
+function hoursLabel(minutes: number): string {
+  const h = String(Math.floor(minutes / 60)).padStart(2, '0');
+  const m = minutes % 60;
+  return m ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`;
 }
 
 /** Daqui a quatro meses: nenhuma barbearia marca além disso. */

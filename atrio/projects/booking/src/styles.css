@@ -19,16 +19,51 @@
 /**
  * Tipografia do app do cliente.
  *
- * Plus Jakarta Sans no lugar do Manrope do painel. São produtos com públicos
- * diferentes: o painel é ferramenta de trabalho, o app é vitrine, e a vitrine
- * aguenta mais personalidade.
+ * Manrope no corpo e Sora nos títulos, como na referência de layout
+ * (projects/booking/src/especificacoes-navalla-co.md). O painel fica só com
+ * Manrope: é ferramenta de trabalho; o app é vitrine, e a vitrine aguenta
+ * mais personalidade.
  *
  * A base continua em 16px. Cheguei a subir para 17 atrás do respiro da
  * referência e as descrições de serviço passaram a quebrar em três linhas num
- * aparelho de 375px — a referência só parece maior porque está desenhada numa
- * tela mais larga. O respiro vem do espaçamento dos componentes, não de
+ * aparelho de 375px. O respiro vem do espaçamento dos componentes, não de
  * inflar a raiz.
  */
+@theme {
+  --font-display: 'Sora', ui-sans-serif, system-ui, sans-serif;
+  --shadow-cta: 0 10px 24px -10px color-mix(in oklch, var(--primary) 55%, transparent);
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+/**
+ * Neutros quentes da referência: fundo off-white, texto e superfícies
+ * escuras em grafite. A cor de AÇÃO não está aqui — é a da barbearia
+ * (BrandingService), e o laranja da referência é a da Navalha & Co.
+ */
 :root {
-  --app-font: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --app-font: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+
+  --atr-n-50: oklch(0.972 0.004 75);   /* #F7F5F2 — fundo */
+  --atr-n-100: oklch(0.945 0.004 75);  /* #F0EEEA — superfície neutra */
+  --atr-n-200: oklch(0.91 0.005 75);   /* #E4E2DF — bordas */
+  --atr-n-300: oklch(0.89 0.006 75);   /* #E0DEDB — borda de campo */
+  --atr-n-600: oklch(0.5 0.01 60);     /* #767472 — texto secundário */
+
+  --foreground: oklch(0.24 0.008 60);  /* #33302B */
+  --card-foreground: oklch(0.24 0.008 60);
+  --secondary-foreground: oklch(0.24 0.008 60);
+  --ink: oklch(0.2 0.006 60);          /* #2A2825 — barra inferior, cards escuros */
+  --ink-foreground: oklch(0.98 0 0);
+  --ink-elevated: oklch(0.28 0.006 60);
+  --ink-muted: oklch(0.74 0.008 70);
+
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.02), 0 8px 24px -12px oklch(0 0 0 / 0.12);
 }
