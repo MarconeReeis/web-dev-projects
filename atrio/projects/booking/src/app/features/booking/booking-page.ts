@@ -34,6 +34,7 @@ import {
   shopDay,
   shopInstant,
   splitBusy,
+  formatPhone,
 } from '@atrio/data';
 import {
   AtrAvatar,
@@ -450,7 +451,7 @@ type ProfessionalChoice = Id | typeof ANY | null;
                 <dt class="w-24 shrink-0 text-muted-foreground">Cliente</dt>
                 <dd class="min-w-0 flex-1">
                   <span class="block font-semibold">{{ session.name() }}</span>
-                  <span class="tabular block text-muted-foreground">{{ session.phone() }}</span>
+                  <span class="tabular block text-muted-foreground">{{ formatPhone(session.phone()) }}</span>
                 </dd>
                 <!-- Sair e entrar com outra conta: as escolhas ficam. -->
                 <button
@@ -588,6 +589,7 @@ type ProfessionalChoice = Id | typeof ANY | null;
   `,
 })
 export class BookingPage {
+  protected readonly formatPhone = formatPhone;
   private readonly servicesRepo = inject(ServiceRepository);
   private readonly professionalsRepo = inject(ProfessionalRepository);
   private readonly appointmentsRepo = inject(AppointmentRepository);

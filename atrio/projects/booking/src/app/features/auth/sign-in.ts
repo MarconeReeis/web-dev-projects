@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { ATRIO_CONFIG } from '@atrio/core';
-import { ClientAuth, ClientAuthError, DEMO_CLIENT_CREDENTIALS } from '@atrio/data';
+import { ClientAuth, ClientAuthError, DEMO_CLIENT_CREDENTIALS, maskPhoneInput } from '@atrio/data';
 import { AtrButton, AtrField, AtrIcon, AtrInput, AtrPasswordInput } from '@atrio/ui';
 
 export type SignInMode = 'entrar' | 'cadastro' | 'recuperar';
@@ -126,7 +126,7 @@ const MIN_PASSWORD = 6;
               placeholder="(11) 90000-0000"
               [invalid]="showErrors() && !!phoneError()"
               [value]="phone()"
-              (input)="phone.set($any($event.target).value)"
+              (input)="phone.set(maskPhoneInput($any($event.target)))"
             />
           </atr-field>
         }
@@ -284,6 +284,7 @@ export class SignIn implements OnInit {
   readonly startIn = input<Mode>('entrar');
   protected readonly name = signal('');
   protected readonly phone = signal('');
+  protected readonly maskPhoneInput = maskPhoneInput;
 
   /** Uma vez só, na abertura: depois o modo é de quem está usando a tela. */
   ngOnInit(): void {

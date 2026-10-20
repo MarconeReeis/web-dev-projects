@@ -8,6 +8,7 @@ import {
   Weekday,
   formatTime,
   shopFormat,
+  formatPhone,
 } from '@atrio/data';
 import { AtrAvatar, AtrBadge, AtrButton, AtrIcon } from '@atrio/ui';
 import { daysLabel } from '../../../shared/week-summary';
@@ -69,7 +70,7 @@ interface ScheduleSummary {
           <h3 class="truncate text-lg font-bold">{{ professional().name }}</h3>
           @if (professional().phone; as phone) {
             <a class="tabular text-sm text-muted-foreground hover:text-primary" [href]="'tel:' + phone">
-              {{ phone }}
+              {{ formatPhone(phone) }}
             </a>
           } @else {
             <p class="text-sm text-muted-foreground">Sem telefone</p>
@@ -192,6 +193,7 @@ interface ScheduleSummary {
   `,
 })
 export class ProfessionalCard {
+  protected readonly formatPhone = formatPhone;
   readonly professional = input.required<Professional>();
   readonly services = input.required<readonly Service[]>();
   readonly blocks = input.required<readonly TimeBlock[]>();

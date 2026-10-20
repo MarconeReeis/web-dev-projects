@@ -17,6 +17,7 @@ import {
   dayOf,
   dayRange,
   startOfDay,
+  maskPhoneInput,
 } from '@atrio/data';
 import { AtrButton, AtrField, AtrInput, AtrSurfaceShell } from '@atrio/ui';
 import { SlotPicker } from './slot-picker';
@@ -70,7 +71,7 @@ export interface NewAppointmentData {
               inputmode="tel"
               placeholder="(11) 98888-7777"
               [value]="phone()"
-              (input)="phone.set($any($event.target).value)"
+              (input)="phone.set(maskPhoneInput($any($event.target)))"
             />
           </atr-field>
         </div>
@@ -182,6 +183,7 @@ export class NewAppointmentDialog {
 
   protected readonly clientName = signal('');
   protected readonly phone = signal('');
+  protected readonly maskPhoneInput = maskPhoneInput;
   protected readonly professionalId = signal<Id | null>(this.data.professionalId);
   protected readonly serviceId = signal<Id | null>(null);
   protected readonly date = signal(startOfDay(this.data.date));

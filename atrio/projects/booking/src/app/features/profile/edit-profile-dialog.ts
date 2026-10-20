@@ -1,6 +1,6 @@
 import { DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ClientAuthError } from '@atrio/data';
+import { ClientAuthError, maskPhone, maskPhoneInput } from '@atrio/data';
 import { AtrButton, AtrField, AtrInput } from '@atrio/ui';
 import { ClientSession } from '../../shared/client-session';
 import { SheetFrame } from '../../shared/sheet-frame';
@@ -38,7 +38,7 @@ import { SheetFrame } from '../../shared/sheet-frame';
             placeholder="(11) 90000-0000"
             [invalid]="showErrors() && !!phoneError()"
             [value]="phone()"
-            (input)="phone.set($any($event.target).value)"
+            (input)="phone.set(maskPhoneInput($any($event.target)))"
           />
         </atr-field>
 
@@ -63,7 +63,8 @@ export class EditProfileDialog {
   private readonly session = inject(ClientSession);
 
   protected readonly name = signal(this.session.name());
-  protected readonly phone = signal(this.session.phone());
+  protected readonly phone = signal(maskPhone(this.session.phone()));
+  protected readonly maskPhoneInput = maskPhoneInput;
   protected readonly busy = signal(false);
   protected readonly showErrors = signal(false);
   protected readonly failure = signal<string | null>(null);

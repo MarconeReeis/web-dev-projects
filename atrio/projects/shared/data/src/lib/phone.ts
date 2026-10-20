@@ -22,3 +22,39 @@ export function formatPhone(value: string): string {
   if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
   return typed;
 }
+
+/**
+ * Máscara enquanto se digita: "11912" vira "(11) 912", e ao completar,
+ * "(11) 91234-5678". Começando com "+", é número de fora: fica livre.
+ */
+export function maskPhone(value: string): string {
+  if (value.trim().startsWith('+')) return value;
+  const d = value.replace(/\D/g, '').slice(0, 11);
+  if (d.length === 0) return '';
+  if (d.length <= 2) return `(${d}`;
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
+/**
+ * Aplica a máscara no próprio campo e devolve o valor mascarado — para usar
+ * no (input): `phone.set(maskPhoneInput($any($event.target)))`.
+ *
+ * O cursor fica depois do mesmo número de dígitos de antes: apagar o "-"
+ * ou corrigir um dígito no meio não joga o cursor para o fim.
+ */
+export function maskPhoneInput(input: HTMLInputElement): string {
+  const caret = input.selectionStart ?? input.value.length;
+  const digitsBefore = input.value.slice(0, caret).replace(/\D/g, '').length;
+  const masked = maskPhone(input.value);
+  if (masked === input.value) return masked;
+
+  input.value = masked;
+  let position = 0;
+  for (let seen = 0; position < masked.length && seen < digitsBefore; position++) {
+    if (/\d/.test(masked[position])) seen++;
+  }
+  input.setSelectionRange(position, position);
+  return masked;
+}

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ATRIO_CONFIG, InstallPrompt } from '@atrio/core';
-import { ClientAuthError, DEMO_CLIENT_CREDENTIALS } from '@atrio/data';
+import { ClientAuthError, DEMO_CLIENT_CREDENTIALS, formatPhone } from '@atrio/data';
 import { AtrAvatar, AtrButton, AtrIcon, AtrOverlay } from '@atrio/ui';
 import { ClientSession } from '../../shared/client-session';
 import { SignIn } from '../auth/sign-in';
@@ -64,7 +64,7 @@ import { EditProfileDialog } from './edit-profile-dialog';
           </div>
           <div>
             <dt class="text-xs text-muted-foreground">Telefone</dt>
-            <dd class="mt-0.5 font-medium">{{ account.phone || '—' }}</dd>
+            <dd class="mt-0.5 font-medium">{{ account.phone ? formatPhone(account.phone) : '—' }}</dd>
           </div>
           <div>
             <dt class="text-xs text-muted-foreground">E-mail · somente leitura</dt>
@@ -175,6 +175,7 @@ import { EditProfileDialog } from './edit-profile-dialog';
   `,
 })
 export class ProfilePage {
+  protected readonly formatPhone = formatPhone;
   /** Os links são absolutos — ver o comentário de `slug` na home. */
   readonly slug = input<string>('');
 

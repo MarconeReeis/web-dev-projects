@@ -22,6 +22,7 @@ import {
   dayOf,
   dayRange,
   shopDay,
+  formatPhone,
 } from '@atrio/data';
 import { AtrAvatar, AtrButton, AtrField, AtrIcon, AtrInput, AtrSurfaceShell } from '@atrio/ui';
 import { toDateInputValue } from '../../../shared/date-input';
@@ -85,7 +86,7 @@ export interface AppointmentPanelData {
                 [href]="'tel:' + phone"
               >
                 <atr-icon name="phone" [size]="14" />
-                {{ phone }}
+                {{ formatPhone(phone) }}
               </a>
             } @else {
               <p class="text-sm text-muted-foreground">Sem telefone</p>
@@ -334,6 +335,7 @@ export interface AppointmentPanelData {
   `,
 })
 export class AppointmentPanel {
+  protected readonly formatPhone = formatPhone;
   private readonly ref = inject<DialogRef<void, AppointmentPanel>>(DialogRef);
   private readonly data = inject<AppointmentPanelData>(DIALOG_DATA);
 

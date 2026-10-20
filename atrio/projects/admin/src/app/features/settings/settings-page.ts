@@ -23,6 +23,8 @@ import {
   clockToMinutes,
   expandWindows,
   minutesToClock,
+  maskPhone,
+  maskPhoneInput,
 } from '@atrio/data';
 import {
   AtrAvatar,
@@ -120,7 +122,7 @@ const EMPTY_ADDRESS: Address = {
               inputmode="tel"
               placeholder="(11) 3333-4444"
               [value]="phone()"
-              (input)="phone.set($any($event.target).value)"
+              (input)="phone.set(maskPhoneInput($any($event.target)))"
             />
           </atr-field>
         </div>
@@ -430,6 +432,7 @@ export class SettingsPage {
 
   protected readonly name = signal('');
   protected readonly phone = signal('');
+  protected readonly maskPhoneInput = maskPhoneInput;
   protected readonly logoUrl = signal<string | null>(null);
   protected readonly address = signal<Address>(EMPTY_ADDRESS);
   protected readonly adminName = signal('');
@@ -470,7 +473,7 @@ export class SettingsPage {
 
       untracked(() => {
         this.name.set(current.name);
-        this.phone.set(current.phone ?? '');
+        this.phone.set(maskPhone(current.phone ?? ''));
         this.logoUrl.set(current.branding.logoUrl);
         this.address.set(current.address ?? EMPTY_ADDRESS);
         this.adminName.set(current.admin.name);

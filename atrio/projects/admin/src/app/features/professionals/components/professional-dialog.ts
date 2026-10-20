@@ -15,6 +15,8 @@ import {
   clockToMinutes,
   workingDay,
   newEntityId,
+  maskPhone,
+  maskPhoneInput,
 } from '@atrio/data';
 import {
   AtrAvatar,
@@ -118,7 +120,7 @@ export interface ProfessionalDialogData {
               inputmode="tel"
               placeholder="(11) 98888-7777"
               [value]="phone()"
-              (input)="phone.set($any($event.target).value)"
+              (input)="phone.set(maskPhoneInput($any($event.target)))"
             />
           </atr-field>
         </div>
@@ -289,7 +291,8 @@ export class ProfessionalDialog {
   });
 
   protected readonly name = signal(this.current?.name ?? '');
-  protected readonly phone = signal(this.current?.phone ?? '');
+  protected readonly phone = signal(maskPhone(this.current?.phone ?? ''));
+  protected readonly maskPhoneInput = maskPhoneInput;
   protected readonly photoUrl = signal<string | null>(this.current?.photoUrl ?? null);
   protected readonly bio = signal(this.current?.bio ?? '');
   protected readonly about = signal(this.current?.about ?? '');
