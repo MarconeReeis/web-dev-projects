@@ -12,6 +12,7 @@ supabase/
 │   ├── 20261019000700_client_link.sql histórico do balcão ligado à conta do cliente
 │   ├── 20261019000800_delete_account.sql excluir minha conta (LGPD)
 │   └── 20261019000900_counter_pin.sql PIN do balcão
+├── templates/                        os e-mails (cadastro, senha, troca de e-mail)
 ├── seed.sql                          a Navalha & Co. do modo demonstração
 └── tests/schema.test.mjs             70 testes contra Postgres de verdade
 ```
@@ -54,6 +55,65 @@ Depois do `db push`, no painel do Supabase:
 
    O link leva a `/b/<barbearia>/nova-senha` (cliente) e a `/nova-senha`
    (painel).
+
+## E-mails
+
+O envio padrão do Supabase é só para teste: poucos e-mails por hora e, em
+projeto novo, só para quem é da equipe do projeto. Para valer, o Supabase
+envia pelo **Resend**, com o domínio **atrioagenda.com.br**.
+
+**1. Domínio no Resend.** Em resend.com → **Domains → Add domain**:
+`atrioagenda.com.br`, região São Paulo se oferecer. Ele mostra os registros
+de DNS (DKIM e SPF) — copie cada um na Cloudflare (**DNS → Records**), com a
+nuvem **cinza** ("DNS only"). Junto, crie o DMARC:
+
+| Tipo | Nome     | Conteúdo           |
+| ---- | -------- | ------------------ |
+| TXT  | `_dmarc` | `v=DMARC1; p=none;` |
+
+Espere o Resend marcar o domínio como **Verified**. Sem isso, os e-mails
+caem no spam ou nem saem.
+
+**2. Chave do Resend.** **API Keys → Create API key**, permissão **Sending
+access**, só para o domínio. A chave aparece uma vez: vai direto para o
+painel do Supabase — nunca para o código, o Git ou o chat.
+
+**3. SMTP no Supabase.** **Authentication → Emails → SMTP Settings**, ligar
+"Enable custom SMTP":
+
+| Campo        | Valor                             |
+| ------------ | --------------------------------- |
+| Sender email | `naoresponda@atrioagenda.com.br`  |
+| Sender name  | `Agendamento`                     |
+| Host         | `smtp.resend.com`                 |
+| Port         | `465`                             |
+| Username     | `resend`                          |
+| Password     | a chave do passo 2                |
+
+O remetente é neutro de propósito: o cliente se cadastrou na "Barbearia X",
+não no Átrio. O nome da barbearia vai no corpo do e-mail — o cadastro envia
+`barbearia` junto com `name` e `phone`, e os modelos usam
+`{{ .Data.barbearia }}`.
+
+**4. Os modelos.** **Authentication → Emails → Templates**, colando assunto
+e o HTML de `supabase/templates/`:
+
+| No painel            | Assunto                  | Arquivo                 |
+| -------------------- | ------------------------ | ----------------------- |
+| Confirm sign up      | Confirme seu e-mail      | `confirmation.html`     |
+| Reset password       | Redefinir sua senha      | `recovery.html`         |
+| Change email address | Confirme o novo e-mail   | `email_change.html`     |
+| Password changed *   | Sua senha foi alterada   | `password_changed.html` |
+
+\* Em **Security notifications**: ligar e colar.
+
+Os mesmos arquivos valem para o Supabase local (`config.toml`). Mudou um
+modelo aqui, cole de novo no painel — nos dois projetos, teste e produção.
+
+**5. Confirmar e-mail.** **Authentication → Providers → Email → Confirm
+email**: ligado. O cadastro passa a responder "Enviamos um link para o seu
+e-mail"; o link volta para a página da barbearia (`/b/<barbearia>`), já
+logado — coberto pelo `/**` das Redirect URLs.
 
 ## Imagens
 

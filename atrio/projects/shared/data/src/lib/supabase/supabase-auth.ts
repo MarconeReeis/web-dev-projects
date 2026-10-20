@@ -37,6 +37,7 @@ import {
 export class SupabaseClientAuth extends ClientAuth {
   private readonly client = inject(SUPABASE_CLIENT);
   private readonly config = inject(SUPABASE_CONFIG);
+  private readonly scope = inject(SupabaseTenantScope);
 
   /** `undefined` até a sessão salva no aparelho ser lida. */
   private readonly session$ = new BehaviorSubject<ClientAccount | null | undefined>(undefined);
@@ -69,11 +70,22 @@ export class SupabaseClientAuth extends ClientAuth {
   }
 
   async signUp(input: NewClientAccount): Promise<ClientAccount> {
+    const tenant = await this.scope.row().catch(() => null);
     const { data, error } = await this.client.auth.signUp({
       email: input.email.trim(),
       password: input.password,
-      // O gatilho do banco cria o perfil a partir destes dois.
-      options: { data: { name: input.name.trim(), phone: input.phone.trim() } },
+      options: {
+        // O gatilho do banco cria o perfil a partir de name e phone. O nome
+        // da barbearia vai para os e-mails (supabase/templates): quem se
+        // cadastrou na "Barbearia X" recebe um e-mail da Barbearia X.
+        data: {
+          name: input.name.trim(),
+          phone: input.phone.trim(),
+          ...(tenant ? { barbearia: tenant.name } : {}),
+        },
+        // O link de confirmação volta para esta barbearia, já logado.
+        emailRedirectTo: `${location.origin}/b/${this.config.tenantSlug()}`,
+      },
     });
     if (error) throw translate(error);
 

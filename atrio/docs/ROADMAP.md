@@ -45,11 +45,12 @@ e recebe.
 - [x] **Tela de nova senha** — feito em 19/10/2026, nos dois apps. O link
       do e-mail leva a "Crie uma senha nova"; link vencido oferece pedir
       outro. Depende das Redirect URLs no Supabase (`supabase/README.md`).
-- [ ] **E-mails de verdade** — P/M. O envio padrão do Supabase é para
-      testes: limite baixo por hora e, pelo que sei, entrega só para e-mails
-      da equipe do projeto (confirmar no painel). Antes de abrir para
-      clientes: SMTP próprio (Resend, Brevo…), modelos em português e
-      **"Confirm email" religado**.
+- [ ] **E-mails de verdade** — P/M. Domínio escolhido: `atrioagenda.com.br`
+      (em registro). Feito: modelos em português em `supabase/templates/`,
+      com o nome da barbearia no corpo, e o link de confirmação voltando
+      para a barbearia. Falta, no painel: domínio verificado no Resend, SMTP
+      no Supabase, modelos colados e **"Confirm email" religado** — o passo a
+      passo está em `supabase/README.md`, "E-mails".
 - [x] **Fotos no Storage** — feito em 19/10/2026. Foto de profissional e
       logo vão para o bucket `midia`, com envio só pela equipe da barbearia
       e na pasta dela; no banco fica o link.
