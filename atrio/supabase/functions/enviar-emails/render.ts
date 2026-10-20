@@ -72,7 +72,7 @@ export function render(row: EmailRow, options: RenderOptions): RenderedEmail {
     ...(address(row.tenant_address) ? [['Local', address(row.tenant_address)] as Detail] : []),
   ];
   const shopDetails: Detail[] = [
-    ['Cliente', row.client_phone ? `${client} · ${row.client_phone}` : client],
+    ['Cliente', row.client_phone ? `${client} · ${formatPhone(row.client_phone)}` : client],
     ...details,
     ...(row.notes ? [['Observações', row.notes] as Detail] : []),
   ];
@@ -213,6 +213,19 @@ function address(value: EmailRow['tenant_address']): string | null {
   const line = [street, value['complement'], value['district']].filter(Boolean).join(' · ');
   const city = [value['city'], value['state']].filter(Boolean).join(' - ');
   return [line, city].filter(Boolean).join(' — ') || null;
+}
+
+/**
+ * "(11) 91234-5678" — o mesmo formato do app (projects/shared/data/src/lib/
+ * phone.ts). Cadastros antigos guardaram só os dígitos.
+ */
+function formatPhone(value: string): string {
+  let digits = value.replace(/\D/g, '');
+  if (value.trim().startsWith('+') && !digits.startsWith('55')) return value.trim();
+  if ((digits.length === 12 || digits.length === 13) && digits.startsWith('55')) digits = digits.slice(2);
+  if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return value.trim();
 }
 
 /** Fecha a frase com ponto — sem dobrar o de "Navalha & Co.". */

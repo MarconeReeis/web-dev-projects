@@ -7,6 +7,7 @@ import {
   NewClientAccount,
 } from '../models/client-account';
 import { ClientAuth } from '../repositories/repositories';
+import { formatPhone } from '../phone';
 import { newId } from './demo-store';
 
 /**
@@ -90,7 +91,7 @@ export class DemoClientAuth extends ClientAuth {
       id: newId('cli'),
       name: input.name.trim(),
       email: input.email.trim().toLowerCase(),
-      phone: input.phone.trim(),
+      phone: formatPhone(input.phone),
       photoUrl: null,
       passwordHash: await hashPassword(input.email, input.password),
     };
@@ -131,7 +132,7 @@ export class DemoClientAuth extends ClientAuth {
     const current = this.session$.value;
     if (!current) throw new ClientAuthError('indisponivel', 'Entre na sua conta para editar.');
 
-    const updated = { ...current, name: changes.name.trim(), phone: changes.phone.trim() };
+    const updated = { ...current, name: changes.name.trim(), phone: formatPhone(changes.phone) };
     const accounts = await this.accounts();
     write(
       ACCOUNTS_KEY,

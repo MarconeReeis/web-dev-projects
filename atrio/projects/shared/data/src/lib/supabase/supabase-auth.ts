@@ -24,6 +24,7 @@ import {
   SupabaseTenantScope,
   createSupabaseClient,
 } from './supabase-core';
+import { formatPhone } from '../phone';
 import {
   SupabaseAppointmentRepository,
   SupabaseAvailabilityRepository,
@@ -85,7 +86,7 @@ export class SupabaseClientAuth extends ClientAuth {
         // cadastrou na "Barbearia X" recebe um e-mail da Barbearia X.
         data: {
           name: input.name.trim(),
-          phone: input.phone.trim(),
+          phone: formatPhone(input.phone),
           ...(tenant ? { barbearia: tenant.name } : {}),
         },
         // O link de confirmação volta para esta barbearia, já logado.
@@ -153,7 +154,7 @@ export class SupabaseClientAuth extends ClientAuth {
     // o formato também — nome com 2 letras, telefone com DDD.
     const { error } = await this.client
       .from('profiles')
-      .update({ name: changes.name.trim(), phone: changes.phone.trim() })
+      .update({ name: changes.name.trim(), phone: formatPhone(changes.phone) })
       .eq('id', auth.user.id);
     if (error) {
       console.error('[supabase]', error);

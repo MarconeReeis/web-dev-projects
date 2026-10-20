@@ -63,6 +63,11 @@ describe('e-mails do agendamento', () => {
     assert.match(mail.html, /href="https:\/\/painel\.atrioagenda\.com\.br\/agenda\?agendamento=ap1"/);
   });
 
+  test('telefone guardado só com dígitos sai formatado', () => {
+    const mail = render({ ...base, kind: 'novo_horario', recipient: 'barbearia', client_phone: '1198434839' }, options);
+    assert.match(mail.text, /Cliente: Beto Lima · \(11\) 9843-4839/);
+  });
+
   test('remarcação mostra o horário de antes', () => {
     const mail = render({ ...base, kind: 'reagendado', previous_starts_at: '2026-10-19T13:00:00Z' }, options);
     assert.equal(mail.subject, 'Horário alterado: agora ter, 20/10 às 15:00');

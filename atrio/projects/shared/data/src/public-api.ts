@@ -24,6 +24,7 @@ export * from './lib/models/finance';
 export * from './lib/models/money';
 
 export * from './lib/period';
+export * from './lib/phone';
 export * from './lib/availability/availability';
 export * from './lib/availability/open-slots';
 export * from './lib/availability/busy';
