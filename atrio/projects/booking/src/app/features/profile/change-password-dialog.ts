@@ -1,46 +1,44 @@
 import { DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ClientAuthError } from '@atrio/data';
-import { AtrButton, AtrField, AtrInput, AtrSurfaceShell } from '@atrio/ui';
+import { AtrButton } from '@atrio/ui';
 import { ClientSession } from '../../shared/client-session';
+import { PasswordInput } from '../../shared/password-input';
+import { SheetFrame } from '../../shared/sheet-frame';
 
 const MIN_PASSWORD = 6;
 
 /**
- * Trocar a senha: a atual e a nova, uma vez só. Pedir a nova duas vezes
- * protege pouco — quem errar a digitação usa "Esqueci minha senha" — e
- * dobra o trabalho no celular.
+ * Trocar a senha: a atual, a nova e a confirmação da nova — com "mostrar"
+ * em cada uma, para conferir antes de enviar.
  *
  * Fecha com `true` quando trocou.
  */
 @Component({
   selector: 'bkg-change-password-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AtrSurfaceShell, AtrButton, AtrField, AtrInput],
+  imports: [SheetFrame, AtrButton, PasswordInput],
   template: `
-    <atr-surface-shell heading="Trocar senha" (closed)="ref.close(false)">
-      <form id="perfil-senha" class="flex flex-col gap-4" novalidate (submit)="$event.preventDefault(); save()">
-        <atr-field label="Senha atual" [error]="showErrors() ? currentError() : null">
-          <input
-            atrInput
-            type="password"
-            autocomplete="current-password"
-            [invalid]="showErrors() && !!currentError()"
-            [value]="current()"
-            (input)="current.set($any($event.target).value)"
-          />
-        </atr-field>
-
-        <atr-field label="Nova senha" [error]="showErrors() ? nextError() : null">
-          <input
-            atrInput
-            type="password"
-            autocomplete="new-password"
-            [invalid]="showErrors() && !!nextError()"
-            [value]="next()"
-            (input)="next.set($any($event.target).value)"
-          />
-        </atr-field>
+    <bkg-sheet-frame heading="Trocar senha" (closed)="ref.close(false)">
+      <form class="flex flex-col gap-4" novalidate (submit)="$event.preventDefault(); save()">
+        <bkg-password-input
+          label="Senha atual"
+          autocomplete="current-password"
+          [error]="showErrors() ? currentError() : null"
+          [(value)]="current"
+        />
+        <bkg-password-input
+          label="Nova senha"
+          autocomplete="new-password"
+          [error]="showErrors() ? nextError() : null"
+          [(value)]="next"
+        />
+        <bkg-password-input
+          label="Confirmar nova senha"
+          autocomplete="new-password"
+          [error]="showErrors() ? confirmError() : null"
+          [(value)]="confirmation"
+        />
 
         @if (failure(); as message) {
           <p
@@ -50,15 +48,12 @@ const MIN_PASSWORD = 6;
             {{ message }}
           </p>
         }
-      </form>
 
-      <div shell-footer class="flex w-full justify-end gap-2">
-        <button type="button" atrButton="ghost" (click)="ref.close(false)">Cancelar</button>
-        <button type="submit" form="perfil-senha" atrButton [disabled]="busy()">
-          {{ busy() ? 'Trocando…' : 'Trocar senha' }}
+        <button type="submit" atrButton size="lg" class="mt-2 w-full shadow-cta" [disabled]="busy()">
+          {{ busy() ? 'Salvando…' : 'Salvar nova senha' }}
         </button>
-      </div>
-    </atr-surface-shell>
+      </form>
+    </bkg-sheet-frame>
   `,
 })
 export class ChangePasswordDialog {
@@ -67,6 +62,7 @@ export class ChangePasswordDialog {
 
   protected readonly current = signal('');
   protected readonly next = signal('');
+  protected readonly confirmation = signal('');
   protected readonly busy = signal(false);
   protected readonly showErrors = signal(false);
   protected readonly failure = signal<string | null>(null);
@@ -77,11 +73,14 @@ export class ChangePasswordDialog {
     if (this.next() === this.current()) return 'Escolha uma senha diferente da atual.';
     return null;
   });
+  protected readonly confirmError = computed(() =>
+    this.confirmation() === this.next() ? null : 'As senhas não são iguais.',
+  );
 
   protected async save(): Promise<void> {
     this.showErrors.set(true);
     this.failure.set(null);
-    if (this.currentError() || this.nextError() || this.busy()) return;
+    if (this.currentError() || this.nextError() || this.confirmError() || this.busy()) return;
 
     this.busy.set(true);
     try {

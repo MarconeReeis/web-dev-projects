@@ -45,6 +45,19 @@ export const routes: Routes = [
       import('./features/appointments/appointment-page').then((m) => m.AppointmentPage),
   },
   {
+    // Política e termos: páginas de leitura, com o próprio "voltar".
+    path: 'b/:slug/privacidade',
+    title: 'Política de privacidade',
+    data: { document: 'privacidade' },
+    loadComponent: () => import('./features/profile/legal-page').then((m) => m.LegalPage),
+  },
+  {
+    path: 'b/:slug/termos',
+    title: 'Termos de uso',
+    data: { document: 'termos' },
+    loadComponent: () => import('./features/profile/legal-page').then((m) => m.LegalPage),
+  },
+  {
     path: 'b/:slug',
     component: Shell,
     children: [

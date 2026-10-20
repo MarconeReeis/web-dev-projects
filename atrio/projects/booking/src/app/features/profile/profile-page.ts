@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ATRIO_CONFIG, InstallPrompt } from '@atrio/core';
 import { ClientAuthError, DEMO_CLIENT_CREDENTIALS } from '@atrio/data';
@@ -18,14 +18,13 @@ import { EditProfileDialog } from './edit-profile-dialog';
  * direito (LGPD), não uma ação do dia a dia, e não pode estar a um toque
  * acidental dele.
  *
- * A seção "Privacidade" da referência (política e termos) entra junto com
- * os textos, no item de LGPD do roadmap — link para documento que não existe
- * pareceria app quebrado.
+ * Política e termos abrem páginas próprias, que por enquanto avisam que o
+ * texto está em preparação (item de LGPD do roadmap).
  */
 @Component({
   selector: 'bkg-profile-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AtrAvatar, AtrButton, AtrIcon, SignIn],
+  imports: [RouterLink, AtrAvatar, AtrButton, AtrIcon, SignIn],
   host: { class: 'block' },
   template: `
     <h1 class="text-2xl font-bold">Perfil</h1>
@@ -100,6 +99,26 @@ import { EditProfileDialog } from './edit-profile-dialog';
         </button>
       </section>
 
+      <!-- Privacidade -->
+      <section class="mt-6 border-t border-border pt-6">
+        <h2 class="flex items-center gap-2 text-lg font-semibold">
+          <atr-icon name="shield-check" [size]="20" class="text-primary" />
+          Privacidade
+        </h2>
+        <div class="mt-3 flex flex-col gap-3">
+          @for (link of legalLinks; track link.path) {
+            <a
+              class="flex min-h-12 w-full items-center gap-3 rounded-full border border-border bg-card px-5 text-sm font-medium transition-colors hover:border-primary"
+              [routerLink]="['/b', slug(), link.path]"
+            >
+              <atr-icon name="file-text" [size]="18" class="shrink-0" />
+              <span class="flex-1">{{ link.label }}</span>
+              <atr-icon name="chevron-right" [size]="18" />
+            </a>
+          }
+        </div>
+      </section>
+
       <button type="button" atrButton="outline" size="lg" class="mt-6 w-full" (click)="session.signOut()">
         <atr-icon name="log-out" [size]="18" />
         Sair da conta
@@ -168,6 +187,11 @@ export class ProfilePage {
   protected readonly deleting = signal(false);
   protected readonly deleteError = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
+
+  protected readonly legalLinks = [
+    { path: 'privacidade', label: 'Política de privacidade' },
+    { path: 'termos', label: 'Termos de uso' },
+  ] as const;
 
   protected readonly isDemo = computed(
     () => this.demoMode && this.session.account()?.email === DEMO_CLIENT_CREDENTIALS.email,

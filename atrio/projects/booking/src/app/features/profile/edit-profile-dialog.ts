@@ -1,8 +1,9 @@
 import { DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ClientAuthError } from '@atrio/data';
-import { AtrButton, AtrField, AtrInput, AtrSurfaceShell } from '@atrio/ui';
+import { AtrButton, AtrField, AtrInput } from '@atrio/ui';
 import { ClientSession } from '../../shared/client-session';
+import { SheetFrame } from '../../shared/sheet-frame';
 
 /**
  * Editar nome e telefone. O e-mail fica de fora: ele é o login, e trocá-lo
@@ -13,10 +14,10 @@ import { ClientSession } from '../../shared/client-session';
 @Component({
   selector: 'bkg-edit-profile-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AtrSurfaceShell, AtrButton, AtrField, AtrInput],
+  imports: [SheetFrame, AtrButton, AtrField, AtrInput],
   template: `
-    <atr-surface-shell heading="Meus dados" (closed)="ref.close(false)">
-      <form id="perfil-dados" class="flex flex-col gap-4" novalidate (submit)="$event.preventDefault(); save()">
+    <bkg-sheet-frame heading="Meus dados" (closed)="ref.close(false)">
+      <form class="flex flex-col gap-4" novalidate (submit)="$event.preventDefault(); save()">
         <atr-field label="Nome" [error]="showErrors() ? nameError() : null">
           <input
             atrInput
@@ -49,15 +50,12 @@ import { ClientSession } from '../../shared/client-session';
             {{ message }}
           </p>
         }
-      </form>
 
-      <div shell-footer class="flex w-full justify-end gap-2">
-        <button type="button" atrButton="ghost" (click)="ref.close(false)">Cancelar</button>
-        <button type="submit" form="perfil-dados" atrButton [disabled]="busy()">
+        <button type="submit" atrButton size="lg" class="mt-2 w-full shadow-cta" [disabled]="busy()">
           {{ busy() ? 'Salvando…' : 'Salvar' }}
         </button>
-      </div>
-    </atr-surface-shell>
+      </form>
+    </bkg-sheet-frame>
   `,
 })
 export class EditProfileDialog {
