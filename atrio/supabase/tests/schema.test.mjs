@@ -1120,3 +1120,35 @@ describe('e-mails do agendamento', () => {
     assert.equal(calls[0].headers['x-atrio-secret'], 'segredo-de-teste');
   });
 });
+
+describe('e-mail para avisos', () => {
+  const save = (user, notice) =>
+    as(
+      user,
+      `select public.save_tenant_settings($1, 'Navalha & Co.', '(11) 98888-1234', null, '{}', null,
+                                          'Novo Responsável', 'novo@navalha.com', $2)`,
+      [TENANT, notice],
+    );
+  const noticeOf = async (appointmentId) =>
+    (
+      await db.query(
+        `select to_email from public.email_outbox where appointment_id = $1 and recipient = 'barbearia'`,
+        [appointmentId],
+      )
+    ).rows.map((r) => r.to_email);
+
+  test('com e-mail para avisos, os avisos vão para ele; em branco, para o administrador', async () => {
+    await save(STAFF, ' Agenda@Navalha.com ');
+    const [first] = await book(BETO, RAFAEL, BARBA, await nextWeek(4, '17:00'));
+    assert.deepEqual(await noticeOf(first.id), ['agenda@navalha.com']);
+
+    await save(STAFF, '');
+    const [second] = await book(BETO, RAFAEL, BARBA, await nextWeek(4, '17:30'));
+    assert.deepEqual(await noticeOf(second.id), ['novo@navalha.com']);
+  });
+
+  test('e-mail inválido é recusado; atendente não altera', async () => {
+    assert.match(await fails(save(STAFF, 'sem-arroba')), /check constraint|notification_email/);
+    assert.equal(await fails(save(ATTENDANT, 'outro@navalha.com')), 'sem_permissao');
+  });
+});

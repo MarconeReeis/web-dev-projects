@@ -257,6 +257,30 @@ const EMPTY_ADDRESS: Address = {
       </div>
     </atr-card>
 
+    <!-- Avisos: separado do administrador — quem recebe a agenda nem sempre
+         é quem responde pela conta. -->
+    <atr-card
+      heading="Avisos de agendamento"
+      subheading="Para onde vão os e-mails de novo horário, remarcação e cancelamento feitos pelos clientes."
+      class="mt-4"
+    >
+      <atr-field
+        label="E-mail para avisos"
+        [hint]="noticeEmail().trim() ? null : 'Em branco, os avisos vão para o e-mail do administrador.'"
+        [error]="showErrors() ? noticeEmailError() : null"
+      >
+        <input
+          atrInput
+          type="email"
+          inputmode="email"
+          [placeholder]="adminEmail() || 'agenda@suabarbearia.com.br'"
+          [invalid]="showErrors() && !!noticeEmailError()"
+          [value]="noticeEmail()"
+          (input)="noticeEmail.set($any($event.target).value)"
+        />
+      </atr-field>
+    </atr-card>
+
     <!-- PIN do balcão: fora do "Salvar" da tela — tem confirmação própria. -->
     <atr-card
       heading="PIN do balcão"
@@ -410,6 +434,7 @@ export class SettingsPage {
   protected readonly address = signal<Address>(EMPTY_ADDRESS);
   protected readonly adminName = signal('');
   protected readonly adminEmail = signal('');
+  protected readonly noticeEmail = signal('');
 
   protected readonly highlightTitle = signal('');
   protected readonly highlightSubtitle = signal('');
@@ -450,6 +475,7 @@ export class SettingsPage {
         this.address.set(current.address ?? EMPTY_ADDRESS);
         this.adminName.set(current.admin.name);
         this.adminEmail.set(current.admin.email);
+        this.noticeEmail.set(current.admin.noticeEmail ?? '');
         this.highlightTitle.set(current.highlight?.title ?? '');
         this.highlightSubtitle.set(current.highlight?.subtitle ?? '');
         this.highlightCta.set(current.highlight?.ctaLabel ?? '');
@@ -501,6 +527,12 @@ export class SettingsPage {
     // endereços válidos, e quem confirma de verdade é o envio.
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return 'E-mail inválido.';
     return null;
+  });
+
+  /** Opcional: em branco vale o do administrador. */
+  protected readonly noticeEmailError = computed(() => {
+    const value = this.noticeEmail().trim();
+    return !value || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value) ? null : 'E-mail inválido.';
   });
 
   /** Só cobra o título quando o banner vai de fato aparecer. */
@@ -566,7 +598,7 @@ export class SettingsPage {
   protected async save(): Promise<void> {
     this.showErrors.set(true);
     const current = this.tenant.tenant();
-    if (!current || this.nameError() || this.emailError() || this.highlightError()) {
+    if (!current || this.nameError() || this.emailError() || this.noticeEmailError() || this.highlightError()) {
       return;
     }
 
@@ -586,7 +618,11 @@ export class SettingsPage {
       phone: this.phone().trim() || null,
       address: this.address(),
       branding: { ...current.branding, logoUrl: this.logoUrl() },
-      admin: { name: this.adminName().trim(), email: this.adminEmail().trim() },
+      admin: {
+        name: this.adminName().trim(),
+        email: this.adminEmail().trim(),
+        noticeEmail: this.noticeEmail().trim().toLowerCase() || null,
+      },
       highlight,
     };
 
@@ -626,6 +662,7 @@ export class SettingsPage {
       this.address(),
       this.adminName(),
       this.adminEmail(),
+      this.noticeEmail(),
       this.highlightTitle(),
       this.highlightSubtitle(),
       this.highlightCta(),

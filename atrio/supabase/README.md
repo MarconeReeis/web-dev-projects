@@ -14,11 +14,12 @@ supabase/
 │   ├── 20261019000900_counter_pin.sql PIN do balcão
 │   ├── 20261020000100_reserved_slugs.sql endereços reservados pelo Átrio
 │   ├── 20261020000200_appointment_emails.sql fila dos e-mails do agendamento
-│   └── 20261020000300_email_dispatch.sql a cada minuto, chama o envio
+│   ├── 20261020000300_email_dispatch.sql a cada minuto, chama o envio
+│   └── 20261020000400_notification_email.sql e-mail para os avisos da barbearia
 ├── functions/enviar-emails/          envia a fila pelo Resend (Edge Function)
 ├── templates/                        os e-mails de conta (cadastro, senha, troca de e-mail)
 ├── seed.sql                          a Navalha & Co. do modo demonstração
-└── tests/schema.test.mjs             81 testes contra Postgres de verdade
+└── tests/schema.test.mjs             83 testes contra Postgres de verdade
 ```
 
 ## Testar
@@ -123,7 +124,9 @@ logado — coberto pelo `/**` das Redirect URLs.
 
 Confirmação, aviso à barbearia, cancelamento, remarcação e lembrete da
 véspera. Quem recebe o quê está no topo de
-`migrations/20261020000200_appointment_emails.sql`.
+`migrations/20261020000200_appointment_emails.sql`. Os avisos à barbearia vão
+para o **e-mail para avisos** (painel → Configurações) ou, em branco, para o
+e-mail do administrador.
 
 **Como funciona.** Marcar, cancelar ou remarcar grava um aviso na fila
 (`email_outbox`) — no banco, na mesma transação, sem depender de rede. A cada

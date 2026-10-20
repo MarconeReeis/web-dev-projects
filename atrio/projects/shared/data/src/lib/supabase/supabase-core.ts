@@ -149,7 +149,7 @@ export class StaffTenantScope extends SupabaseTenantScope {
   async row(): Promise<TenantRow | null> {
     const { data, error } = await this.client
       .from('tenants')
-      .select('*, tenant_accounts(subscription, admin_name, admin_email)')
+      .select('*, tenant_accounts(subscription, admin_name, admin_email, notification_email)')
       .eq('id', await this.id())
       .maybeSingle();
     if (error) throw error;
@@ -252,6 +252,7 @@ export interface TenantRow {
     subscription: 'trial' | 'ativa' | 'inadimplente' | 'cancelada';
     admin_name: string;
     admin_email: string;
+    notification_email: string | null;
   } | null;
 }
 

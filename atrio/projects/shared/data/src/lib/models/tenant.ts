@@ -61,6 +61,11 @@ export interface Branding {
 export interface TenantAdmin {
   readonly name: string;
   readonly email: string;
+  /**
+   * Para onde vão os avisos de agendamento (novo horário, remarcação e
+   * cancelamento pelo cliente). Nulo: vão para `email`.
+   */
+  readonly noticeEmail: string | null;
 }
 
 /**

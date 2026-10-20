@@ -90,6 +90,7 @@ export class SupabaseTenantRepository extends TenantRepository {
       p_highlight: tenant.highlight,
       p_admin_name: tenant.admin.name,
       p_admin_email: tenant.admin.email,
+      p_notification_email: tenant.admin.noticeEmail,
     });
     if (error) throw toAppError(error);
     await discardImage(this.client, previous, logoUrl);
@@ -596,7 +597,11 @@ function toTenant(row: TenantRow): Tenant {
     address: (row.address as unknown as Address | null) ?? null,
     // Responsável e assinatura só chegam para a equipe; no app do cliente
     // ficam neutros (ele não os usa).
-    admin: { name: account?.admin_name ?? '', email: account?.admin_email ?? '' },
+    admin: {
+      name: account?.admin_name ?? '',
+      email: account?.admin_email ?? '',
+      noticeEmail: account?.notification_email ?? null,
+    },
     highlight: row.highlight,
     branding: {
       logoUrl: row.branding?.logoUrl ?? null,
