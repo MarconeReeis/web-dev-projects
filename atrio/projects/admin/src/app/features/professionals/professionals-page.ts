@@ -10,7 +10,8 @@ import {
   ServiceRepository,
   TimeBlock,
   TimeBlockRepository,
-  startOfDay,
+  dayRange,
+  shopDay,
 } from '@atrio/data';
 import {
   AtrButton,
@@ -105,12 +106,7 @@ export class ProfessionalsPage {
   private readonly pinGate = inject(PinGate);
 
   /** Daqui até um ano: o que ainda está por vir, em agendamentos e bloqueios. */
-  private readonly horizon = (() => {
-    const from = startOfDay(new Date());
-    const to = new Date(from);
-    to.setDate(to.getDate() + HORIZON_DAYS);
-    return { from: from.toISOString(), to: to.toISOString() };
-  })();
+  private readonly horizon = dayRange(shopDay(), HORIZON_DAYS);
 
   /** Inclui inativos — ver o comentário da classe. */
   protected readonly professionals = toSignal(this.professionalsRepo.watchAll(true), {
@@ -184,7 +180,7 @@ export class ProfessionalsPage {
 
   protected openBlockDialog(professionalId: Id): void {
     this.overlay.openDialog<BlockDialog, BlockDialogData, boolean>(BlockDialog, {
-      date: new Date(),
+      date: shopDay(),
       professionalId,
     });
   }

@@ -8,6 +8,8 @@ import {
   FinanceRepository,
   formatAmount,
   parseMoney,
+  shopDay,
+  shopInstant,
 } from '@atrio/data';
 import { AtrButton, AtrField, AtrInput, AtrSurfaceShell } from '@atrio/ui';
 import { fromDateInputValue, toDateInputValue } from '../../../shared/date-input';
@@ -17,7 +19,7 @@ const CATEGORIES = Object.keys(EXPENSE_CATEGORY_LABEL) as ExpenseCategory[];
 export interface ExpenseDialogData {
   /** Nulo em lançamento novo. */
   readonly expense: FinanceEntry | null;
-  /** Data sugerida quando é um lançamento novo. */
+  /** Instante sugerido quando é um lançamento novo; vale o dia dele na barbearia. */
   readonly date: Date;
 }
 
@@ -110,7 +112,7 @@ export class ExpenseDialog {
   protected readonly description = signal(this.current?.description ?? '');
   protected readonly category = signal<ExpenseCategory>(this.current?.category ?? 'produtos');
   protected readonly date = signal(
-    toDateInputValue(new Date(this.current?.occurredAt ?? this.data.date)),
+    toDateInputValue(shopDay(this.current?.occurredAt ?? this.data.date)),
   );
   protected readonly amountText = signal(
     this.current ? formatAmount(this.current.amount) : '',
@@ -150,7 +152,7 @@ export class ExpenseDialog {
     const expense = {
       description: this.description().trim(),
       amount: this.parsedAmount()!,
-      occurredAt: fromDateInputValue(this.date()).toISOString(),
+      occurredAt: shopInstant(fromDateInputValue(this.date())).toISOString(),
       category: this.category(),
     };
 

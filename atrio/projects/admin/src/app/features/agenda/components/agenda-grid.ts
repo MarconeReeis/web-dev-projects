@@ -11,6 +11,9 @@ import {
   expandWindows,
   formatTime,
   isSameDay,
+  shopDay,
+  shopInstant,
+  shopMinutes,
 } from '@atrio/data';
 import { AtrAvatar } from '@atrio/ui';
 import { AtrIcon } from '@atrio/ui';
@@ -326,9 +329,7 @@ export class AgendaGrid {
       }));
 
       const nowMinute =
-        now && isSameDay(now, column.date)
-          ? now.getHours() * 60 + now.getMinutes()
-          : null;
+        now && isSameDay(shopDay(now), column.date) ? shopMinutes(now) : null;
 
       return {
         column,
@@ -338,7 +339,7 @@ export class AgendaGrid {
           .filter(
             (b) =>
               (b.professionalId === null || b.professionalId === column.professional.id) &&
-              isSameDay(new Date(b.startsAt), column.date),
+              isSameDay(shopDay(b.startsAt), column.date),
           )
           .map((block) => ({
             block,
@@ -349,7 +350,7 @@ export class AgendaGrid {
           .filter(
             (a) =>
               a.professionalId === column.professional.id &&
-              isSameDay(new Date(a.startsAt), column.date),
+              isSameDay(shopDay(a.startsAt), column.date),
           )
           .map((appointment) => ({
             appointment,
@@ -383,8 +384,7 @@ export class AgendaGrid {
     const snapped =
       Math.round((this.window().start + offsetMinutes) / SNAP_MINUTES) * SNAP_MINUTES;
 
-    const startsAt = new Date(column.date);
-    startsAt.setHours(0, snapped, 0, 0);
+    const startsAt = shopInstant(column.date, snapped);
 
     this.slotSelected.emit({
       professionalId: column.professional.id,
@@ -397,12 +397,12 @@ export class AgendaGrid {
       ...this.appointments().filter(
         (a) =>
           a.professionalId === column.professional.id &&
-          isSameDay(new Date(a.startsAt), column.date),
+          isSameDay(shopDay(a.startsAt), column.date),
       ),
       ...this.blocks().filter(
         (b) =>
           (b.professionalId === null || b.professionalId === column.professional.id) &&
-          isSameDay(new Date(b.startsAt), column.date),
+          isSameDay(shopDay(b.startsAt), column.date),
       ),
     ];
   }
@@ -410,13 +410,16 @@ export class AgendaGrid {
 
 // ─── funções de posicionamento ──────────────────────────────────────────
 
-/** Minutos desde a meia-noite da coluna, preso aos limites do dia. */
+/**
+ * Minutos desde a meia-noite da coluna, no relógio da barbearia, preso aos
+ * limites do dia.
+ */
 function minutesOf(instant: string, columnDate: Date): number {
-  const date = new Date(instant);
-  if (!isSameDay(date, columnDate)) {
-    return date < columnDate ? 0 : 24 * 60;
+  const day = shopDay(instant);
+  if (!isSameDay(day, columnDate)) {
+    return day < columnDate ? 0 : 24 * 60;
   }
-  return date.getHours() * 60 + date.getMinutes();
+  return shopMinutes(instant);
 }
 
 function place(

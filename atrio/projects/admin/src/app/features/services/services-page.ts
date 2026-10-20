@@ -8,7 +8,8 @@ import {
   ProfessionalRepository,
   Service,
   ServiceRepository,
-  startOfDay,
+  dayRange,
+  shopDay,
 } from '@atrio/data';
 import {
   AtrButton,
@@ -85,12 +86,7 @@ export class ServicesPage {
   private readonly appointmentsRepo = inject(AppointmentRepository);
   private readonly overlay = inject(AtrOverlay);
 
-  private readonly horizon = (() => {
-    const from = startOfDay(new Date());
-    const to = new Date(from);
-    to.setDate(to.getDate() + HORIZON_DAYS);
-    return { from: from.toISOString(), to: to.toISOString() };
-  })();
+  private readonly horizon = dayRange(shopDay(), HORIZON_DAYS);
 
   private readonly allServices = toSignal(this.servicesRepo.watchAll(true), {
     initialValue: [] as readonly Service[],

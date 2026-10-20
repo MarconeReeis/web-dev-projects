@@ -6,7 +6,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { isSameDay, startOfDay } from '@atrio/data';
+import { isSameDay, shopDay, startOfDay } from '@atrio/data';
 import { AtrIcon } from '@atrio/ui';
 
 const MONTH = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
@@ -126,7 +126,7 @@ export class MonthPicker {
 
   protected readonly cells = computed<Cell[]>(() => {
     const month = this.month();
-    const today = startOfDay(new Date());
+    const today = shopDay();
     const min = startOfDay(this.min()).getTime();
     const max = startOfDay(this.max()).getTime();
 

@@ -19,7 +19,9 @@ import {
   formatMoney,
   formatTime,
   nextStatusIsAllowed,
-  startOfDay,
+  dayOf,
+  dayRange,
+  shopDay,
 } from '@atrio/data';
 import { AtrAvatar, AtrButton, AtrField, AtrIcon, AtrInput, AtrSurfaceShell } from '@atrio/ui';
 import { toDateInputValue } from '../../../shared/date-input';
@@ -353,7 +355,7 @@ export class AppointmentPanel {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly newStartsAt = signal<IsoDateTime | null>(null);
-  protected readonly rescheduleDate = signal(startOfDay(new Date()));
+  protected readonly rescheduleDate = signal(shopDay());
 
   protected readonly appointment = toSignal(
     this.appointmentsRepo.watchById(this.data.appointmentId),
@@ -411,10 +413,7 @@ export class AppointmentPanel {
 
   /** Agenda do dia escolhido, para o cálculo de horários livres. */
   private readonly dayRange = computed(() => {
-    const from = this.rescheduleDate();
-    const to = new Date(from);
-    to.setDate(to.getDate() + 1);
-    return { from: from.toISOString(), to: to.toISOString() };
+    return dayRange(this.rescheduleDate());
   });
 
   protected readonly dayAppointments = toSignal(
@@ -460,7 +459,7 @@ export class AppointmentPanel {
 
   protected startReschedule(): void {
     const current = this.appointment();
-    if (current) this.rescheduleDate.set(startOfDay(new Date(current.startsAt)));
+    if (current) this.rescheduleDate.set(shopDay(current.startsAt));
     this.newStartsAt.set(null);
     this.mode.set('reagendar');
   }
@@ -468,7 +467,7 @@ export class AppointmentPanel {
   protected onRescheduleDate(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     if (!value) return;
-    this.rescheduleDate.set(startOfDay(new Date(`${value}T00:00:00`)));
+    this.rescheduleDate.set(dayOf(value));
     this.newStartsAt.set(null);
   }
 

@@ -30,8 +30,10 @@ import {
   isSameDay,
   leastBusy,
   openSlots,
+  dayRange,
+  shopDay,
+  shopInstant,
   splitBusy,
-  startOfDay,
 } from '@atrio/data';
 import {
   AtrAvatar,
@@ -614,7 +616,7 @@ export class BookingPage {
   protected readonly step = signal<Step>('profissional');
   protected readonly choice = signal<ProfessionalChoice>(null);
   protected readonly serviceId = signal<Id | null>(null);
-  protected readonly date = signal(startOfDay(new Date()));
+  protected readonly date = signal(shopDay());
   protected readonly startsAt = signal<IsoDateTime | null>(null);
 
   protected readonly notes = signal('');
@@ -700,12 +702,7 @@ export class BookingPage {
    * Fixa no carregamento da página: quem atravessa a meia-noite com a tela
    * aberta continua vendo "hoje" como ontem até recarregar, como já era.
    */
-  private readonly horizon = (() => {
-    const from = startOfDay(new Date());
-    const to = new Date(from);
-    to.setDate(to.getDate() + BOOKING_HORIZON_DAYS);
-    return { from: from.toISOString(), to: to.toISOString() };
-  })();
+  private readonly horizon = dayRange(shopDay(), BOOKING_HORIZON_DAYS);
 
   /**
    * Os trechos ocupados da janela — não a agenda: o app do cliente não vê
@@ -722,7 +719,7 @@ export class BookingPage {
   /** Só os do dia escolhido: é sobre eles que se mede quem está menos ocupado. */
   private readonly dayAppointments = computed(() =>
     this.horizonAppointments().filter((item) =>
-      isSameDay(new Date(item.startsAt), this.date()),
+      isSameDay(shopDay(item.startsAt), this.date()),
     ),
   );
 
@@ -804,7 +801,7 @@ export class BookingPage {
   }
 
   protected readonly dateLabel = computed(() => {
-    const instant = this.startsAt() ?? this.date().toISOString();
+    const instant = this.startsAt() ?? shopInstant(this.date());
     const label = formatLongDate(instant);
     return label.charAt(0).toUpperCase() + label.slice(1);
   });

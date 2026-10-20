@@ -14,6 +14,8 @@ import {
   formatAmount,
   formatMoney,
   parseMoney,
+  dayOf,
+  dayRange,
   startOfDay,
 } from '@atrio/data';
 import { AtrButton, AtrField, AtrInput, AtrSurfaceShell } from '@atrio/ui';
@@ -21,6 +23,7 @@ import { SlotPicker } from './slot-picker';
 import { toDateInputValue } from '../../../shared/date-input';
 
 export interface NewAppointmentData {
+  /** O DIA (ver period.ts) — não um instante: use shopDay para obtê-lo. */
   readonly date: Date;
   readonly professionalId: Id | null;
   /** Horário tocado na grade, quando a origem foi um espaço livre. */
@@ -220,10 +223,7 @@ export class NewAppointmentDialog {
   });
 
   private readonly dayRange = computed(() => {
-    const from = this.date();
-    const to = new Date(from);
-    to.setDate(to.getDate() + 1);
-    return { from: from.toISOString(), to: to.toISOString() };
+    return dayRange(this.date());
   });
 
   protected readonly dayAppointments = toSignal(
@@ -282,7 +282,7 @@ export class NewAppointmentDialog {
   protected onDate(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     if (!value) return;
-    this.date.set(startOfDay(new Date(`${value}T00:00:00`)));
+    this.date.set(dayOf(value));
     this.startsAt.set(null);
   }
 

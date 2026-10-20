@@ -15,7 +15,12 @@ import {
   ProfessionalRepository,
   formatLongDate,
   formatMoney,
+  addDays,
+  isSameDay,
   rangeFor,
+  shopDay,
+  shopInstant,
+  shopMinutes,
 } from '@atrio/data';
 import { AtrButton, AtrIcon, AtrOverlay, AtrPageHeading } from '@atrio/ui';
 import { CustomPeriodDialog, CustomPeriodData } from '../../shared/custom-period-dialog';
@@ -299,12 +304,16 @@ function bucketize(
   const to = new Date(range.to);
   const days = Math.round((to.getTime() - from.getTime()) / DAY_MS);
 
+  // Horas e dias no relógio da barbearia: o recebimento das 9h é das 9h
+  // de lá, seja qual for o fuso do aparelho (ver period.ts).
+  const firstDay = shopDay(from);
+
   if (days <= 1) {
     const slots = [8, 10, 12, 14, 16, 18, 20];
     return slots.map((hour) => ({
       label: `${hour}h`,
       ...totalsIn(entries, (date) => {
-        const h = date.getHours();
+        const h = Math.floor(shopMinutes(date) / 60);
         return h >= hour && h < hour + 2;
       }),
     }));
@@ -312,30 +321,29 @@ function bucketize(
 
   if (days <= 7) {
     return Array.from({ length: days }, (_, index) => {
-      const day = new Date(from);
-      day.setDate(day.getDate() + index);
+      const day = addDays(firstDay, index);
       return {
-        label: new Intl.DateTimeFormat('pt-BR', { weekday: 'short' })
-          .format(day)
-          .replace('.', ''),
-        ...totalsIn(entries, (date) => sameDay(date, day)),
+        label: WEEKDAY_SHORT.format(day).replace('.', ''),
+        ...totalsIn(entries, (date) => isSameDay(shopDay(date), day)),
       };
     });
   }
 
   const weeks = Math.ceil(days / 7);
   return Array.from({ length: weeks }, (_, index) => {
-    const start = new Date(from);
-    start.setDate(start.getDate() + index * 7);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 7);
+    const startDay = addDays(firstDay, index * 7);
+    const start = shopInstant(startDay);
+    const end = shopInstant(addDays(startDay, 7));
     return {
-      label: new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' })
-        .format(start),
+      label: DAY_MONTH.format(startDay),
       ...totalsIn(entries, (date) => date >= start && date < end),
     };
   });
 }
+
+// Formatam DIAS, não instantes — por isso sem fuso (ver period.ts).
+const WEEKDAY_SHORT = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' });
+const DAY_MONTH = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' });
 
 function totalsIn(
   entries: readonly FinanceEntry[],
@@ -353,10 +361,3 @@ function totalsIn(
   return { received, expenses };
 }
 
-function sameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}

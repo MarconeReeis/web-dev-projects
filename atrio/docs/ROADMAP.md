@@ -94,9 +94,10 @@ e recebe.
       cliente em `…/b/<barbearia>`.
 - [ ] **PWA de verdade** — P. Testar a instalação em Android e iPhone com o
       app publicado (HTTPS).
-- [ ] **Fuso da barbearia** — P/M. O banco já confere expediente no fuso da
-      barbearia; o app ainda calcula no fuso do aparelho. Coincide em São
-      Paulo, mas um cliente viajando veria horários errados.
+- [x] **Fuso da barbearia** — feito em 19/10/2026. O app calcula e mostra
+      tudo no fuso da barbearia (`tenants.time_zone`), como o banco: horários
+      livres, agenda, "hoje", períodos do Financeiro e da Dashboard. Um
+      cliente com o celular em outro fuso vê os horários da barbearia.
 - [ ] **Agenda sem internet no tablet** — M. Guardar a última agenda
       carregada para consulta quando a internet cair (confirmar continua
       exigindo conexão).

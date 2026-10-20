@@ -21,8 +21,12 @@ import {
   TimeBlockRepository,
   formatLongDate,
   formatShortDate,
+  addDays,
+  dayOf,
+  dayRange,
   isSameDay,
-  startOfDay,
+  shopDay,
+  shopInstant,
   startOfWeek,
 } from '@atrio/data';
 import { AtrButton, AtrCard, AtrEmptyState, AtrIcon, AtrOverlay, AtrPageHeading } from '@atrio/ui';
@@ -197,7 +201,8 @@ export class AgendaPage {
   readonly agendamento = input<string | undefined>(undefined);
 
   protected readonly view = signal<View>('dia');
-  protected readonly date = signal(startOfDay(new Date()));
+  /** O DIA à mostra (ver period.ts): no fuso da barbearia, não no do tablet. */
+  protected readonly date = signal(shopDay());
   protected readonly professionalId = signal<Id | null>(null);
 
   /**
@@ -215,10 +220,9 @@ export class AgendaPage {
   // ─── período ──────────────────────────────────────────────────────────
 
   private readonly range = computed<DateRange>(() => {
-    const from = this.view() === 'dia' ? this.date() : startOfWeek(this.date());
-    const to = new Date(from);
-    to.setDate(to.getDate() + (this.view() === 'dia' ? 1 : 7));
-    return { from: from.toISOString(), to: to.toISOString() };
+    return this.view() === 'dia'
+      ? dayRange(this.date())
+      : dayRange(startOfWeek(this.date()), 7);
   });
 
   protected readonly appointments = toSignal(
@@ -252,12 +256,11 @@ export class AgendaPage {
 
       const start = startOfWeek(this.date());
       return Array.from({ length: 7 }, (_, index) => {
-        const day = new Date(start);
-        day.setDate(day.getDate() + index);
+        const day = addDays(start, index);
         return {
           key: `d-${index}`,
           label: capitalize(WEEKDAY_SHORT.format(day).replace('.', '')),
-          sublabel: formatShortDate(day),
+          sublabel: formatShortDate(shopInstant(day)),
           showAvatar: false,
           professional,
           date: day,
@@ -283,18 +286,17 @@ export class AgendaPage {
 
   protected readonly dateValue = computed(() => toDateInputValue(this.date()));
 
-  protected readonly isToday = computed(() => isSameDay(this.date(), new Date()));
+  protected readonly isToday = computed(() => isSameDay(this.date(), shopDay(this.now() ?? new Date())));
 
   protected readonly rangeLabel = computed(() => {
     if (this.view() === 'dia') {
       // Intl devolve "sexta-feira, 16 de outubro"; só a primeira letra sobe.
       // O `capitalize` do CSS viraria "Sexta-Feira, 16 De Outubro".
-      return capitalize(formatLongDate(this.date()));
+      return capitalize(formatLongDate(shopInstant(this.date())));
     }
     const start = startOfWeek(this.date());
-    const end = new Date(start);
-    end.setDate(end.getDate() + 6);
-    return `${formatShortDate(start)} a ${formatShortDate(end)}`;
+    const end = addDays(start, 6);
+    return `${formatShortDate(shopInstant(start))} a ${formatShortDate(shopInstant(end))}`;
   });
 
   constructor() {
@@ -313,18 +315,16 @@ export class AgendaPage {
   // ─── navegação ────────────────────────────────────────────────────────
 
   protected shift(direction: 1 | -1): void {
-    const next = new Date(this.date());
-    next.setDate(next.getDate() + direction * (this.view() === 'dia' ? 1 : 7));
-    this.date.set(startOfDay(next));
+    this.date.set(addDays(this.date(), direction * (this.view() === 'dia' ? 1 : 7)));
   }
 
   protected goToday(): void {
-    this.date.set(startOfDay(new Date()));
+    this.date.set(shopDay());
   }
 
   protected onDate(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
-    if (value) this.date.set(startOfDay(new Date(`${value}T00:00:00`)));
+    if (value) this.date.set(dayOf(value));
   }
 
   // ─── overlays ─────────────────────────────────────────────────────────
@@ -346,7 +346,7 @@ export class AgendaPage {
     startsAt: IsoDateTime;
   }): void {
     this.openDialogWith({
-      date: new Date(slot.startsAt),
+      date: shopDay(slot.startsAt),
       professionalId: slot.professionalId,
       // O toque dá o horário de partida; o seletor valida se ele cabe mesmo.
       startsAt: null,
@@ -362,7 +362,7 @@ export class AgendaPage {
     ref.closed.subscribe((created) => {
       // Leva a agenda para o dia do que acabou de ser marcado: confirmar um
       // agendamento e não vê-lo na tela parece que não funcionou.
-      if (created) this.date.set(startOfDay(new Date(created.startsAt)));
+      if (created) this.date.set(shopDay(created.startsAt));
     });
   }
 

@@ -20,6 +20,7 @@ import {
   formatTime,
   isSameDay,
   openSlots,
+  shopDay,
   startOfDay,
 } from '@atrio/data';
 import { AtrIcon } from '@atrio/ui';
@@ -222,7 +223,8 @@ export class ScheduleStep {
   /** Qual semana da janela está à mostra: 0 é a que começa hoje. */
   protected readonly weekIndex = signal(0);
 
-  protected readonly firstDay = computed(() => startOfDay(new Date()));
+  /** Hoje NA BARBEARIA: perto da meia-noite, o aparelho pode já estar em outro dia. */
+  protected readonly firstDay = computed(() => shopDay());
 
   protected readonly lastDay = computed(() =>
     addDays(this.firstDay(), BOOKING_HORIZON_DAYS - 1),

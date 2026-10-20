@@ -1,5 +1,5 @@
 import { Signal, computed, signal } from '@angular/core';
-import { DateRange, PeriodPreset, formatShortDate, rangeFor } from '@atrio/data';
+import { DateRange, PeriodPreset, formatShortDate, rangeFor, shopDay } from '@atrio/data';
 
 /**
  * Estado do filtro de período, compartilhado pela Dashboard e pelo Financeiro.
@@ -47,12 +47,12 @@ export class PeriodSelection {
     this.presetValue.set('personalizado');
   }
 
-  /** Datas sugeridas ao abrir o seletor: o período atual. */
+  /** Dias sugeridos ao abrir o seletor: o primeiro e o último do período atual. */
   suggestion(): { from: Date; to: Date } {
     const current = this.range();
     return {
-      from: new Date(current.from),
-      to: new Date(new Date(current.to).getTime() - 1),
+      from: shopDay(current.from),
+      to: shopDay(new Date(new Date(current.to).getTime() - 1)),
     };
   }
 }

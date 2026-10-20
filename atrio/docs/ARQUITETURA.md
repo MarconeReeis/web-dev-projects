@@ -152,10 +152,17 @@ Converte para `Date` só na borda de apresentação.
 Intervalos são sempre `[início, fim)` — fim exclusivo. É o que impede o
 atendimento da meia-noite de contar em dois dias.
 
-**Pendência conhecida:** os cálculos de período usam o fuso do navegador. No
-tablet da barbearia isso coincide com o fuso dela, então funciona hoje. Quando
-o backend entrar, o cálculo precisa usar `tenant.timeZone` — o Brasil tem mais
-de um fuso, e o dono em Rio Branco não pode ver o caixa fechar às 21h.
+**Fuso:** horas e dias são sempre os **da barbearia** (`tenant.timeZone`),
+nunca os do aparelho — o Brasil tem mais de um fuso, o cliente pode estar
+viajando, e o dono em Rio Branco não pode ver o caixa fechar às 21h. O banco
+confere tudo em `tenants.time_zone`; o app usa as funções de `period.ts`
+(`shopDay`, `shopInstant`, `shopMinutes`, `dayRange`) e formatadores que já
+mostram no fuso dela. O fuso é definido quando a barbearia é lida.
+
+Lá circulam dois tipos de valor: o **instante** (um momento real) e o **dia**
+(um `Date` à meia-noite do aparelho, do qual só ano, mês e dia importam — o
+dia escolhido no calendário). Um vira o outro só por `shopInstant` e
+`shopDay`; as contas de calendário (somar dias, dia da semana) rodam no dia.
 
 ---
 

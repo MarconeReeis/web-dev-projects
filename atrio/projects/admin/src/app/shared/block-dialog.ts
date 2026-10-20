@@ -6,12 +6,15 @@ import {
   ProfessionalRepository,
   TimeBlockRepository,
   clockToMinutes,
+  dayOf,
+  shopInstant,
 } from '@atrio/data';
 import { TenantContext } from '@atrio/core';
 import { AtrButton, AtrField, AtrInput, AtrSurfaceShell } from '@atrio/ui';
 import { toDateInputValue } from './date-input';
 
 export interface BlockDialogData {
+  /** O DIA (ver period.ts) em que o bloqueio começa. */
   readonly date: Date;
   readonly professionalId: Id | null;
 }
@@ -111,7 +114,7 @@ export class BlockDialog {
 
   protected onDate(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
-    if (value) this.date.set(new Date(`${value}T00:00:00`));
+    if (value) this.date.set(dayOf(value));
   }
 
   protected onStart(event: Event): void {
@@ -144,11 +147,8 @@ export class BlockDialog {
     }
   }
 
-  /** Combina a data escolhida com a hora do relógio, no fuso local. */
+  /** Combina o dia escolhido com a hora do relógio da barbearia. */
   private at(clock: string): Date {
-    const minutes = clockToMinutes(clock);
-    const result = new Date(this.date());
-    result.setHours(0, minutes, 0, 0);
-    return result;
+    return shopInstant(this.date(), clockToMinutes(clock));
   }
 }

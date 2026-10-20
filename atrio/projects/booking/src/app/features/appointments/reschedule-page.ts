@@ -21,8 +21,9 @@ import {
   ServiceRepository,
   formatShortDay,
   formatTime,
+  dayRange,
+  shopDay,
   splitBusy,
-  startOfDay,
 } from '@atrio/data';
 import { AtrButton, AtrCard, AtrEmptyState } from '@atrio/ui';
 import { PageHeader } from '../../shared/page-header';
@@ -150,7 +151,7 @@ export class ReschedulePage {
 
   protected readonly appointment = ownAppointment(this.id);
 
-  protected readonly date = signal(startOfDay(new Date()));
+  protected readonly date = signal(shopDay());
   protected readonly startsAt = signal<IsoDateTime | null>(null);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -164,12 +165,7 @@ export class ReschedulePage {
   });
 
   /** Mesma janela do agendamento novo — ver `horizon` em booking-page. */
-  private readonly horizon = (() => {
-    const from = startOfDay(new Date());
-    const to = new Date(from);
-    to.setDate(to.getDate() + BOOKING_HORIZON_DAYS);
-    return { from: from.toISOString(), to: to.toISOString() };
-  })();
+  private readonly horizon = dayRange(shopDay(), BOOKING_HORIZON_DAYS);
 
   /** Trechos ocupados — não a agenda, que o cliente não pode ler. */
   private readonly occupied = toSignal(this.availabilityRepo.watchBusy(this.horizon), {
@@ -189,8 +185,8 @@ export class ReschedulePage {
       if (!item || positioned) return;
       positioned = true;
       untracked(() => {
-        const day = startOfDay(new Date(item.startsAt));
-        if (day.getTime() >= startOfDay(new Date()).getTime()) this.date.set(day);
+        const day = shopDay(item.startsAt);
+        if (day.getTime() >= shopDay().getTime()) this.date.set(day);
       });
     });
   }

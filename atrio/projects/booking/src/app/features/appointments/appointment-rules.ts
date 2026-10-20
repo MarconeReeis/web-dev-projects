@@ -1,4 +1,4 @@
-import { Appointment, DateRange, startOfDay } from '@atrio/data';
+import { Appointment, DateRange, addDays, shopDay, shopInstant } from '@atrio/data';
 import { AtrBadgeTone } from '@atrio/ui';
 
 /**
@@ -36,11 +36,9 @@ export function canChange(appointment: Appointment, now = Date.now()): boolean {
 }
 
 export function clientWindow(): DateRange {
-  const from = startOfDay(new Date());
-  from.setDate(from.getDate() - PAST_DAYS);
-
-  const to = startOfDay(new Date());
-  to.setDate(to.getDate() + AHEAD_DAYS);
-
-  return { from: from.toISOString(), to: to.toISOString() };
+  const today = shopDay();
+  return {
+    from: shopInstant(addDays(today, -PAST_DAYS)).toISOString(),
+    to: shopInstant(addDays(today, AHEAD_DAYS)).toISOString(),
+  };
 }

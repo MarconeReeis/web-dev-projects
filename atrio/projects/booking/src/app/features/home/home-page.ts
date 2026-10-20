@@ -13,8 +13,9 @@ import {
   formatAddress,
   formatLongDate,
   formatMoney,
+  dayRange,
   formatTime,
-  startOfDay,
+  shopDay,
 } from '@atrio/data';
 import { AtrBadge, AtrBadgeTone, AtrButton, AtrCard, AtrIcon, initialsOf } from '@atrio/ui';
 import { STATUS_TONE } from '../appointments/appointment-rules';
@@ -376,8 +377,5 @@ export class HomePage {
 
 /** Daqui a quatro meses: nenhuma barbearia marca além disso. */
 function horizon() {
-  const from = startOfDay(new Date());
-  const to = new Date(from);
-  to.setDate(to.getDate() + HORIZON_DAYS);
-  return { from: from.toISOString(), to: to.toISOString() };
+  return dayRange(shopDay(), HORIZON_DAYS);
 }

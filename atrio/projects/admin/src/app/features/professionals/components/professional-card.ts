@@ -7,6 +7,7 @@ import {
   WEEKDAY_LABEL,
   Weekday,
   formatTime,
+  shopFormat,
 } from '@atrio/data';
 import { AtrAvatar, AtrBadge, AtrButton, AtrIcon } from '@atrio/ui';
 import { daysLabel } from '../../../shared/week-summary';
@@ -23,11 +24,6 @@ const WEEKDAY_INITIAL: Readonly<Record<Weekday, string>> = {
   5: 'S',
   6: 'S',
 };
-
-const BLOCK_DATE = new Intl.DateTimeFormat('pt-BR', {
-  day: 'numeric',
-  month: 'short',
-});
 
 interface ScheduleGroup {
   /** "Seg–Qui", "Sex", "Seg, Qua, Sex". */
@@ -273,7 +269,7 @@ export class ProfessionalCard {
   });
 
   protected blockLabel(block: TimeBlock): string {
-    const date = BLOCK_DATE.format(new Date(block.startsAt));
+    const date = shopFormat({ day: 'numeric', month: 'short' }).format(new Date(block.startsAt));
     const range = `${formatTime(block.startsAt)}–${formatTime(block.endsAt)}`;
     return block.reason ? `${date} · ${range} · ${block.reason}` : `${date} · ${range}`;
   }
