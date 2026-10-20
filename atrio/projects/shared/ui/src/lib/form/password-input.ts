@@ -1,14 +1,18 @@
 import { ChangeDetectionStrategy, Component, input, model, signal } from '@angular/core';
-import { AtrField, AtrIcon, AtrInput } from '@atrio/ui';
+import { AtrIcon } from '../icon/icon';
+import { AtrField } from './field';
+import { AtrInput } from './input';
 
 /**
  * Campo de senha com "mostrar/ocultar".
  *
- * No celular, digitar senha sem ver é onde mais se erra — e o erro só
- * aparece depois de enviar. O olho deixa conferir antes.
+ * No celular e no tablet, digitar senha sem ver é onde mais se erra — e o
+ * erro só aparece depois de enviar. O olho deixa conferir antes.
+ *
+ *   <atr-password-input label="Senha" [error]="erro" [(value)]="senha" />
  */
 @Component({
-  selector: 'bkg-password-input',
+  selector: 'atr-password-input',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AtrField, AtrIcon, AtrInput],
   template: `
@@ -38,7 +42,7 @@ import { AtrField, AtrIcon, AtrInput } from '@atrio/ui';
     </atr-field>
   `,
 })
-export class PasswordInput {
+export class AtrPasswordInput {
   readonly label = input.required<string>();
   readonly error = input<string | null>(null);
   readonly autocomplete = input<'current-password' | 'new-password'>('current-password');

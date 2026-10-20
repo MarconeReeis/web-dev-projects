@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { DEMO_STAFF_CREDENTIALS, StaffAuth, StaffAuthError } from '@atrio/data';
-import { AtrButton, AtrField, AtrIcon, AtrInput } from '@atrio/ui';
+import { AtrButton, AtrField, AtrIcon, AtrInput, AtrPasswordInput } from '@atrio/ui';
 import { environment } from '../../../environments/environment';
 
 type Mode = 'entrar' | 'recuperar';
@@ -29,7 +29,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 @Component({
   selector: 'adm-login-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AtrButton, AtrField, AtrIcon, AtrInput],
+  imports: [AtrButton, AtrField, AtrIcon, AtrInput, AtrPasswordInput],
   host: { class: 'grid min-h-dvh bg-background lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]' },
   template: `
     <!-- Marca: só no tablet em paisagem e no computador. -->
@@ -98,16 +98,12 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             </atr-field>
 
             @if (mode() === 'entrar') {
-              <atr-field label="Senha" [error]="showErrors() ? passwordError() : null">
-                <input
-                  atrInput
-                  type="password"
-                  autocomplete="current-password"
-                  [invalid]="showErrors() && !!passwordError()"
-                  [value]="password()"
-                  (input)="password.set($any($event.target).value)"
-                />
-              </atr-field>
+              <atr-password-input
+                label="Senha"
+                autocomplete="current-password"
+                [error]="showErrors() ? passwordError() : null"
+                [(value)]="password"
+              />
 
               <button
                 type="button"

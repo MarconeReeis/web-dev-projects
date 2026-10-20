@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { ATRIO_CONFIG } from '@atrio/core';
 import { ClientAuth, ClientAuthError, DEMO_CLIENT_CREDENTIALS } from '@atrio/data';
-import { AtrButton, AtrField, AtrIcon, AtrInput } from '@atrio/ui';
+import { AtrButton, AtrField, AtrIcon, AtrInput, AtrPasswordInput } from '@atrio/ui';
 
 export type SignInMode = 'entrar' | 'cadastro' | 'recuperar';
 type Mode = SignInMode;
@@ -34,7 +34,7 @@ const MIN_PASSWORD = 6;
 @Component({
   selector: 'bkg-sign-in',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AtrButton, AtrField, AtrIcon, AtrInput],
+  imports: [AtrButton, AtrField, AtrIcon, AtrInput, AtrPasswordInput],
   host: { class: 'block' },
   template: `
     <h2 class="text-2xl font-extrabold tracking-tight text-balance">{{ title() }}</h2>
@@ -146,19 +146,12 @@ const MIN_PASSWORD = 6;
         </atr-field>
 
         @if (mode() !== 'recuperar') {
-          <atr-field
+          <atr-password-input
             label="Senha"
+            [autocomplete]="mode() === 'cadastro' ? 'new-password' : 'current-password'"
             [error]="showErrors() ? passwordError() : null"
-          >
-            <input
-              atrInput
-              type="password"
-              [attr.autocomplete]="mode() === 'cadastro' ? 'new-password' : 'current-password'"
-              [invalid]="showErrors() && !!passwordError()"
-              [value]="password()"
-              (input)="password.set($any($event.target).value)"
-            />
-          </atr-field>
+            [(value)]="password"
+          />
         }
 
         @if (mode() === 'entrar') {

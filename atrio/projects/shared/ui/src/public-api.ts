@@ -19,6 +19,7 @@ export * from './lib/page-heading/page-heading';
 export * from './lib/empty-state/empty-state';
 export * from './lib/form/input';
 export * from './lib/form/field';
+export * from './lib/form/password-input';
 export * from './lib/form/switch';
 export * from './lib/overlay/overlay';
 export * from './lib/overlay/surface-shell';

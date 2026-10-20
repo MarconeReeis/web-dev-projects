@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ClientAccount, ClientAuth, ClientAuthError } from '@atrio/data';
-import { AtrButton, AtrField, AtrIcon, AtrInput } from '@atrio/ui';
+import { AtrButton, AtrIcon, AtrPasswordInput } from '@atrio/ui';
 import { filter, firstValueFrom, timeout } from 'rxjs';
 import { PageHeader } from '../../shared/page-header';
 
@@ -24,7 +24,7 @@ type State = 'verificando' | 'formulario' | 'expirado' | 'pronto';
 @Component({
   selector: 'bkg-new-password-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, AtrButton, AtrField, AtrIcon, AtrInput, PageHeader],
+  imports: [RouterLink, AtrButton, AtrIcon, PageHeader, AtrPasswordInput],
   host: { class: 'flex min-h-dvh flex-col bg-background' },
   template: `
     <bkg-page-header heading="Nova senha" (back)="goHome()" />
@@ -44,27 +44,19 @@ type State = 'verificando' | 'formulario' | 'expirado' | 'pronto';
           </p>
 
           <form class="mt-6 flex flex-col gap-4" novalidate (submit)="$event.preventDefault(); save()">
-            <atr-field label="Nova senha" [error]="showErrors() ? passwordError() : null">
-              <input
-                atrInput
-                type="password"
-                autocomplete="new-password"
-                [invalid]="showErrors() && !!passwordError()"
-                [value]="password()"
-                (input)="password.set($any($event.target).value)"
-              />
-            </atr-field>
+            <atr-password-input
+              label="Nova senha"
+              autocomplete="new-password"
+              [error]="showErrors() ? passwordError() : null"
+              [(value)]="password"
+            />
 
-            <atr-field label="Confirme a nova senha" [error]="showErrors() ? confirmError() : null">
-              <input
-                atrInput
-                type="password"
-                autocomplete="new-password"
-                [invalid]="showErrors() && !!confirmError()"
-                [value]="confirm()"
-                (input)="confirm.set($any($event.target).value)"
-              />
-            </atr-field>
+            <atr-password-input
+              label="Confirme a nova senha"
+              autocomplete="new-password"
+              [error]="showErrors() ? confirmError() : null"
+              [(value)]="confirm"
+            />
 
             @if (failure(); as message) {
               <p

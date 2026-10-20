@@ -1,7 +1,7 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CounterPin, PinCheck, StaffAuthError, formatTime } from '@atrio/data';
-import { AtrButton, AtrField, AtrIcon, AtrInput, AtrSurfaceShell } from '@atrio/ui';
+import { AtrButton, AtrIcon, AtrSurfaceShell, AtrPasswordInput } from '@atrio/ui';
 
 const LENGTH = 4;
 
@@ -35,7 +35,7 @@ type Step =
 @Component({
   selector: 'adm-pin-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AtrSurfaceShell, AtrButton, AtrField, AtrIcon, AtrInput],
+  imports: [AtrSurfaceShell, AtrButton, AtrIcon, AtrPasswordInput],
   host: { '(document:keydown)': 'onKey($event)' },
   template: `
     <atr-surface-shell [heading]="heading()" [description]="description()" (closed)="ref.close(false)">
@@ -62,16 +62,12 @@ type Step =
 
         @case ('senha') {
           <form class="flex flex-col gap-4" novalidate (submit)="$event.preventDefault(); checkPassword()">
-            <atr-field label="Senha da conta" [error]="error()">
-              <input
-                atrInput
-                type="password"
-                autocomplete="current-password"
-                [invalid]="!!error()"
-                [value]="password()"
-                (input)="password.set($any($event.target).value)"
-              />
-            </atr-field>
+            <atr-password-input
+              label="Senha da conta"
+              autocomplete="current-password"
+              [error]="error()"
+              [(value)]="password"
+            />
             <button type="submit" atrButton [disabled]="!password()">Continuar</button>
           </form>
         }

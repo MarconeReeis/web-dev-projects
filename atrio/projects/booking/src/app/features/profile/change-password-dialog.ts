@@ -1,9 +1,8 @@
 import { DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ClientAuthError } from '@atrio/data';
-import { AtrButton } from '@atrio/ui';
+import { AtrButton, AtrPasswordInput } from '@atrio/ui';
 import { ClientSession } from '../../shared/client-session';
-import { PasswordInput } from '../../shared/password-input';
 import { SheetFrame } from '../../shared/sheet-frame';
 
 const MIN_PASSWORD = 6;
@@ -17,23 +16,23 @@ const MIN_PASSWORD = 6;
 @Component({
   selector: 'bkg-change-password-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SheetFrame, AtrButton, PasswordInput],
+  imports: [SheetFrame, AtrButton, AtrPasswordInput],
   template: `
     <bkg-sheet-frame heading="Trocar senha" (closed)="ref.close(false)">
       <form class="flex flex-col gap-4" novalidate (submit)="$event.preventDefault(); save()">
-        <bkg-password-input
+        <atr-password-input
           label="Senha atual"
           autocomplete="current-password"
           [error]="showErrors() ? currentError() : null"
           [(value)]="current"
         />
-        <bkg-password-input
+        <atr-password-input
           label="Nova senha"
           autocomplete="new-password"
           [error]="showErrors() ? nextError() : null"
           [(value)]="next"
         />
-        <bkg-password-input
+        <atr-password-input
           label="Confirmar nova senha"
           autocomplete="new-password"
           [error]="showErrors() ? confirmError() : null"
