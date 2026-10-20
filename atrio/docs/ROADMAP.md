@@ -3,18 +3,52 @@
 O que falta para uma barbearia de verdade usar o Átrio no dia a dia — e para
 vender a assinatura.
 
-**Onde estamos (19/10/2026).** As telas do painel e do app do cliente estão
-prontas. O banco está no Supabase, com as regras de agenda, acesso e caixa
-testadas (`npm run test:db`). O **app do cliente já usa o banco** e foi
-testado de ponta a ponta: cadastro, agendamento, reagendamento e
-cancelamento. O **painel ainda roda no modo demonstração**: sem login da
-equipe, o agendamento feito pelo cliente não aparece na agenda da barbearia.
+**Onde estamos (20/10/2026).** Painel e app do cliente rodam no banco
+(Supabase), com as regras de agenda, acesso e caixa testadas
+(`npm run test:db`), e o fluxo de ponta a ponta funciona: o cliente marca, a
+barbearia vê em tempo real, atende e recebe. Os e-mails de conta saem pelo
+domínio `atrioagenda.com.br`. O app do cliente está no layout novo (Início e
+Perfil). Falta o que está abaixo — com a **direção do produto** decidida em
+20/10/2026 (seção a seguir) mudando parte do que vem antes do lançamento.
 
 **Como ler.** Cada item tem um tamanho relativo — **P** (pequeno, cabe numa
 sessão), **M** (médio, uma ou duas sessões), **G** (grande, várias). As fases
 1 a 4 **bloqueiam o lançamento**; o resto vem depois.
 
 ---
+
+## Direção do produto (20/10/2026)
+
+**Átrio Agenda, um produto só.** Em vez de um app por barbearia, um site:
+`atrioagenda.com.br/<barbearia>`. O Átrio é a moldura (topo, barra, app
+instalado); a barbearia é o assunto da página (logo, capa, nome,
+profissionais). Combina com o que já existe: a conta do cliente é uma só para
+todas as barbearias, e o app instalado deixa de precisar do nome de cada uma.
+
+**Planos por tamanho, não por canal.** O barbeiro sozinho não precisa de
+financeiro; a barbearia com equipe precisa. Mas mesmo o barbeiro sozinho
+precisa dizer ao sistema quando trabalha e quando folga — o plano pequeno tem
+um painel enxuto, não nenhum.
+
+| Plano | Para quem | O que tem |
+|---|---|---|
+| **Solo** | 1 profissional | Página de agendamento, agenda simples no celular (dia, folgas, horários), avisos por e-mail para cliente e barbeiro |
+| **Barbearia** | Equipe | Tudo do Solo + painel completo: financeiro, dashboard, vários profissionais, PIN do balcão |
+| **+ WhatsApp** (adicional) | Qualquer plano | Confirmação e lembrete pelo WhatsApp |
+| **Agendamento pelo WhatsApp** (futuro) | Qualquer plano | Marcar pelo WhatsApp, por menu de opções |
+
+Os valores ainda não existem: os que surgiram na conversa (R$ 200, R$ 100,
+R$ 60) eram exemplos. Saem do **estudo de preços** (fase 4), antes do
+lançamento.
+
+**Decisões em aberto:**
+
+- **Cor.** Identidade do Átrio para todas as barbearias (a barbearia aparece
+  pelo logo e pelas fotos), ou a cor de cada uma, como hoje. A primeira é mais
+  consistente e simples; a cor própria pode virar extra de plano maior.
+- **Nunca mostrar concorrente.** O medo do dono é o Átrio virar intermediário
+  e oferecer a barbearia vizinha aos clientes dele. Proposta: regra do
+  produto, escrita no contrato — a página de uma barbearia nunca mostra outra.
 
 ## Antes de tudo (não espere)
 
@@ -45,12 +79,27 @@ e recebe.
 - [x] **Tela de nova senha** — feito em 19/10/2026, nos dois apps. O link
       do e-mail leva a "Crie uma senha nova"; link vencido oferece pedir
       outro. Depende das Redirect URLs no Supabase (`supabase/README.md`).
-- [ ] **E-mails de verdade** — P/M. Domínio escolhido: `atrioagenda.com.br`
-      (em registro). Feito: modelos em português em `supabase/templates/`,
-      com o nome da barbearia no corpo, e o link de confirmação voltando
-      para a barbearia. Falta, no painel: domínio verificado no Resend, SMTP
-      no Supabase, modelos colados e **"Confirm email" religado** — o passo a
-      passo está em `supabase/README.md`, "E-mails".
+- [x] **E-mails de conta** — feito em 20/10/2026 no banco de
+      desenvolvimento. Domínio `atrioagenda.com.br` na Cloudflare, envio pelo
+      Resend (verificado), SMTP no Supabase, modelos em português com o nome
+      da barbearia e "Confirm email" ligado; o cadastro mostra "Confirme seu
+      e-mail" com reenviar. No banco de produção, repetir SMTP e modelos —
+      passo a passo em `supabase/README.md`, "E-mails".
+- [ ] **E-mails do agendamento** — M. O que mais entrega valor ao plano Solo:
+      confirmação para o cliente, aviso de novo horário para a barbearia,
+      aviso de cancelamento e reagendamento, e lembrete na véspera. Disparo
+      pelo banco (função + Resend), com agendamento para o lembrete.
+- [ ] **URL `atrioagenda.com.br/<barbearia>`** — P. Sem o `/b/`, com a lista
+      de nomes reservados (`perfil`, `entrar`, `painel`…) que nenhuma
+      barbearia pode usar. Os links antigos redirecionam.
+- [ ] **Marca Átrio no topo** — P. Átrio na moldura; logo, capa e nome da
+      barbearia no conteúdo. Depende da decisão da cor (ver "Direção do
+      produto").
+- [ ] **Planos no banco** — M. Plano na assinatura (`tenant_accounts`) e o
+      que cada um libera: o painel completo só no plano Barbearia. A regra
+      vale no banco, não só na tela.
+- [ ] **Painel enxuto do plano Solo** — M/G. A agenda do dia no celular,
+      folgas e horários de trabalho; reaproveita o painel atual.
 - [x] **Fotos no Storage** — feito em 19/10/2026. Foto de profissional e
       logo vão para o bucket `midia`, com envio só pela equipe da barbearia
       e na pasta dela; no banco fica o link.
@@ -90,8 +139,8 @@ e recebe.
       migrações (sem o seed) e um `environment.prod.ts` em cada app apontando
       para ele.
 - [ ] **Hospedagem e domínio** — M. Os dois apps publicados com HTTPS
-      (Cloudflare Pages, Vercel ou similar), domínio do Átrio, e o app do
-      cliente em `…/b/<barbearia>`.
+      (Cloudflare Pages, já com o domínio lá), o app do cliente em
+      `atrioagenda.com.br/<barbearia>` e o painel num endereço próprio.
 - [ ] **PWA de verdade** — P. Testar a instalação em Android e iPhone com o
       app publicado (HTTPS).
 - [x] **Fuso da barbearia** — feito em 19/10/2026. O app calcula e mostra
@@ -111,6 +160,11 @@ e recebe.
       e o painel em modo leitura para inadimplente — o campo já existe.
 - [ ] **Kit da barbearia** — P. Link e QR code para divulgar o agendamento
       no balcão, no Instagram e no WhatsApp.
+- [ ] **Estudo de preços** — P. Valores dos planos Solo e Barbearia e do
+      adicional de WhatsApp, olhando o mercado e o custo de cada um (o
+      WhatsApp oficial cobra por mensagem). Validar no piloto: mostrar os
+      planos a barbearias pequenas e grandes e ver qual escolhem e quanto
+      aceitam pagar.
 - [ ] **Página do Átrio e preço** — M. Onde a barbearia conhece o produto e
       assina.
 - [ ] **Canal de suporte** — P. WhatsApp ou e-mail, com quem responde e em
@@ -122,9 +176,24 @@ e recebe.
 
 Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
 
-- **App instalado com o nome e o ícone da barbearia** — hoje, instalado, ele
-  aparece como "Agendar horário" com o ícone do Átrio. Deixado para depois
-  por decisão de 19/10/2026: não é necessário agora.
+- **WhatsApp oficial (adicional)** — confirmação e lembrete pela API oficial
+  da Meta (WhatsApp Business Platform). Só a oficial: as bibliotecas "não
+  oficiais" violam os termos e derrubam o número. Exige verificar a empresa
+  na Meta e aprovar cada modelo de mensagem; cada lembrete é cobrado por
+  mensagem. É o que mais reduz falta.
+- **Agendamento pelo WhatsApp, por menu** — o cliente escolhe por opções, sem
+  texto livre: "1 — Agendar com um profissional", depois a lista de
+  profissionais, de serviços, de dias e de horários. O WhatsApp tem
+  mensagens interativas para isso (botões de resposta e listas de opções),
+  e menu não precisa entender frase: é mais simples de fazer, não erra e
+  evita mensagens desnecessárias. As respostas a quem escreveu primeiro
+  costumam não ser cobradas pela Meta (conferir a tabela na hora). Por
+  baixo, as mesmas regras de horário do app.
+- **"Meus horários" de todas as barbearias** — com a marca Átrio, o cliente
+  que usa duas barbearias vê os horários das duas num lugar só.
+- **Marca própria (premium)** — app e endereço com o nome da barbearia, para
+  quem quiser: o antigo "app instalado com o nome da barbearia" e o
+  subdomínio por barbearia viram esta oferta.
 - **Login com Google** — o botão já está na tela. Falta o cliente OAuth no
   Google Cloud, o provedor no Supabase e guardar as escolhas do agendamento
   durante o redirecionamento.
@@ -132,15 +201,16 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
 - **Comissão por profissional** — vai ser pedida no primeiro mês; o
   atendimento já guarda profissional e preço.
 - **Fechamento de caixa** do dia.
-- **Subdomínio por barbearia** (`barbearia.atrio.com.br`).
 - **Código do agendamento** com busca no painel.
 - **Relatórios** além do Financeiro atual.
 
 ## Ordem sugerida
 
 1. ~~Código no GitHub, região e ambientes~~ — feito.
-2. Login da equipe → painel no banco. Fecha o fluxo de ponta a ponta.
-3. E-mails, nova senha e cadastro de barbearia.
-4. LGPD, PIN, captcha, monitoramento, plano Pro.
-5. Integração contínua, hospedagem, PWA.
-6. Piloto → cobrança → lançamento.
+2. ~~Login da equipe → painel no banco~~ — feito.
+3. ~~E-mails de conta, nova senha e cadastro de barbearia~~ — feito.
+4. Decidir a cor e a regra de concorrentes → URL nova e marca Átrio no topo.
+5. E-mails do agendamento → planos no banco → painel enxuto do Solo.
+6. LGPD, captcha, monitoramento, plano Pro.
+7. Banco de produção, hospedagem, PWA.
+8. Estudo de preços → piloto → cobrança → lançamento.
