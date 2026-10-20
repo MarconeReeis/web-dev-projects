@@ -73,6 +73,28 @@ const supabaseStandIn = `
   alter table storage.objects enable row level security;
   grant usage on schema storage to anon, authenticated;
   grant select, insert, update, delete on storage.objects to anon, authenticated;
+
+  -- E-mails: Vault, pg_net e pg_cron, só o que a migração usa. As chamadas
+  -- ficam gravadas para o teste conferir.
+  create schema vault;
+  create table vault.decrypted_secrets (name text primary key, decrypted_secret text);
+  create schema net;
+  create table net.calls (url text, headers jsonb, body jsonb);
+  create function net.http_post(
+    url text, body jsonb default '{}', params jsonb default '{}',
+    headers jsonb default '{}', timeout_milliseconds integer default 5000
+  ) returns bigint language sql as $$
+    insert into net.calls values (url, headers, body);
+    select 1::bigint
+  $$;
+  create schema cron;
+  create table cron.jobs (name text primary key, schedule text, command text);
+  create function cron.schedule(job_name text, schedule text, command text)
+  returns bigint language sql as $$
+    insert into cron.jobs values (job_name, schedule, command)
+    on conflict (name) do update set schedule = excluded.schedule, command = excluded.command;
+    select 1::bigint
+  $$;
 `;
 
 let db;
@@ -926,5 +948,175 @@ describe('PIN do balcão', () => {
   test('outra barbearia e cliente não usam o PIN daqui', async () => {
     assert.equal(await fails(status(OTHER_STAFF)), 'nao_encontrado');
     assert.equal(await fails(verify('4321', BETO)), 'nao_encontrado');
+  });
+});
+
+describe('e-mails do agendamento', () => {
+  // O e-mail do responsável — um teste de Configurações acima já o trocou.
+  let SHOP;
+  before(async () => {
+    SHOP = (await db.query(`select admin_email from public.tenant_accounts where tenant_id = $1`, [TENANT]))
+      .rows[0].admin_email;
+  });
+  const reschedule = (user, id, at) =>
+    as(user, `select * from public.reschedule_appointment($1, $2, null)`, [id, at]);
+  const cancel = (user, id) => as(user, `select * from public.cancel_appointment($1)`, [id]);
+  const outbox = async (appointmentId) =>
+    (
+      await db.query(
+        `select kind, recipient, to_email, status, previous_starts_at
+           from public.email_outbox where appointment_id = $1
+          order by kind, recipient`,
+        [appointmentId],
+      )
+    ).rows;
+  const betoClient = async () =>
+    (await db.query(`select id from public.clients where user_id = $1`, [BETO])).rows[0].id;
+  const brief = (rows) => rows.map((r) => `${r.kind}:${r.recipient}:${r.to_email}`);
+
+  let byApp;
+  let atCounter;
+
+  test('cliente marca pelo app: confirmação para ele, aviso para a barbearia', async () => {
+    [byApp] = await book(BETO, RAFAEL, BARBA, await nextWeek(4, '14:00'));
+    assert.deepEqual(brief(await outbox(byApp.id)), [
+      'agendado:cliente:beto@exemplo.com',
+      `novo_horario:barbearia:${SHOP}`,
+    ]);
+  });
+
+  test('equipe marca no balcão: só o cliente com conta recebe', async () => {
+    [atCounter] = await as(
+      STAFF,
+      `select * from public.create_appointment($1, $2, now() + interval '3 days', 'Beto Lima', null, $3)`,
+      [CAIO, CORTE, await betoClient()],
+    );
+    assert.deepEqual(brief(await outbox(atCounter.id)), ['agendado:cliente:beto@exemplo.com']);
+
+    const [walkIn] = await as(
+      STAFF,
+      `select * from public.create_appointment($1, $2, now() + interval '3 days 2 hours', 'Avulso')`,
+      [CAIO, CORTE],
+    );
+    assert.deepEqual(await outbox(walkIn.id), []);
+  });
+
+  test('cliente remarca: os dois recebem, com o horário de antes', async () => {
+    const before = new Date(byApp.starts_at).getTime();
+    await reschedule(BETO, byApp.id, await nextWeek(4, '16:00'));
+    const rows = (await outbox(byApp.id)).filter((r) => r.kind === 'reagendado');
+    assert.deepEqual(brief(rows), [`reagendado:barbearia:${SHOP}`, 'reagendado:cliente:beto@exemplo.com']);
+    assert.ok(rows.every((r) => new Date(r.previous_starts_at).getTime() === before));
+  });
+
+  test('quem cancela não é avisado: o outro lado é', async () => {
+    await cancel(BETO, byApp.id);
+    assert.deepEqual(
+      brief((await outbox(byApp.id)).filter((r) => r.kind === 'cancelado')),
+      [`cancelado:barbearia:${SHOP}`],
+    );
+
+    await cancel(STAFF, atCounter.id);
+    assert.deepEqual(
+      brief((await outbox(atCounter.id)).filter((r) => r.kind === 'cancelado')),
+      ['cancelado:cliente:beto@exemplo.com'],
+    );
+  });
+
+  test('só a chave de serviço pega a fila', async () => {
+    assert.match(await fails(as(BETO, `select * from public.claim_emails()`)), /permission denied/);
+    assert.match(await fails(as(STAFF, `select * from public.claim_emails()`)), /permission denied/);
+    assert.match(await fails(as(null, `select * from public.email_outbox`)), /permission denied/);
+  });
+
+  test('a fila descarta o aviso que perdeu o sentido e entrega o resto completo', async () => {
+    const claimed = await as('service_role', `select * from public.claim_emails(1000)`);
+
+    // O horário foi cancelado: confirmar ou lembrar dele não faz mais sentido.
+    const stale = (await outbox(byApp.id)).filter((r) => r.kind !== 'cancelado');
+    assert.ok(stale.length > 0 && stale.every((r) => r.status === 'descartado'), JSON.stringify(stale));
+
+    const notice = claimed.find((c) => c.appointment_id === byApp.id && c.kind === 'cancelado');
+    assert.equal(notice.recipient, 'barbearia');
+    assert.equal(notice.reply_to, 'beto@exemplo.com'); // a barbearia responde ao cliente
+    assert.equal(notice.tenant_slug, 'navalha-e-co');
+    assert.equal(notice.time_zone, 'America/Sao_Paulo');
+    assert.equal(notice.professional_name, 'Rafael Lima');
+
+    const toClient = claimed.find((c) => c.appointment_id === atCounter.id && c.kind === 'cancelado');
+    assert.equal(toClient.reply_to, SHOP); // e o cliente, à barbearia
+
+    // Reservado não sai de novo numa segunda chamada.
+    const again = await as('service_role', `select id from public.claim_emails(1000)`);
+    assert.ok(!again.some((c) => c.id === notice.id));
+  });
+
+  test('enviado sai da fila; falha volta, até a quinta', async () => {
+    const [row] = (
+      await db.query(`select id from public.email_outbox where status = 'enviando' order by created_at limit 1`)
+    ).rows;
+    await as('service_role', `select public.finish_email($1, true)`, [row.id]);
+    const [sent] = (await db.query(`select status, sent_at from public.email_outbox where id = $1`, [row.id])).rows;
+    assert.equal(sent.status, 'enviado');
+    assert.ok(sent.sent_at);
+
+    const [other] = (
+      await db.query(`select id from public.email_outbox where status = 'enviando' order by created_at limit 1`)
+    ).rows;
+    await as('service_role', `select public.finish_email($1, false, 'Resend fora do ar')`, [other.id]);
+    const [retry] = (
+      await db.query(`select status, last_error from public.email_outbox where id = $1`, [other.id])
+    ).rows;
+    assert.deepEqual(retry, { status: 'pendente', last_error: 'Resend fora do ar' });
+
+    await db.query(`update public.email_outbox set attempts = 5, status = 'enviando' where id = $1`, [other.id]);
+    await as('service_role', `select public.finish_email($1, false, 'de novo')`, [other.id]);
+    const [gaveUp] = (await db.query(`select status from public.email_outbox where id = $1`, [other.id])).rows;
+    assert.equal(gaveUp.status, 'falhou');
+  });
+
+  test('lembrete na véspera, uma vez só, e não para quem marcou em cima', async () => {
+    const client = await betoClient();
+    const [ahead] = await as(
+      STAFF,
+      `select * from public.create_appointment($1, $2, now() + interval '20 hours', 'Beto Lima', null, $3)`,
+      [CAIO, CORTE, client],
+    );
+    const [lastMinute] = await as(
+      STAFF,
+      `select * from public.create_appointment($1, $2, now() + interval '22 hours', 'Beto Lima', null, $3)`,
+      [CAIO, CORTE, client],
+    );
+    // Marcado há três dias: ganha lembrete. O outro, marcado agora, não.
+    await db.query(`update public.appointments set created_at = now() - interval '3 days' where id = $1`, [
+      ahead.id,
+    ]);
+
+    await db.query(`select private.enqueue_reminders()`);
+    await db.query(`select private.enqueue_reminders()`);
+
+    assert.deepEqual(brief((await outbox(ahead.id)).filter((r) => r.kind === 'lembrete')), [
+      'lembrete:cliente:beto@exemplo.com',
+    ]);
+    assert.deepEqual((await outbox(lastMinute.id)).filter((r) => r.kind === 'lembrete'), []);
+  });
+
+  test('a cada minuto: sem Vault nada é chamado; com ele, a função recebe o segredo', async () => {
+    const [job] = (await db.query(`select schedule, command from cron.jobs where name = 'atrio-enviar-emails'`))
+      .rows;
+    assert.deepEqual(job, { schedule: '* * * * *', command: 'select private.dispatch_emails()' });
+
+    await db.query(`delete from net.calls`);
+    await db.query(`select private.dispatch_emails()`);
+    assert.equal((await db.query(`select count(*)::int as n from net.calls`)).rows[0].n, 0);
+
+    await db.query(`insert into vault.decrypted_secrets values
+      ('emails_url', 'https://exemplo.supabase.co/functions/v1/enviar-emails'),
+      ('emails_secret', 'segredo-de-teste')`);
+    await db.query(`select private.dispatch_emails()`);
+    const calls = (await db.query(`select url, headers from net.calls`)).rows;
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, 'https://exemplo.supabase.co/functions/v1/enviar-emails');
+    assert.equal(calls[0].headers['x-atrio-secret'], 'segredo-de-teste');
   });
 });
