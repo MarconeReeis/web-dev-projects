@@ -16,6 +16,7 @@ import {
   workingDay,
 } from '../models/schedule';
 import { clockToMinutes, minutesToClock } from '../availability/availability';
+import { addDays, shopDay, shopInstant, shopMinutes } from '../period';
 import { Service } from '../models/service';
 import { Tenant } from '../models/tenant';
 
@@ -77,16 +78,17 @@ const MAX_SHIFT_BACKWARD = -(9 * 60);
  * de próximos vazia: a pior primeira impressão possível numa demonstração.
  */
 function demoShiftMinutes(now: Date): number {
-  const hour = now.getHours();
+  const minutes = shopMinutes(now);
+  const hour = Math.floor(minutes / 60);
   if (hour >= 9 && hour < 19) return 0;
 
-  const desired = hour * 60 + now.getMinutes() - DEMO_ANCHOR_HOUR * 60;
+  const desired = minutes - DEMO_ANCHOR_HOUR * 60;
   return Math.max(MAX_SHIFT_BACKWARD, Math.min(MAX_SHIFT_FORWARD, desired));
 }
 
+/** Hora do relógio da barbearia, no dia dela em que cai `base`. */
 function at(base: Date, hour: number, minute: number, shift = 0): Date {
-  const d = new Date(base);
-  d.setHours(hour, minute, 0, 0);
+  const d = shopInstant(shopDay(base), hour * 60 + minute);
   return shift === 0 ? d : new Date(d.getTime() + shift * 60_000);
 }
 
@@ -187,9 +189,7 @@ function buildHistory(
   ];
 
   for (let back = HISTORY_DAYS; back >= 1; back--) {
-    const day = new Date(now);
-    day.setDate(day.getDate() - back);
-    day.setHours(0, 0, 0, 0);
+    const day = addDays(shopDay(now), -back);
 
     const weekday = day.getDay() as Weekday;
     const daySchedule = schedule[weekday];
@@ -208,8 +208,7 @@ function buildHistory(
         const offset = open + 30 * proIndex + slot * 90 + Math.floor(random() * 30);
         if (offset + service.durationMinutes > close) continue;
 
-        const startsAt = new Date(day);
-        startsAt.setHours(0, offset, 0, 0);
+        const startsAt = shopInstant(day, offset);
         const endsAt = plusMinutes(startsAt, service.durationMinutes);
 
         const roll = random();
@@ -285,8 +284,7 @@ function historyExpense(
   hour: number,
   category: FinanceEntry['category'],
 ): FinanceEntry {
-  const when = new Date(day);
-  when.setHours(hour, 0, 0, 0);
+  const when = shopInstant(day, hour * 60);
   const stamp = iso(when);
 
   return {

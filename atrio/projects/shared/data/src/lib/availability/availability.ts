@@ -3,6 +3,7 @@ import { ClockTime, Id, IsoDateTime } from '../models/common';
 import { Professional } from '../models/professional';
 import { DaySchedule, TimeBlock, TimeWindow, Weekday } from '../models/schedule';
 import { Service } from '../models/service';
+import { shopInstant } from '../period';
 
 /**
  * Motor de disponibilidade: funções puras, sem Angular e sem RxJS.
@@ -22,9 +23,9 @@ import { Service } from '../models/service';
  *   fuso; a conversão para instante acontece aqui, contra a data do dia;
  * - a saída é `IsoDateTime`, como o resto do sistema.
  *
- * Pendência conhecida, a mesma de `period.ts`: a conversão usa o fuso do
- * navegador. No tablet da barbearia coincide com o fuso dela. Quando o backend
- * entrar, precisa passar a usar `tenant.timeZone`.
+ * A conversão de "09:00" para instante usa o fuso da barbearia
+ * (`shopInstant`, ver period.ts), não o do aparelho — e `date` é um DIA
+ * daquele arquivo: só ano, mês e dia importam.
  */
 
 /** Passo padrão da grade de horários, em minutos. */
@@ -178,7 +179,7 @@ export function availableSlots(params: AvailabilityParams): IsoDateTime[] {
     const latest = clockToMinutes(window.end) - duration;
 
     for (let minute = from; minute <= latest; minute += granularity) {
-      const startsAt = atLocalMinutes(date, minute);
+      const startsAt = shopInstant(date, minute);
 
       // Horário já vencido não se vende. A comparação é por instante, e não
       // "só quando `date` é hoje", porque um dia passado também não tem
@@ -186,7 +187,7 @@ export function availableSlots(params: AvailabilityParams): IsoDateTime[] {
       // exatamente agora.
       if (now && startsAt.getTime() < now.getTime()) continue;
 
-      const endsAt = atLocalMinutes(date, minute + duration);
+      const endsAt = shopInstant(date, minute + duration);
       const candidate: ConflictCandidate = {
         startsAt: startsAt.toISOString(),
         endsAt: endsAt.toISOString(),
@@ -204,20 +205,6 @@ export function availableSlots(params: AvailabilityParams): IsoDateTime[] {
 /** Sobreposição de `[início, fim)`: encosto exato não conta. */
 function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number): boolean {
   return aStart < bEnd && bStart < aEnd;
-}
-
-/**
- * Instante local correspondente a N minutos depois da meia-noite do dia.
- *
- * `setMinutes` com valor maior que 59 transborda para as horas, o que é
- * justamente o que se quer aqui — e deixa a conta de horário de verão com a
- * plataforma, em vez de reimplementá-la.
- */
-function atLocalMinutes(day: Date, minutes: number): Date {
-  const d = new Date(day);
-  d.setHours(0, 0, 0, 0);
-  d.setMinutes(minutes);
-  return d;
 }
 
 function toMinuteRange(window: TimeWindow): MinuteRange {

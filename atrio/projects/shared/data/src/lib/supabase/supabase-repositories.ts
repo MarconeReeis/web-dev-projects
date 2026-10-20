@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable, inject } from '@angular/core';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { Observable, map, of, switchMap } from 'rxjs';
+import { setShopTimeZone } from '../period';
+import { Observable, map, of, switchMap, tap } from 'rxjs';
 import {
   Appointment,
   AppointmentStatus,
@@ -73,7 +74,7 @@ export class SupabaseTenantRepository extends TenantRepository {
     return this.sync.live(async () => {
       const row = await this.scope.row();
       return row ? toTenant(row) : null;
-    });
+    }).pipe(tap((tenant) => tenant && setShopTimeZone(tenant.timeZone)));
   }
 
   async save(tenant: Tenant): Promise<void> {

@@ -5,15 +5,14 @@ import { Id } from '../models/common';
 import { Professional } from '../models/professional';
 import { DaySchedule, EMPTY_DAY, TimeBlock, WeeklySchedule, workingDay } from '../models/schedule';
 import { Service } from '../models/service';
-import { availableSlots, expandWindows, hasConflict } from './availability';
+import { shopInstant, shopMinutes } from '../period';
+import { availableSlots, expandWindows, hasConflict, minutesToClock } from './availability';
 
 /**
- * Datas fixas, construídas com `new Date(ano, mês, dia, hora, minuto)`.
- *
- * Construtor local, e não string ISO: o motor converte `ClockTime` contra o
- * fuso local, então o teste precisa falar a mesma língua. Com string ISO em
- * UTC, a suíte passaria na máquina de quem a escreveu e quebraria em outro
- * fuso — exatamente o tipo de teste que ninguém confia.
+ * DIAS fixos (ver period.ts), e horas sempre no relógio da barbearia: `at`
+ * e `hhmm` passam por shopInstant e shopMinutes. Assim a suíte dá o mesmo
+ * resultado em qualquer fuso de máquina — a de quem escreveu e a do CI, em
+ * UTC.
  *
  * 19/10/2026 é uma segunda-feira; 18/10/2026, um domingo.
  */
@@ -66,14 +65,11 @@ function service(durationMinutes: number): Service {
 
 /** Hora do dia de um horário retornado, para asserções legíveis ("09:15"). */
 function hhmm(instant: string): string {
-  const d = new Date(instant);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return minutesToClock(shopMinutes(instant));
 }
 
 function at(day: Date, hour: number, minute = 0): Date {
-  const d = new Date(day);
-  d.setHours(hour, minute, 0, 0);
-  return d;
+  return shopInstant(day, hour * 60 + minute);
 }
 
 function appointment(options: {

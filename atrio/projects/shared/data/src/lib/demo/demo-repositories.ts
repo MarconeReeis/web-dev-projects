@@ -1,5 +1,6 @@
 import { Injectable, Provider, inject } from '@angular/core';
-import { Observable, combineLatest, firstValueFrom, map } from 'rxjs';
+import { setShopTimeZone } from '../period';
+import { Observable, combineLatest, firstValueFrom, map, tap } from 'rxjs';
 import {
   Appointment,
   AppointmentStatus,
@@ -441,7 +442,7 @@ export class DemoTenantRepository extends TenantRepository {
   private readonly store = inject(DemoStore);
 
   watchCurrent(): Observable<Tenant | null> {
-    return this.store.tenant$();
+    return this.store.tenant$().pipe(tap((tenant) => tenant && setShopTimeZone(tenant.timeZone)));
   }
 
   async save(tenant: Tenant): Promise<void> {
