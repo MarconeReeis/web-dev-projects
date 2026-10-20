@@ -11,10 +11,11 @@ supabase/
 │   ├── 20261019000600_storage.sql    imagens: bucket "midia" e quem envia o quê
 │   ├── 20261019000700_client_link.sql histórico do balcão ligado à conta do cliente
 │   ├── 20261019000800_delete_account.sql excluir minha conta (LGPD)
-│   └── 20261019000900_counter_pin.sql PIN do balcão
+│   ├── 20261019000900_counter_pin.sql PIN do balcão
+│   └── 20261020000100_reserved_slugs.sql endereços reservados pelo Átrio
 ├── templates/                        os e-mails (cadastro, senha, troca de e-mail)
 ├── seed.sql                          a Navalha & Co. do modo demonstração
-└── tests/schema.test.mjs             70 testes contra Postgres de verdade
+└── tests/schema.test.mjs             72 testes contra Postgres de verdade
 ```
 
 ## Testar
@@ -53,7 +54,7 @@ Depois do `db push`, no painel do Supabase:
    - **Redirect URLs**: `http://localhost:4300/**` e `http://localhost:4200/**`
      — e, ao publicar, os endereços de produção dos dois apps.
 
-   O link leva a `/b/<barbearia>/nova-senha` (cliente) e a `/nova-senha`
+   O link leva a `/<barbearia>/nova-senha` (cliente) e a `/nova-senha`
    (painel).
 
 ## E-mails
@@ -112,7 +113,7 @@ modelo aqui, cole de novo no painel — nos dois projetos, teste e produção.
 
 **5. Confirmar e-mail.** **Authentication → Providers → Email → Confirm
 email**: ligado. O cadastro passa a responder "Enviamos um link para o seu
-e-mail"; o link volta para a página da barbearia (`/b/<barbearia>`), já
+e-mail"; o link volta para a página da barbearia (`/<barbearia>`), já
 logado — coberto pelo `/**` das Redirect URLs.
 
 ## Imagens
@@ -214,7 +215,7 @@ banco, não pelo app. O que muda entre eles:
 
 | | App do cliente (`provideSupabaseData`) | Painel (`provideSupabaseAdminData`) |
 | --- | --- | --- |
-| De qual barbearia | do endereço (`/b/:slug`) | do vínculo da conta da equipe |
+| De qual barbearia | do endereço (`/:slug`) | do vínculo da conta da equipe |
 | Login | cliente (`profiles`) | equipe (`tenant_members`) |
 | Tempo real | não — reconsulta ao abrir, após escrever e ao voltar à aba | agenda, bloqueios e caixa, filtrados pela barbearia |
 | Sessão guardada em | `atrio.auth.cliente` | `atrio.auth.equipe` |

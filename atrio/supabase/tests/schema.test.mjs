@@ -637,6 +637,18 @@ describe('cadastro de barbearia', () => {
     assert.equal(after.rows[0].n, before.rows[0].n);
   });
 
+  test('endereço reservado pelo Átrio ou fora do formato é recusado', async () => {
+    assert.equal(await fails(create('service_role', 'planos')), 'endereco_reservado');
+    assert.equal(await fails(create('service_role', 'Perfil')), 'endereco_reservado');
+    assert.equal(await fails(create('service_role', 'barbearia do zé')), 'endereco_invalido');
+
+    // A regra é da tabela: nem por SQL direto uma barbearia vira "/entrar".
+    assert.match(
+      await fails(db.query(`update public.tenants set slug = 'entrar' where id = $1`, [TENANT])),
+      /tenants_slug_nao_reservado/,
+    );
+  });
+
   test('dono sem conta é recusado antes de criar qualquer coisa', async () => {
     assert.equal(await fails(create('service_role', 'outra-do-ze', 'ninguem@exemplo.com')), 'dono_inexistente');
     const rows = await db.query(`select 1 from public.tenants where slug = 'outra-do-ze'`);
