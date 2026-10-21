@@ -17,4 +17,10 @@ export const environment = {
   supabaseKey: 'sb_publishable_m3GrRqHztsLw614bwNaQmA_9wJp8-2q',
   /** App do cliente: o link da barbearia é este endereço + /<barbearia>. */
   bookingUrl: 'http://localhost:4300',
+  /**
+   * Chave pública do Turnstile (captcha da Cloudflare). Esta é a de TESTE da
+   * Cloudflare, que sempre aprova — troque pela do widget de verdade em
+   * produção. Nula: sem captcha.
+   */
+  turnstileSiteKey: '1x00000000000000000000AA' as string | null,
 };

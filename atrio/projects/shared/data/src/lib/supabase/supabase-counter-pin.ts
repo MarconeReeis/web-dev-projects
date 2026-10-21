@@ -1,3 +1,4 @@
+import { CAPTCHA_FAILED_MESSAGE, CAPTCHA_TOKEN } from '../captcha';
 import { Injectable, inject } from '@angular/core';
 import { filter, firstValueFrom } from 'rxjs';
 import { PinCheck, PinStatus, StaffAuthError } from '../models/staff';
@@ -14,6 +15,7 @@ interface CheckRow {
 @Injectable()
 export class SupabaseCounterPin extends CounterPin {
   private readonly client = inject(SUPABASE_CLIENT);
+  private readonly captcha = inject(CAPTCHA_TOKEN);
   private readonly auth = inject(StaffAuth);
 
   async status(): Promise<PinStatus> {
@@ -53,7 +55,11 @@ export class SupabaseCounterPin extends CounterPin {
     const { error: authError } = await this.client.auth.signInWithPassword({
       email: session.email,
       password,
+      options: { captchaToken: await this.captcha() },
     });
+    if (authError?.code === 'captcha_failed') {
+      throw new StaffAuthError('indisponivel', CAPTCHA_FAILED_MESSAGE);
+    }
     if (authError) throw new StaffAuthError('credenciais', 'Senha incorreta.');
 
     const { error } = await this.client.rpc('reset_counter_pin', {

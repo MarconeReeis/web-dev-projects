@@ -6,7 +6,7 @@ import {
   isDevMode,
 } from '@angular/core';
 import { TitleStrategy, provideRouter, withComponentInputBinding } from '@angular/router';
-import { provideAtrioConfig } from '@atrio/core';
+import { provideAtrioConfig, provideTurnstile } from '@atrio/core';
 import { TenantRepository, provideDemoData, provideSupabaseData } from '@atrio/data';
 import { filter, firstValueFrom, timeout } from 'rxjs';
 import { environment } from '../environments/environment';
@@ -32,6 +32,9 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
     { provide: TitleStrategy, useClass: AtrioTitleStrategy },
+
+    // Captcha nos pedidos de conta (entrar, criar conta, link de senha).
+    ...provideTurnstile(environment.turnstileSiteKey),
 
     provideAtrioConfig({
       productName: 'Átrio',

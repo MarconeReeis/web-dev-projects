@@ -14,4 +14,10 @@ export const environment = {
   supabaseKey: 'sb_publishable_m3GrRqHztsLw614bwNaQmA_9wJp8-2q',
   /** Barbearia de quem abre o app sem caminho (/). */
   defaultTenantSlug: 'navalha-e-co',
+  /**
+   * Chave pública do Turnstile (captcha da Cloudflare). Esta é a de TESTE da
+   * Cloudflare, que sempre aprova — troque pela do widget de verdade em
+   * produção. Nula: sem captcha.
+   */
+  turnstileSiteKey: '1x00000000000000000000AA' as string | null,
 };

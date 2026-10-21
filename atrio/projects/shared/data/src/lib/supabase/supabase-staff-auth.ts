@@ -1,3 +1,4 @@
+import { CAPTCHA_FAILED_MESSAGE, CAPTCHA_TOKEN } from '../captcha';
 import {
   EnvironmentProviders,
   Injectable,
@@ -52,6 +53,7 @@ import { SupabaseCounterPin } from './supabase-counter-pin';
 @Injectable()
 export class SupabaseStaffAuth extends StaffAuth {
   private readonly client = inject(SUPABASE_CLIENT);
+  private readonly captcha = inject(CAPTCHA_TOKEN);
 
   /** `undefined` até a sessão salva no aparelho ser lida. */
   private readonly session$ = new BehaviorSubject<StaffSession | null | undefined>(undefined);
@@ -75,6 +77,7 @@ export class SupabaseStaffAuth extends StaffAuth {
     const { data, error } = await this.client.auth.signInWithPassword({
       email: email.trim(),
       password,
+      options: { captchaToken: await this.captcha() },
     });
     if (error) throw translate(error);
 
@@ -106,8 +109,9 @@ export class SupabaseStaffAuth extends StaffAuth {
     // definir a senha nova.
     const { error } = await this.client.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${location.origin}/nova-senha`,
+      captchaToken: await this.captcha(),
     });
-    if (error && error.status !== 400) throw translate(error);
+    if (error && (error.code === 'captcha_failed' || error.status !== 400)) throw translate(error);
   }
 
   async updatePassword(password: string): Promise<StaffSession> {
@@ -163,6 +167,9 @@ export class SupabaseStaffAuth extends StaffAuth {
 }
 
 function translate(error: AuthError): StaffAuthError {
+  if (error.code === 'captcha_failed') {
+    return new StaffAuthError('indisponivel', CAPTCHA_FAILED_MESSAGE);
+  }
   if (error.code === 'invalid_credentials') {
     return new StaffAuthError('credenciais', 'E-mail ou senha incorretos.');
   }

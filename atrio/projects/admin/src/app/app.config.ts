@@ -1,6 +1,6 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, isDevMode } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
-import { provideAtrioConfig } from '@atrio/core';
+import { provideAtrioConfig, provideTurnstile } from '@atrio/core';
 import { provideDemoData, provideSupabaseAdminData, provideSupabaseStaffAuth } from '@atrio/data';
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
@@ -41,6 +41,9 @@ export const appConfig: ApplicationConfig = {
       // esvaziava. O ganho era um cross-fade decorativo; a perda, um painel
       // inutilizável no tablet do balcão. Troca ruim.
     ),
+
+    // Captcha nos pedidos de conta (entrar, criar conta, link de senha).
+    ...provideTurnstile(environment.turnstileSiteKey),
 
     provideAtrioConfig({
       productName: 'Átrio',

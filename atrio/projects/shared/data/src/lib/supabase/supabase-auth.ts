@@ -25,6 +25,7 @@ import {
   createSupabaseClient,
 } from './supabase-core';
 import { formatPhone } from '../phone';
+import { CAPTCHA_FAILED_MESSAGE, CAPTCHA_TOKEN } from '../captcha';
 import {
   SupabaseAppointmentRepository,
   SupabaseAvailabilityRepository,
@@ -42,6 +43,7 @@ import {
 @Injectable()
 export class SupabaseClientAuth extends ClientAuth {
   private readonly client = inject(SUPABASE_CLIENT);
+  private readonly captcha = inject(CAPTCHA_TOKEN);
   private readonly config = inject(SUPABASE_CONFIG);
   private readonly scope = inject(SupabaseTenantScope);
 
@@ -70,6 +72,7 @@ export class SupabaseClientAuth extends ClientAuth {
     const { data, error } = await this.client.auth.signInWithPassword({
       email: email.trim(),
       password,
+      options: { captchaToken: await this.captcha() },
     });
     if (error) throw translate(error);
     return this.publish(await this.accountOf(data.user));
@@ -91,6 +94,7 @@ export class SupabaseClientAuth extends ClientAuth {
         },
         // O link de confirmação volta para esta barbearia, já logado.
         emailRedirectTo: this.confirmationRedirect(),
+        captchaToken: await this.captcha(),
       },
     });
     if (error) throw translate(error);
@@ -126,18 +130,21 @@ export class SupabaseClientAuth extends ClientAuth {
     // manda para a Site URL e a pessoa cai fora do app.
     const { error } = await this.client.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${location.origin}/${this.config.tenantSlug()}/nova-senha`,
+      captchaToken: await this.captcha(),
     });
-    // Mesmo resultado exista a conta ou não; só falha de rede chega aqui.
-    if (error && error.status !== 400) throw translate(error);
+    // Mesmo resultado exista a conta ou não; só falha de rede (ou captcha)
+    // chega aqui.
+    if (error && (error.code === 'captcha_failed' || error.status !== 400)) throw translate(error);
   }
 
   async resendConfirmation(email: string): Promise<void> {
     const { error } = await this.client.auth.resend({
       type: 'signup',
       email: email.trim(),
-      options: { emailRedirectTo: this.confirmationRedirect() },
+      options: { emailRedirectTo: this.confirmationRedirect(), captchaToken: await this.captcha() },
     });
     if (!error) return;
+    if (error.code === 'captcha_failed') throw translate(error);
     // O limite de envios tem resposta própria. O resto — conta que não
     // existe ou já confirmada — resolve calado, como o "esqueci a senha".
     if (error.code === 'over_email_send_rate_limit' || error.status === 429) {
@@ -177,7 +184,12 @@ export class SupabaseClientAuth extends ClientAuth {
     const email = auth.user?.email;
     if (!email) throw new ClientAuthError('indisponivel', 'Entre na sua conta para trocar a senha.');
 
-    const { error: checkError } = await this.client.auth.signInWithPassword({ email, password: current });
+    const { error: checkError } = await this.client.auth.signInWithPassword({
+      email,
+      password: current,
+      options: { captchaToken: await this.captcha() },
+    });
+    if (checkError?.code === 'captcha_failed') throw translate(checkError);
     if (checkError) throw new ClientAuthError('credenciais', 'Senha atual incorreta.');
 
     const { error } = await this.client.auth.updateUser({ password: next });
@@ -242,6 +254,8 @@ const TOO_MANY_EMAILS = 'Muitos e-mails em pouco tempo. Espere alguns minutos e 
 
 function translate(error: AuthError): ClientAuthError {
   switch (error.code) {
+    case 'captcha_failed':
+      return new ClientAuthError('indisponivel', CAPTCHA_FAILED_MESSAGE);
     case 'invalid_credentials':
       return new ClientAuthError('credenciais', 'E-mail ou senha incorretos.');
     case 'user_already_exists':
