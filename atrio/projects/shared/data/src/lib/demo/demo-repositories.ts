@@ -1,6 +1,6 @@
 import { Injectable, Provider, inject } from '@angular/core';
 import { setShopTimeZone } from '../period';
-import { Observable, combineLatest, firstValueFrom, map, tap } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, firstValueFrom, map, tap } from 'rxjs';
 import {
   Appointment,
   AppointmentStatus,
@@ -12,6 +12,7 @@ import {
 import { LinkSuggestion } from '../models/client';
 import { Cents, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
+import { ShopNotification } from '../models/notification';
 import { Professional } from '../models/professional';
 import { BusyInterval, TimeBlock } from '../models/schedule';
 import { Service } from '../models/service';
@@ -24,6 +25,7 @@ import {
   CounterPin,
   FinanceQuery,
   FinanceRepository,
+  NotificationRepository,
   ProfessionalRepository,
   ServiceRepository,
   StaffAuth,
@@ -451,6 +453,52 @@ export class DemoTenantRepository extends TenantRepository {
 }
 
 /**
+ * Avisos na demonstração: alguns de exemplo, montados com os horários do
+ * dia, para o sino ter o que mostrar. Lido vale enquanto a página estiver
+ * aberta.
+ */
+@Injectable()
+export class DemoNotificationRepository extends NotificationRepository {
+  private readonly store = inject(DemoStore);
+  private readonly items$ = new BehaviorSubject<readonly ShopNotification[]>(this.samples());
+
+  watchRecent(limit = 30): Observable<readonly ShopNotification[]> {
+    return this.items$.pipe(map((items) => items.slice(0, limit)));
+  }
+
+  async markRead(ids: readonly Id[]): Promise<void> {
+    const set = new Set(ids);
+    this.items$.next(this.items$.value.map((n) => (set.has(n.id) ? { ...n, read: true } : n)));
+  }
+
+  async markAllRead(): Promise<void> {
+    this.items$.next(this.items$.value.map((n) => ({ ...n, read: true })));
+  }
+
+  private samples(): ShopNotification[] {
+    const now = Date.now();
+    const upcoming = this.store
+      .snapshot()
+      .appointments.filter((a) => a.status === 'agendado' && new Date(a.startsAt).getTime() > now)
+      .slice(0, 3);
+    const kinds: ShopNotification['kind'][] = ['novo_horario', 'reagendado', 'cancelado'];
+    return upcoming.map((appointment, index) => ({
+      id: `aviso-${appointment.id}`,
+      appointmentId: appointment.id,
+      kind: kinds[index],
+      clientName: appointment.client.name,
+      startsAt: appointment.startsAt,
+      previousStartsAt:
+        kinds[index] === 'reagendado'
+          ? new Date(new Date(appointment.startsAt).getTime() - 3_600_000).toISOString()
+          : null,
+      read: false,
+      createdAt: new Date(now - (index + 1) * 12 * 60_000).toISOString(),
+    }));
+  }
+}
+
+/**
  * Liga os repositórios à implementação de demonstração.
  *
  * Trocar por `provideFirebaseData()` depois é mudar esta linha no app.config
@@ -462,6 +510,7 @@ export function provideDemoData(): Provider[] {
     { provide: ProfessionalRepository, useClass: DemoProfessionalRepository },
     { provide: ServiceRepository, useClass: DemoServiceRepository },
     { provide: FinanceRepository, useClass: DemoFinanceRepository },
+    { provide: NotificationRepository, useClass: DemoNotificationRepository },
     { provide: TimeBlockRepository, useClass: DemoTimeBlockRepository },
     { provide: TenantRepository, useClass: DemoTenantRepository },
     { provide: AvailabilityRepository, useClass: DemoAvailabilityRepository },

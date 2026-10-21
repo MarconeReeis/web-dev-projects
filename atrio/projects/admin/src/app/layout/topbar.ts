@@ -13,6 +13,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ATRIO_CONFIG, TenantContext } from '@atrio/core';
 import { STAFF_ROLE_LABEL, StaffAuth } from '@atrio/data';
 import { AtrAvatar, AtrIcon } from '@atrio/ui';
+import { NotificationsMenu } from './notifications-menu';
 
 /**
  * Barra superior.
@@ -25,13 +26,14 @@ import { AtrAvatar, AtrIcon } from '@atrio/ui';
  * mais escasso. Título e descrição agora pertencem só ao cabeçalho da página
  * (atr-page-heading).
  *
- * Também não há busca global nem sino de notificação: nada ainda os alimenta,
- * e controle que não faz nada ensina o usuário a ignorar a interface.
+ * O sino traz o que o cliente fez pelo app (ver NotificationsMenu). Busca
+ * global não há: nada ainda a alimenta, e controle que não faz nada ensina o
+ * usuário a ignorar a interface.
  */
 @Component({
   selector: 'adm-topbar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AtrIcon, AtrAvatar],
+  imports: [AtrIcon, AtrAvatar, NotificationsMenu],
   host: {
     class:
       'flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4 sm:px-6',
@@ -61,6 +63,8 @@ import { AtrAvatar, AtrIcon } from '@atrio/ui';
         Modo demonstração
       </span>
     }
+
+    <adm-notifications-menu />
 
     <div class="relative" #account>
       <button

@@ -8,6 +8,7 @@ import {
 } from '../models/appointment';
 import { LinkSuggestion } from '../models/client';
 import { ClientAccount, ClientProfileChanges, NewClientAccount } from '../models/client-account';
+import { ShopNotification } from '../models/notification';
 import { PinCheck, PinStatus, StaffSession } from '../models/staff';
 import { Cents, DateRange, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
@@ -142,6 +143,14 @@ export abstract class ServiceRepository {
 export interface FinanceQuery {
   readonly range: DateRange;
   readonly professionalId?: Id | null;
+}
+
+/** Avisos do sino do painel: o que o cliente fez pelo app. */
+export abstract class NotificationRepository {
+  /** Os mais recentes primeiro, em tempo real. */
+  abstract watchRecent(limit?: number): Observable<readonly ShopNotification[]>;
+  abstract markRead(ids: readonly Id[]): Promise<void>;
+  abstract markAllRead(): Promise<void>;
 }
 
 export abstract class FinanceRepository {

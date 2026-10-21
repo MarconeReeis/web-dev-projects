@@ -104,10 +104,12 @@ e recebe.
       (Profissionais, Financeiro). Troca: `npm run barbearia:plano`.
 - [ ] **Painel enxuto do plano Solo** — M/G. A agenda do dia no celular,
       folgas e horários de trabalho; reaproveita o painel atual.
-- [ ] **Notificações no painel (sino)** — P/M. Sino no topo com o número de
-      não lidas; cada aviso ("Novo horário: Beto · qua 10:00", cancelado,
-      remarcado, pedido para confirmar) abre a agenda no atendimento. Lê os
-      mesmos eventos da fila de e-mails, em tempo real, com lido/não lido.
+- [x] **Notificações no painel (sino)** — feito em 21/10/2026. Sino no
+      topo com o número de não lidas; cada aviso (novo horário, cancelou,
+      remarcou) abre o atendimento na agenda e fica lido. Nasce no banco
+      (`notifications`, mesmas regras dos e-mails à barbearia), chega em
+      tempo real, lido é da barbearia; com mais de 60 dias, sai. O "pedido
+      para confirmar" entra com a confirmação pelo barbeiro.
 - [ ] **Confirmação pelo barbeiro** — M. Opção da barbearia em
       Configurações: "confirmação automática" (como hoje, o padrão) ou "eu
       confirmo cada agendamento". Na segunda, o horário marcado pelo app
@@ -242,7 +244,7 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
 3. ~~E-mails de conta, nova senha e cadastro de barbearia~~ — feito.
 4. ~~Decidir a cor e a regra de concorrentes → URL nova e marca Átrio~~ —
    feito.
-5. ~~E-mails do agendamento → planos no banco~~ → sino de notificações →
+5. ~~E-mails do agendamento → planos no banco → sino de notificações~~ →
    confirmação pelo barbeiro → painel enxuto do Solo.
 6. LGPD, captcha, monitoramento, plano Pro.
 7. Banco de produção, hospedagem, PWA.

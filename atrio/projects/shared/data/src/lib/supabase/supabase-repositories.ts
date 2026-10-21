@@ -12,6 +12,7 @@ import {
 import { LinkSuggestion } from '../models/client';
 import { Cents, ClockTime, DateRange, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
+import { ShopNotification } from '../models/notification';
 import { Professional } from '../models/professional';
 import {
   BusyInterval,
@@ -30,6 +31,7 @@ import {
   ClientAuth,
   FinanceQuery,
   FinanceRepository,
+  NotificationRepository,
   ProfessionalRepository,
   ServiceRepository,
   StaffAuth,
@@ -536,6 +538,75 @@ export class SupabaseFinanceRepository extends FinanceRepository {
 }
 
 /**
+ * Avisos do sino. Nascem no banco (private.notify_shop) e chegam pelo tempo
+ * real do painel (SupabaseRealtime) — esta classe só lê e marca como lido.
+ */
+@Injectable()
+export class SupabaseNotificationRepository extends NotificationRepository {
+  private readonly client = inject(SUPABASE_CLIENT);
+  private readonly scope = inject(SupabaseTenantScope);
+  private readonly sync = inject(SupabaseSync);
+
+  watchRecent(limit = 30): Observable<readonly ShopNotification[]> {
+    return this.sync.live(async () => {
+      const { data, error } = await this.client
+        .from('notifications')
+        .select('*')
+        .eq('tenant_id', await this.scope.id())
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (error) throw toAppError(error);
+      return (data as NotificationRow[]).map(toNotification);
+    });
+  }
+
+  async markRead(ids: readonly Id[]): Promise<void> {
+    if (ids.length === 0) return;
+    const { error } = await this.client
+      .from('notifications')
+      .update({ read_at: new Date().toISOString() })
+      .in('id', [...ids])
+      .is('read_at', null);
+    if (error) throw toAppError(error);
+    this.sync.changed();
+  }
+
+  async markAllRead(): Promise<void> {
+    const { error } = await this.client
+      .from('notifications')
+      .update({ read_at: new Date().toISOString() })
+      .eq('tenant_id', await this.scope.id())
+      .is('read_at', null);
+    if (error) throw toAppError(error);
+    this.sync.changed();
+  }
+}
+
+interface NotificationRow {
+  id: string;
+  appointment_id: string;
+  kind: ShopNotification['kind'];
+  client_name: string;
+  starts_at: string;
+  previous_starts_at: string | null;
+  read_at: string | null;
+  created_at: string;
+}
+
+function toNotification(row: NotificationRow): ShopNotification {
+  return {
+    id: row.id,
+    appointmentId: row.appointment_id,
+    kind: row.kind,
+    clientName: row.client_name,
+    startsAt: new Date(row.starts_at).toISOString(),
+    previousStartsAt: row.previous_starts_at ? new Date(row.previous_starts_at).toISOString() : null,
+    read: row.read_at !== null,
+    createdAt: new Date(row.created_at).toISOString(),
+  };
+}
+
+/**
  * Tempo real do painel: uma mudança em agendamentos, bloqueios ou caixa da
  * barbearia — feita no celular de um cliente, em outro tablet — reconsulta as
  * telas abertas. É o que faz o horário marcado pelo cliente aparecer na
@@ -571,6 +642,7 @@ export class SupabaseRealtime {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments', filter }, changed)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'time_blocks', filter }, changed)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'finance_entries', filter }, changed)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter }, changed)
       .subscribe();
   }
 

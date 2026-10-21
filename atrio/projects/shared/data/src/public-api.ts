@@ -21,6 +21,7 @@ export * from './lib/models/client-account';
 export * from './lib/models/staff';
 export * from './lib/models/appointment';
 export * from './lib/models/finance';
+export * from './lib/models/notification';
 export * from './lib/models/money';
 
 export * from './lib/period';
