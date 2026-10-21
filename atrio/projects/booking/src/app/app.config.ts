@@ -6,7 +6,7 @@ import {
   isDevMode,
 } from '@angular/core';
 import { TitleStrategy, provideRouter, withComponentInputBinding } from '@angular/router';
-import { provideAtrioConfig, provideTurnstile } from '@atrio/core';
+import { provideAtrioConfig, provideMonitoring, provideTurnstile } from '@atrio/core';
 import { TenantRepository, provideDemoData, provideSupabaseData } from '@atrio/data';
 import { filter, firstValueFrom, timeout } from 'rxjs';
 import { environment } from '../environments/environment';
@@ -35,6 +35,9 @@ export const appConfig: ApplicationConfig = {
 
     // Captcha nos pedidos de conta (entrar, criar conta, link de senha).
     ...provideTurnstile(environment.turnstileSiteKey),
+
+    // Erros da tela para o Sentry (iniciado no main.ts).
+    ...provideMonitoring(environment.sentryDsn),
 
     provideAtrioConfig({
       productName: 'Átrio',

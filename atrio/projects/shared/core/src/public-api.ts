@@ -13,3 +13,4 @@ export * from './lib/branding/oklch';
 export * from './lib/branding/branding';
 export * from './lib/pwa/install-prompt';
 export * from './lib/captcha/turnstile';
+export * from './lib/monitoring/monitoring';
