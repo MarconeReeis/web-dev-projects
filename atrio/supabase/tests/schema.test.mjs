@@ -1243,3 +1243,68 @@ describe('planos', () => {
     assert.equal(await fails(setPlan('service_role', 'solo')), 'rebaixar_equipe');
   });
 });
+
+describe('avisos do painel (sino)', () => {
+  const notices = async (appointmentId) =>
+    (
+      await db.query(
+        `select kind, client_name, read_at, previous_starts_at
+           from public.notifications where appointment_id = $1 order by created_at`,
+        [appointmentId],
+      )
+    ).rows;
+
+  let booked;
+
+  test('cliente marca, remarca e cancela pelo app: um aviso para cada', async () => {
+    [booked] = await book(BETO, RAFAEL, BARBA, await nextWeek(1, '16:00'));
+    await as(BETO, `select * from public.reschedule_appointment($1, $2, null)`, [
+      booked.id,
+      await nextWeek(1, '16:30'),
+    ]);
+    await as(BETO, `select * from public.cancel_appointment($1)`, [booked.id]);
+
+    const rows = await notices(booked.id);
+    assert.deepEqual(
+      rows.map((r) => r.kind),
+      ['novo_horario', 'reagendado', 'cancelado'],
+    );
+    assert.equal(rows[0].client_name, 'Beto Lima');
+    assert.ok(rows[1].previous_starts_at, 'a remarcação guarda o horário de antes');
+  });
+
+  test('o que a própria equipe faz não vira aviso', async () => {
+    const [atCounter] = await as(
+      STAFF,
+      `select * from public.create_appointment($1, $2, now() + interval '4 days', 'Balcão')`,
+      [CAIO, CORTE],
+    );
+    await as(STAFF, `select * from public.cancel_appointment($1)`, [atCounter.id]);
+    assert.deepEqual(await notices(atCounter.id), []);
+  });
+
+  test('a equipe lê e marca como lido; mais nada muda', async () => {
+    const mine = await as(STAFF, `select id from public.notifications where appointment_id = $1`, [booked.id]);
+    assert.equal(mine.length, 3);
+
+    await as(STAFF, `update public.notifications set read_at = now() where appointment_id = $1`, [booked.id]);
+    assert.ok((await notices(booked.id)).every((r) => r.read_at));
+
+    assert.match(
+      await fails(as(STAFF, `update public.notifications set client_name = 'Outro' where appointment_id = $1`, [booked.id])),
+      /permission denied/,
+    );
+  });
+
+  test('cliente e outra barbearia não veem os avisos', async () => {
+    assert.deepEqual(await as(BETO, `select id from public.notifications`), []);
+    assert.deepEqual(await as(OTHER_STAFF, `select id from public.notifications`), []);
+    assert.match(await fails(as(null, `select id from public.notifications`)), /permission denied/);
+  });
+
+  test('avisos antigos saem uma vez por dia', async () => {
+    const [job] = (await db.query(`select schedule, command from cron.jobs where name = 'atrio-limpar-avisos'`)).rows;
+    assert.equal(job.schedule, '15 3 * * *');
+    assert.match(job.command, /delete from public\.notifications where created_at < now\(\) - interval '60 days'/);
+  });
+});

@@ -16,11 +16,12 @@ supabase/
 │   ├── 20261020000200_appointment_emails.sql fila dos e-mails do agendamento
 │   ├── 20261020000300_email_dispatch.sql a cada minuto, chama o envio
 │   ├── 20261020000400_notification_email.sql e-mail para os avisos da barbearia
-│   └── 20261020000500_plans.sql      planos Solo e Barbearia, e os limites de cada um
+│   ├── 20261020000500_plans.sql      planos Solo e Barbearia, e os limites de cada um
+│   └── 20261021000100_notifications.sql avisos do sino do painel
 ├── functions/enviar-emails/          envia a fila pelo Resend (Edge Function)
 ├── templates/                        os e-mails de conta (cadastro, senha, troca de e-mail)
 ├── seed.sql                          a Navalha & Co. do modo demonstração
-└── tests/schema.test.mjs             90 testes contra Postgres de verdade
+└── tests/schema.test.mjs             95 testes contra Postgres de verdade
 ```
 
 ## Testar
