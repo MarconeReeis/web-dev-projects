@@ -104,6 +104,19 @@ e recebe.
       (Profissionais, Financeiro). Troca: `npm run barbearia:plano`.
 - [ ] **Painel enxuto do plano Solo** — M/G. A agenda do dia no celular,
       folgas e horários de trabalho; reaproveita o painel atual.
+- [ ] **Notificações no painel (sino)** — P/M. Sino no topo com o número de
+      não lidas; cada aviso ("Novo horário: Beto · qua 10:00", cancelado,
+      remarcado, pedido para confirmar) abre a agenda no atendimento. Lê os
+      mesmos eventos da fila de e-mails, em tempo real, com lido/não lido.
+- [ ] **Confirmação pelo barbeiro** — M. Opção da barbearia em
+      Configurações: "confirmação automática" (como hoje, o padrão) ou "eu
+      confirmo cada agendamento". Na segunda, o horário marcado pelo app
+      nasce **pendente** — já reservado, para ninguém mais pegar — e o
+      cliente recebe "pedido recebido". O barbeiro confirma ou recusa pelo
+      painel, pelo sino ou **pelos botões do próprio e-mail** (link seguro,
+      sem abrir o painel); o cliente recebe a resposta. Sem resposta até um
+      prazo (ex.: 2 horas antes), o pedido é recusado sozinho e o cliente,
+      avisado. Lembrete da véspera só para confirmado. Depende do sino.
 - [x] **Fotos no Storage** — feito em 19/10/2026. Foto de profissional e
       logo vão para o bucket `midia`, com envio só pela equipe da barbearia
       e na pasta dela; no banco fica o link.
@@ -180,6 +193,10 @@ e recebe.
 
 Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
 
+- **Notificação no celular (push)** — avisos do sino mesmo com o app
+  fechado, para o barbeiro que não fica olhando o painel (plano Solo). No
+  iPhone, só com o app instalado na tela inicial. Mesmo problema que o
+  WhatsApp resolve por outro canal.
 - **WhatsApp oficial (adicional)** — confirmação e lembrete pela API oficial
   da Meta (WhatsApp Business Platform). Só a oficial: as bibliotecas "não
   oficiais" violam os termos e derrubam o número. Exige verificar a empresa
@@ -225,7 +242,8 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
 3. ~~E-mails de conta, nova senha e cadastro de barbearia~~ — feito.
 4. ~~Decidir a cor e a regra de concorrentes → URL nova e marca Átrio~~ —
    feito.
-5. ~~E-mails do agendamento → planos no banco~~ → painel enxuto do Solo.
+5. ~~E-mails do agendamento → planos no banco~~ → sino de notificações →
+   confirmação pelo barbeiro → painel enxuto do Solo.
 6. LGPD, captcha, monitoramento, plano Pro.
 7. Banco de produção, hospedagem, PWA.
 8. Estudo de preços → piloto → cobrança → lançamento.
