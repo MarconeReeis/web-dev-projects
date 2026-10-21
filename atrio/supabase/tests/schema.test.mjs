@@ -1308,3 +1308,159 @@ describe('avisos do painel (sino)', () => {
     assert.match(job.command, /delete from public\.notifications where created_at < now\(\) - interval '60 days'/);
   });
 });
+
+describe('confirmação pelo barbeiro', () => {
+  const confirm = (user, id) => as(user, `select * from public.confirm_appointment($1)`, [id]);
+  const decline = (user, id) => as(user, `select * from public.decline_appointment($1)`, [id]);
+  const byToken = (token, action) =>
+    as('service_role', `select * from public.respond_by_token($1, $2)`, [token, action]);
+  const row = async (id) => (await db.query(`select * from public.appointments where id = $1`, [id])).rows[0];
+  const outbox = async (id) =>
+    (
+      await db.query(
+        `select kind || ':' || recipient as k from public.email_outbox where appointment_id = $1 order by created_at, recipient`,
+        [id],
+      )
+    ).rows.map((r) => r.k);
+  const notices = async (id) =>
+    (await db.query(`select kind, read_at from public.notifications where appointment_id = $1 order by created_at`, [id]))
+      .rows;
+  const ask = async (clock) => (await book(BETO, RAFAEL, BARBA, await nextWeek(3, clock)))[0];
+
+  before(async () => {
+    await db.query(`update public.tenants set confirmation_mode = 'manual' where id = $1`, [TENANT]);
+  });
+  after(async () => {
+    await db.query(`update public.tenants set confirmation_mode = 'automatica' where id = $1`, [TENANT]);
+  });
+
+  let request;
+
+  test('cliente pede: nasce pendente, com prazo de 2h antes e token, e o horário fica ocupado', async () => {
+    request = await ask('09:00');
+    assert.equal(request.status, 'pendente');
+    assert.equal(new Date(request.starts_at) - new Date(request.respond_by), 2 * 3600_000);
+    assert.ok(request.response_token);
+
+    assert.equal(
+      await fails(as(STAFF, `select * from public.create_appointment($1, $2, $3, 'Outro')`, [
+        RAFAEL,
+        BARBA,
+        request.starts_at,
+      ])),
+      'horario_ocupado',
+    );
+  });
+
+  test('pedido: cliente recebe "pedido recebido"; a barbearia, o pedido e o aviso no sino', async () => {
+    assert.deepEqual(await outbox(request.id), ['pedido:barbearia', 'pedido_recebido:cliente']);
+    assert.deepEqual((await notices(request.id)).map((n) => n.kind), ['pedido']);
+  });
+
+  test('a equipe marca no balcão: nasce confirmado, mesmo no modo de confirmar', async () => {
+    const [counter] = await as(
+      STAFF,
+      `select * from public.create_appointment($1, $2, now() + interval '5 days', 'Balcão')`,
+      [CAIO, CORTE],
+    );
+    assert.equal(counter.status, 'agendado');
+  });
+
+  test('cliente e outra barbearia não respondem o pedido', async () => {
+    assert.equal(await fails(confirm(BETO, request.id)), 'nao_encontrado');
+    assert.equal(await fails(confirm(OTHER_STAFF, request.id)), 'nao_encontrado');
+    assert.match(await fails(as(STAFF, `select * from public.respond_by_token($1, 'confirmar')`, [request.response_token])),
+      /permission denied/);
+  });
+
+  test('barbearia confirma: vira agendado, o cliente recebe a confirmação e o aviso fica lido', async () => {
+    const [confirmed] = await confirm(STAFF, request.id);
+    assert.equal(confirmed.status, 'agendado');
+    assert.equal(confirmed.response_token, null);
+    assert.ok((await outbox(request.id)).includes('agendado:cliente'));
+    assert.ok((await notices(request.id)).every((n) => n.read_at));
+
+    assert.equal(await fails(confirm(STAFF, request.id)), 'ja_respondido');
+  });
+
+  test('barbearia recusa: o cliente recebe "recusado", ninguém mais é avisado, e o horário fica livre', async () => {
+    const asked = await ask('09:30');
+    await decline(STAFF, asked.id);
+
+    const declined = await row(asked.id);
+    assert.equal(declined.status, 'cancelado');
+    assert.equal(declined.declined_reason, 'recusado');
+    assert.deepEqual(await outbox(asked.id), ['pedido:barbearia', 'pedido_recebido:cliente', 'recusado:cliente']);
+    assert.deepEqual((await notices(asked.id)).map((n) => n.kind), ['pedido']);
+
+    const [again] = await as(STAFF, `select * from public.create_appointment($1, $2, $3, 'Outro')`, [
+      RAFAEL,
+      BARBA,
+      asked.starts_at,
+    ]);
+    assert.equal(again.status, 'agendado');
+  });
+
+  test('pelo e-mail: "ver" não muda nada, "confirmar" vale uma vez', async () => {
+    const asked = await ask('10:30');
+    const [seen] = await byToken(asked.response_token, 'ver');
+    assert.equal(seen.result, 'pendente');
+    assert.equal(seen.client_name, 'Beto Lima');
+    assert.equal((await row(asked.id)).status, 'pendente');
+
+    const [done] = await byToken(asked.response_token, 'confirmar');
+    assert.equal(done.result, 'confirmado');
+    assert.equal((await row(asked.id)).status, 'agendado');
+
+    const [reused] = await byToken(asked.response_token, 'recusar');
+    assert.equal(reused.result, 'invalido');
+    assert.equal((await row(asked.id)).status, 'agendado');
+  });
+
+  test('pelo e-mail, recusar também avisa o cliente e não vira "cancelado" no sino', async () => {
+    const asked = await ask('11:00');
+    const [done] = await byToken(asked.response_token, 'recusar');
+    assert.equal(done.result, 'recusado');
+    assert.ok((await outbox(asked.id)).includes('recusado:cliente'));
+    assert.deepEqual((await notices(asked.id)).map((n) => n.kind), ['pedido']);
+  });
+
+  test('sem resposta no prazo: recusado sozinho, cliente avisado, sino avisa', async () => {
+    const asked = await ask('11:30');
+    await db.query(`update public.appointments set respond_by = now() - interval '1 minute' where id = $1`, [asked.id]);
+    await db.query(`select private.expire_pending()`);
+
+    const expired = await row(asked.id);
+    assert.equal(expired.status, 'cancelado');
+    assert.equal(expired.declined_reason, 'sem_resposta');
+    assert.ok((await outbox(asked.id)).includes('recusado:cliente'));
+    assert.deepEqual((await notices(asked.id)).map((n) => n.kind), ['pedido', 'sem_resposta']);
+  });
+
+  test('cliente pode desistir do pedido: a barbearia é avisada', async () => {
+    const asked = await ask('14:00');
+    await as(BETO, `select * from public.cancel_appointment($1)`, [asked.id]);
+    assert.ok((await outbox(asked.id)).includes('cancelado:barbearia'));
+    assert.deepEqual((await notices(asked.id)).map((n) => n.kind), ['pedido', 'cancelado']);
+  });
+
+  test('a fila leva o token só no pedido, e descarta o pedido já respondido', async () => {
+    const pending = await ask('13:00');
+    const answered = await ask('13:30');
+    await confirm(STAFF, answered.id);
+
+    const claimed = await as('service_role', `select * from public.claim_emails(1000)`);
+    const toShop = claimed.find((c) => c.appointment_id === pending.id && c.kind === 'pedido');
+    assert.equal(toShop.response_token, pending.response_token);
+    const toClient = claimed.find((c) => c.appointment_id === pending.id && c.kind === 'pedido_recebido');
+    assert.equal(toClient.response_token, null);
+
+    const stale = (
+      await db.query(
+        `select status from public.email_outbox where appointment_id = $1 and kind in ('pedido', 'pedido_recebido')`,
+        [answered.id],
+      )
+    ).rows;
+    assert.ok(stale.length === 2 && stale.every((r) => r.status === 'descartado'));
+  });
+});
