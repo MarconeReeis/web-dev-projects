@@ -102,8 +102,13 @@ e recebe.
       ativo, só o dono, caixa sem despesas — recusado no banco. O painel
       mostra o plano em Configurações e avisa onde o Solo esbarra
       (Profissionais, Financeiro). Troca: `npm run barbearia:plano`.
-- [ ] **Painel enxuto do plano Solo** — M/G. A agenda do dia no celular,
-      folgas e horários de trabalho; reaproveita o painel atual.
+- [x] **Painel de celular** — feito em 21/10/2026, para os dois planos em
+      tela de celular (o tablet continua igual). Barra inferior com quatro
+      abas: **Hoje** (pedidos para confirmar no topo e o dia em lista),
+      **Agenda** (um dia de cada vez), **Horários** (jornada, folgas e
+      bloqueios) e **Mais** (serviços, caixa, resumo, configurações e o link
+      da página da barbearia). Tocar num atendimento abre o mesmo painel de
+      detalhes do tablet.
 - [x] **Notificações no painel (sino)** — feito em 21/10/2026. Sino no
       topo com o número de não lidas; cada aviso (novo horário, cancelou,
       remarcou) abre o atendimento na agenda e fica lido. Nasce no banco
@@ -247,7 +252,7 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
 4. ~~Decidir a cor e a regra de concorrentes → URL nova e marca Átrio~~ —
    feito.
 5. ~~E-mails do agendamento → planos no banco → sino de notificações →
-   confirmação pelo barbeiro~~ → painel enxuto do Solo.
+   confirmação pelo barbeiro → painel de celular~~ — feito.
 6. LGPD, captcha, monitoramento, plano Pro.
 7. Banco de produção, hospedagem, PWA.
 8. Estudo de preços → piloto → cobrança → lançamento.

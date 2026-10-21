@@ -11,6 +11,8 @@ import { StaffAuth } from '@atrio/data';
 import { filter } from 'rxjs';
 import { Sidebar } from './sidebar';
 import { Topbar } from './topbar';
+import { BottomNav } from './bottom-nav';
+import { Viewport } from './viewport';
 
 /**
  * Moldura do painel: menu lateral fixo + conteúdo rolável.
@@ -27,9 +29,19 @@ import { Topbar } from './topbar';
 @Component({
   selector: 'adm-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, Sidebar, Topbar],
+  imports: [RouterOutlet, Sidebar, Topbar, BottomNav],
   host: { class: 'flex h-dvh w-full overflow-hidden bg-background' },
   template: `
+    @if (viewport.isPhone()) {
+      <!-- Celular: barra inferior com quatro abas no lugar do menu lateral. -->
+      <div class="flex min-w-0 flex-1 flex-col">
+        <adm-topbar [phone]="true" />
+        <main class="flex-1 overflow-y-auto px-4 pt-5 pb-28">
+          <router-outlet />
+        </main>
+        <adm-bottom-nav />
+      </div>
+    } @else {
     <!-- Menu em telas grandes -->
     <aside
       class="hidden shrink-0 transition-[width] duration-200 lg:block"
@@ -57,11 +69,13 @@ import { Topbar } from './topbar';
         <router-outlet />
       </main>
     </div>
+    }
   `,
 })
 export class Shell {
   private static readonly STORAGE_KEY = 'atrio.admin.sidebar-collapsed';
 
+  protected readonly viewport = inject(Viewport);
   protected readonly collapsed = signal(Shell.readCollapsed());
   protected readonly drawerOpen = signal(false);
 

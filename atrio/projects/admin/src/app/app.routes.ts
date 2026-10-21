@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { PHONE_QUERY } from './layout/viewport';
 import { Shell } from './layout/shell';
 import { guestOnly, staffOnly } from './features/auth/guards';
 import { pinRequired } from './shared/pin/pin-gate';
@@ -42,7 +43,30 @@ export const routes: Routes = [
     component: Shell,
     canActivate: [staffOnly],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      // No celular o painel abre no "Hoje"; no tablet, na Dashboard.
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: () => (window.matchMedia(PHONE_QUERY).matches ? 'hoje' : 'dashboard'),
+      },
+      {
+        // Painel de celular: o dia em lista, com os pedidos no topo.
+        path: 'hoje',
+        title: 'Hoje · Átrio',
+        data: { mode: 'hoje' },
+        loadComponent: () => import('./features/today/day-list-page').then((m) => m.DayListPage),
+      },
+      {
+        path: 'dias',
+        title: 'Agenda · Átrio',
+        data: { mode: 'dias' },
+        loadComponent: () => import('./features/today/day-list-page').then((m) => m.DayListPage),
+      },
+      {
+        path: 'mais',
+        title: 'Mais · Átrio',
+        loadComponent: () => import('./features/more/more-page').then((m) => m.MorePage),
+      },
       {
         path: 'dashboard',
         title: 'Dashboard · Átrio',

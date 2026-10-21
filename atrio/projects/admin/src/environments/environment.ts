@@ -15,4 +15,6 @@ export const environment = {
   dataSource: 'supabase' as 'supabase' | 'demo',
   supabaseUrl: 'https://bgivwvjxonfickevvilm.supabase.co',
   supabaseKey: 'sb_publishable_m3GrRqHztsLw614bwNaQmA_9wJp8-2q',
+  /** App do cliente: o link da barbearia é este endereço + /<barbearia>. */
+  bookingUrl: 'http://localhost:4300',
 };

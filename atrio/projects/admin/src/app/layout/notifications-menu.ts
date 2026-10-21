@@ -7,7 +7,9 @@ import {
   formatShortDay,
   formatTime,
 } from '@atrio/data';
-import { AtrIcon, AtrioIconName } from '@atrio/ui';
+import { AtrIcon, AtrOverlay, AtrioIconName } from '@atrio/ui';
+import { AppointmentPanel, AppointmentPanelData } from '../features/agenda/components/appointment-panel';
+import { Viewport } from './viewport';
 
 const TITLE: Readonly<Record<ShopNotification['kind'], string>> = {
   novo_horario: 'Novo horário',
@@ -124,6 +126,8 @@ const ICON: Readonly<Record<ShopNotification['kind'], AtrioIconName>> = {
 export class NotificationsMenu {
   private readonly repository = inject(NotificationRepository);
   private readonly router = inject(Router);
+  private readonly overlay = inject(AtrOverlay);
+  private readonly viewport = inject(Viewport);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly title = TITLE;
@@ -171,6 +175,13 @@ export class NotificationsMenu {
   protected async openItem(item: ShopNotification): Promise<void> {
     this.open.set(false);
     if (!item.read) void this.repository.markRead([item.id]);
+    // No celular, a grade da agenda não cabe: abre só o atendimento.
+    if (this.viewport.isPhone()) {
+      this.overlay.openSheet<AppointmentPanel, AppointmentPanelData>(AppointmentPanel, {
+        appointmentId: item.appointmentId,
+      });
+      return;
+    }
     await this.router.navigate(['/agenda'], { queryParams: { agendamento: item.appointmentId } });
   }
 

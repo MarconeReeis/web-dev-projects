@@ -41,15 +41,18 @@ import { NotificationsMenu } from './notifications-menu';
     '(document:keydown.escape)': 'accountOpen.set(false)',
   },
   template: `
-    <button
-      type="button"
-      class="inline-flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-      [attr.aria-label]="menuButtonLabel()"
-      [attr.aria-expanded]="!collapsed()"
-      (click)="toggleMenu.emit()"
-    >
-      <atr-icon [name]="collapsed() ? 'panel-left-open' : 'panel-left-close'" />
-    </button>
+    <!-- No celular não há menu lateral: as seções ficam na barra inferior. -->
+    @if (!phone()) {
+      <button
+        type="button"
+        class="inline-flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        [attr.aria-label]="menuButtonLabel()"
+        [attr.aria-expanded]="!collapsed()"
+        (click)="toggleMenu.emit()"
+      >
+        <atr-icon [name]="collapsed() ? 'panel-left-open' : 'panel-left-close'" />
+      </button>
+    }
 
     <!-- No mobile o menu some, então a barbearia é identificada aqui. -->
     <span class="truncate font-bold lg:hidden">{{ tenant.name() }}</span>
@@ -114,6 +117,8 @@ export class Topbar {
   private readonly auth = inject(StaffAuth);
 
   readonly collapsed = input(false);
+  /** Painel de celular: sem o botão do menu lateral. */
+  readonly phone = input(false);
   readonly toggleMenu = output<void>();
 
   protected readonly session = toSignal(this.auth.watchSession(), { initialValue: null });
