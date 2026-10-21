@@ -12,7 +12,8 @@
     "test:db": "node --test supabase/tests/schema.test.mjs",
     "test:emails": "node --test supabase/functions/enviar-emails/render.test.ts",
     "icons": "node tools/generate-icons.mjs",
-    "barbearia:nova": "node --env-file-if-exists=.env.local tools/nova-barbearia.mjs"
+    "barbearia:nova": "node --env-file-if-exists=.env.local tools/nova-barbearia.mjs",
+    "barbearia:plano": "node --env-file-if-exists=.env.local tools/plano-barbearia.mjs"
   },
   "private": true,
   "packageManager": "npm@11.19.1",

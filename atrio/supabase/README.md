@@ -15,11 +15,12 @@ supabase/
 │   ├── 20261020000100_reserved_slugs.sql endereços reservados pelo Átrio
 │   ├── 20261020000200_appointment_emails.sql fila dos e-mails do agendamento
 │   ├── 20261020000300_email_dispatch.sql a cada minuto, chama o envio
-│   └── 20261020000400_notification_email.sql e-mail para os avisos da barbearia
+│   ├── 20261020000400_notification_email.sql e-mail para os avisos da barbearia
+│   └── 20261020000500_plans.sql      planos Solo e Barbearia, e os limites de cada um
 ├── functions/enviar-emails/          envia a fila pelo Resend (Edge Function)
 ├── templates/                        os e-mails de conta (cadastro, senha, troca de e-mail)
 ├── seed.sql                          a Navalha & Co. do modo demonstração
-└── tests/schema.test.mjs             83 testes contra Postgres de verdade
+└── tests/schema.test.mjs             90 testes contra Postgres de verdade
 ```
 
 ## Testar
@@ -204,6 +205,23 @@ transação só no banco (`create_tenant`), e se ela falhar a conta recém-criad
 Precisa da chave **service_role** em `.env.local` (copie de `.env.example`;
 o Git ignora o arquivo). Essa chave ignora todas as regras do banco: só nesta
 máquina, só nos scripts de `tools/`, nunca em app nem em chat.
+
+## Plano da barbearia
+
+Dois planos: **Solo** (1 profissional ativo, só a conta do dono, caixa sem
+despesas) e **Barbearia** (sem esses limites). Toda barbearia nasce no
+Barbearia. Os limites são do banco (`20261020000500_plans.sql`); o painel só
+os mostra.
+
+```bash
+npm run barbearia:plano -- --endereco barbearia-do-ze               # mostra o plano
+npm run barbearia:plano -- --endereco barbearia-do-ze --plano solo  # troca
+```
+
+Rebaixar para Solo só é aceito quando a barbearia já cabe nele — com dois
+profissionais ativos ou com atendentes, o comando diz o que ajustar antes.
+Nada é apagado. Usa a chave service_role de `.env.local`, como
+`barbearia:nova`.
 
 ## Conta da equipe
 

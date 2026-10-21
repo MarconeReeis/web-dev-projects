@@ -1152,3 +1152,94 @@ describe('e-mail para avisos', () => {
     assert.equal(await fails(save(ATTENDANT, 'outro@navalha.com')), 'sem_permissao');
   });
 });
+
+describe('planos', () => {
+  // A Barbearia do Zé, criada em "cadastro de barbearia": um dono, nenhum
+  // profissional — terreno limpo para os limites do Solo.
+  const ZE_OWNER = '10000000-0000-4000-8000-000000000007';
+  let ze;
+  const setPlan = (user, plan) => as(user, `select public.set_tenant_plan($1, $2)`, [ze, plan]);
+  const addPro = (name, active = true) =>
+    db.query(`insert into public.professionals (tenant_id, name, active) values ($1, $2, $3) returning id`, [
+      ze,
+      name,
+      active,
+    ]);
+
+  before(async () => {
+    ze = (await db.query(`select id from public.tenants where slug = 'barbearia-do-ze'`)).rows[0].id;
+  });
+
+  test('barbearia nova nasce no plano Barbearia', async () => {
+    const [account] = await as(ZE_OWNER, `select plan from public.tenant_accounts where tenant_id = $1`, [ze]);
+    assert.equal(account.plan, 'barbearia');
+  });
+
+  test('só a chave de serviço troca o plano', async () => {
+    assert.match(await fails(setPlan(ZE_OWNER, 'solo')), /permission denied/);
+    assert.equal(await fails(setPlan('service_role', 'ouro')), 'plano_invalido');
+  });
+
+  test('rebaixar para Solo: recusa com 2 profissionais ativos, aceita com 1', async () => {
+    await addPro('Zé');
+    const { rows } = await addPro('Tião');
+    assert.equal(await fails(setPlan('service_role', 'solo')), 'rebaixar_profissionais');
+
+    await db.query(`update public.professionals set active = false where id = $1`, [rows[0].id]);
+    await setPlan('service_role', 'solo');
+    const [account] = await as(ZE_OWNER, `select plan from public.tenant_accounts where tenant_id = $1`, [ze]);
+    assert.equal(account.plan, 'solo');
+  });
+
+  test('no Solo, um segundo profissional ativo é recusado — nem novo, nem reativado', async () => {
+    assert.equal(await fails(addPro('Novo')), 'limite_do_plano');
+
+    const { rows } = await addPro('Folguista', false); // inativo pode
+    assert.equal(
+      await fails(db.query(`update public.professionals set active = true where id = $1`, [rows[0].id])),
+      'limite_do_plano',
+    );
+  });
+
+  test('no Solo, só a conta do dono: atendente é recusado', async () => {
+    assert.equal(
+      await fails(
+        db.query(`insert into public.tenant_members (tenant_id, user_id, role) values ($1, $2, 'atendente')`, [
+          ze,
+          BETO,
+        ]),
+      ),
+      'limite_do_plano',
+    );
+  });
+
+  test('no Solo, o caixa não aceita despesa nova', async () => {
+    const reason = await fails(
+      as(
+        ZE_OWNER,
+        `insert into public.finance_entries (tenant_id, kind, description, amount_cents, occurred_at, category)
+         values ($1, 'despesa', 'Lâminas', 4500, now(), 'produtos')`,
+        [ze],
+      ),
+    );
+    assert.match(reason, /row-level security/);
+  });
+
+  test('de volta ao Barbearia, os limites somem; com atendente, não rebaixa', async () => {
+    await setPlan('service_role', 'barbearia');
+    await addPro('Segundo');
+    await db.query(`insert into public.tenant_members (tenant_id, user_id, role) values ($1, $2, 'atendente')`, [
+      ze,
+      BETO,
+    ]);
+    await as(
+      ZE_OWNER,
+      `insert into public.finance_entries (tenant_id, kind, description, amount_cents, occurred_at, category)
+       values ($1, 'despesa', 'Lâminas', 4500, now(), 'produtos')`,
+      [ze],
+    );
+
+    await db.query(`update public.professionals set active = false where tenant_id = $1 and name <> 'Zé'`, [ze]);
+    assert.equal(await fails(setPlan('service_role', 'solo')), 'rebaixar_equipe');
+  });
+});
