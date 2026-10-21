@@ -7,7 +7,15 @@
  * esteja o cliente onde estiver.
  */
 
-export type EmailKind = 'agendado' | 'novo_horario' | 'cancelado' | 'reagendado' | 'lembrete';
+export type EmailKind =
+  | 'agendado'
+  | 'novo_horario'
+  | 'cancelado'
+  | 'reagendado'
+  | 'lembrete'
+  | 'pedido'
+  | 'pedido_recebido'
+  | 'recusado';
 
 export interface EmailRow {
   id: string;
@@ -30,6 +38,12 @@ export interface EmailRow {
   tenant_phone: string | null;
   tenant_address: Record<string, string | null> | null;
   time_zone: string;
+  /** Pedido (barbearia que confirma cada agendamento): até quando responder. */
+  respond_by: string | null;
+  /** Só no e-mail "pedido" à barbearia: é o que os botões levam. */
+  response_token: string | null;
+  /** Na recusa: a barbearia recusou, ou o prazo venceu sem resposta. */
+  declined_reason: 'recusado' | 'sem_resposta' | null;
 }
 
 export interface RenderOptions {
@@ -59,6 +73,12 @@ export function render(row: EmailRow, options: RenderOptions): RenderedEmail {
   const inAgenda = `${options.painelUrl}/agenda?agendamento=${row.appointment_id}`;
   const fromClientSide = `${shop} · Átrio Agenda`;
   const fromShopSide = 'Átrio Agenda';
+  const deadline = row.respond_by
+    ? (() => {
+        const at = describeInstant(row.respond_by, row.time_zone);
+        return `${at.shortDate} às ${at.start}`;
+      })()
+    : null;
 
   const details: Detail[] = [
     ['Serviço', `${row.service_name} · ${minutesBetween(row.starts_at, row.ends_at)} min`],
@@ -147,6 +167,51 @@ export function render(row: EmailRow, options: RenderOptions): RenderedEmail {
             details: shopDetails,
             action: ['Abrir na agenda', inAgenda],
           });
+
+    case 'pedido': {
+      const answer = (action: 'confirmar' | 'recusar') =>
+        `${options.painelUrl}/responder?token=${row.response_token}&acao=${action}`;
+      return compose({
+        fromName: fromShopSide,
+        subject: `Pedido de horário: ${client} · ${when.shortDate} às ${when.start}`,
+        brand: shop,
+        heading: 'Novo pedido para confirmar',
+        lead: `${client} pediu um horário pelo app.${deadline ? ` Responda até ${deadline}.` : ''}`,
+        details: shopDetails,
+        action: ['Confirmar horário', answer('confirmar')],
+        secondary: ['Recusar', answer('recusar')],
+        footnote: 'Sem resposta no prazo, o pedido é recusado sozinho e o cliente é avisado.',
+      });
+    }
+
+    case 'pedido_recebido':
+      return compose({
+        fromName: fromClientSide,
+        subject: `Pedido enviado: ${when.shortDate} às ${when.start}`,
+        brand: shop,
+        heading: 'Pedido enviado',
+        lead: sentence(`A ${shop} vai confirmar o seu horário, e você recebe a resposta por e-mail`),
+        details: clientDetails,
+        action: ['Ver meu pedido', myAppointment],
+        footnote: deadline
+          ? `Se não houver resposta até ${deadline}, o pedido é cancelado e o horário fica livre.`
+          : undefined,
+      });
+
+    case 'recusado':
+      return compose({
+        fromName: fromClientSide,
+        subject: `Pedido não confirmado: ${when.shortDate} às ${when.start}`,
+        brand: shop,
+        heading: row.declined_reason === 'sem_resposta' ? 'Pedido sem resposta' : 'Horário não confirmado',
+        lead:
+          row.declined_reason === 'sem_resposta'
+            ? `A ${shop} não respondeu a tempo, e o pedido foi cancelado. Que tal escolher outro horário?`
+            : sentence(`A ${shop} não pôde confirmar este horário. Escolha outro pelo app`),
+        details,
+        action: ['Escolher outro horário', `${options.appUrl}/${row.tenant_slug}/agendar`],
+        footnote: 'Dúvidas? Responda este e-mail para falar com a barbearia.',
+      });
 
     case 'novo_horario':
       return compose({
@@ -260,6 +325,8 @@ interface Composition {
   lead: string;
   details: Detail[];
   action: [label: string, url: string];
+  /** Segundo botão, discreto ("Recusar" ao lado de "Confirmar"). */
+  secondary?: [label: string, url: string];
   footnote?: string;
 }
 
@@ -307,7 +374,12 @@ function compose(c: Composition): RenderedEmail {
             </tr>
             <tr>
               <td style="padding:24px 32px 0;">
-                <a href="${escapeHtml(c.action[1])}" style="display:inline-block;background:#18181b;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 24px;border-radius:12px;">${escapeHtml(c.action[0])}</a>
+                <a href="${escapeHtml(c.action[1])}" style="display:inline-block;background:#18181b;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 24px;border-radius:12px;">${escapeHtml(c.action[0])}</a>${
+                  c.secondary
+                    ? `
+                <a href="${escapeHtml(c.secondary[1])}" style="display:inline-block;margin-left:8px;background:#ffffff;color:#18181b;text-decoration:none;font-size:15px;font-weight:700;padding:13px 23px;border-radius:12px;border:1px solid #d4d4d8;">${escapeHtml(c.secondary[0])}</a>`
+                    : ''
+                }
               </td>
             </tr>
             <tr>
@@ -329,6 +401,7 @@ function compose(c: Composition): RenderedEmail {
     ...c.details.map(([label, value]) => `${label}: ${value}`),
     '',
     `${c.action[0]}: ${c.action[1]}`,
+    ...(c.secondary ? [`${c.secondary[0]}: ${c.secondary[1]}`] : []),
     ...(c.footnote ? ['', c.footnote] : []),
     '',
     '— Átrio Agenda',

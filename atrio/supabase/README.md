@@ -17,11 +17,14 @@ supabase/
 │   ├── 20261020000300_email_dispatch.sql a cada minuto, chama o envio
 │   ├── 20261020000400_notification_email.sql e-mail para os avisos da barbearia
 │   ├── 20261020000500_plans.sql      planos Solo e Barbearia, e os limites de cada um
-│   └── 20261021000100_notifications.sql avisos do sino do painel
+│   ├── 20261021000100_notifications.sql avisos do sino do painel
+│   ├── 20261021000200_pending_status.sql status "pendente"
+│   └── 20261021000300_booking_confirmation.sql confirmação pelo barbeiro
 ├── functions/enviar-emails/          envia a fila pelo Resend (Edge Function)
+├── functions/responder-agendamento/ botões Confirmar/Recusar do e-mail de pedido
 ├── templates/                        os e-mails de conta (cadastro, senha, troca de e-mail)
 ├── seed.sql                          a Navalha & Co. do modo demonstração
-└── tests/schema.test.mjs             95 testes contra Postgres de verdade
+└── tests/schema.test.mjs             106 testes contra Postgres de verdade
 ```
 
 ## Testar
@@ -167,11 +170,18 @@ cancelado antes de a confirmação sair) é descartado.
    select vault.create_secret('<o segredo do passo 2>', 'emails_secret');
    ```
 
-5. **Publicar a função** (já feito no projeto de teste):
+5. **Publicar as funções** (já feito no projeto de teste):
 
    ```bash
    npx supabase functions deploy enviar-emails --no-verify-jwt --use-api
+   npx supabase functions deploy responder-agendamento --no-verify-jwt --use-api
    ```
+
+   `responder-agendamento` atende os botões **Confirmar** e **Recusar** do
+   e-mail de pedido (barbearia que confirma cada agendamento). O botão leva
+   à página `/responder` do painel (`PAINEL_URL`), que funciona sem login e
+   pede um segundo toque antes de responder; a prova é o token do pedido,
+   de uso único.
 
 Sem os passos 3 e 4 nada quebra: os avisos ficam na fila esperando.
 

@@ -29,6 +29,9 @@ const base: EmailRow = {
   tenant_phone: '(11) 98888-1234',
   tenant_address: { street: 'Rua Augusta', number: '1472', district: 'Consolação', city: 'São Paulo', state: 'SP' },
   time_zone: 'America/Sao_Paulo',
+  respond_by: null,
+  response_token: null,
+  declined_reason: null,
 };
 const options = { appUrl: 'https://atrioagenda.com.br', painelUrl: 'https://painel.atrioagenda.com.br' };
 
@@ -86,6 +89,36 @@ describe('e-mails do agendamento', () => {
 
     const today = render({ ...base, kind: 'lembrete' }, { ...options, now: new Date('2026-10-20T11:00:00Z') });
     assert.match(today.subject, /^Hoje às 15:00/);
+  });
+
+  test('pedido à barbearia: prazo e os dois botões, que levam ao painel com o token', () => {
+    const mail = render(
+      {
+        ...base,
+        kind: 'pedido',
+        recipient: 'barbearia',
+        respond_by: '2026-10-20T16:00:00Z',
+        response_token: 'tok-123',
+      },
+      options,
+    );
+    assert.equal(mail.subject, 'Pedido de horário: Beto Lima · ter, 20/10 às 15:00');
+    assert.match(mail.text, /Responda até ter, 20\/10 às 13:00\./);
+    assert.match(mail.html, /href="https:\/\/painel\.atrioagenda\.com\.br\/responder\?token=tok-123&amp;acao=confirmar"/);
+    assert.match(mail.html, /href="https:\/\/painel\.atrioagenda\.com\.br\/responder\?token=tok-123&amp;acao=recusar"/);
+  });
+
+  test('pedido recebido e recusa, para o cliente', () => {
+    const asked = render({ ...base, kind: 'pedido_recebido', respond_by: '2026-10-20T16:00:00Z' }, options);
+    assert.equal(asked.subject, 'Pedido enviado: ter, 20/10 às 15:00');
+    assert.match(asked.text, /até ter, 20\/10 às 13:00, o pedido é cancelado/);
+
+    const declined = render({ ...base, kind: 'recusado', declined_reason: 'recusado' }, options);
+    assert.equal(declined.subject, 'Pedido não confirmado: ter, 20/10 às 15:00');
+    assert.match(declined.text, /não pôde confirmar/);
+
+    const expired = render({ ...base, kind: 'recusado', declined_reason: 'sem_resposta' }, options);
+    assert.match(expired.text, /não respondeu a tempo/);
   });
 
   test('o que alguém digitou nunca vira HTML', () => {

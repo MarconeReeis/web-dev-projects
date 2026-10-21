@@ -426,3 +426,8 @@ enabled = true
 # segredo `x-atrio-secret` em vez de um JWT. Ver supabase/README.md.
 [functions.enviar-emails]
 verify_jwt = false
+
+# Chamada pela página /responder do painel, sem login: a prova é o token do
+# pedido. Ver supabase/functions/responder-agendamento.
+[functions.responder-agendamento]
+verify_jwt = false
