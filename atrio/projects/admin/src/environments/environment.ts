@@ -24,5 +24,5 @@ export const environment = {
    */
   turnstileSiteKey: '1x00000000000000000000AA' as string | null,
   /** DSN do Sentry (público), para receber os erros. Nulo: desligado. */
-  sentryDsn: null as string | null,
+  sentryDsn: 'https://f01973c003fe7a8e0156bcc7dcbd3687@o4512295610220544.ingest.us.sentry.io/4512295677919232' as string | null,
 };
