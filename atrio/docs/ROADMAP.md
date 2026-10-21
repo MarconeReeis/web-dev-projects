@@ -33,7 +33,7 @@ um painel enxuto, não nenhum.
 | Plano | Para quem | O que tem |
 |---|---|---|
 | **Solo** | 1 profissional | Página de agendamento, agenda simples no celular (dia, folgas, horários), avisos por e-mail para cliente e barbeiro |
-| **Barbearia** | Equipe | Tudo do Solo + painel completo: financeiro, dashboard, vários profissionais, PIN do balcão |
+| **Barbearia** | Equipe | Tudo do Solo + painel completo: financeiro, dashboard, vários profissionais, PIN do balcão e, depois do lançamento, Métricas |
 | **+ WhatsApp** (adicional) | Qualquer plano | Confirmação e lembrete pelo WhatsApp |
 | **Agendamento pelo WhatsApp** (futuro) | Qualquer plano | Marcar pelo WhatsApp, por menu de opções |
 
@@ -193,6 +193,16 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
   evita mensagens desnecessárias. As respostas a quem escreveu primeiro
   costumam não ser cobradas pela Meta (conferir a tabela na hora). Por
   baixo, as mesmas regras de horário do app.
+- **Métricas (plano Barbearia)** — tela nova no painel com o funil do app
+  do cliente: quantos visitaram a página, começaram a agendar, escolheram
+  horário, entraram ou se cadastraram e confirmaram — e em que passo
+  desistem. Com a origem de cada visita (`?origem=instagram`, `whatsapp`,
+  `qrcode` nos links do kit da barbearia), mostra qual canal traz mais
+  agendamento. Gráficos de funil e de evolução no período.
+  Eventos no nosso banco, sem rastreador de terceiros: anônimos, sem nome,
+  e-mail ou telefone, com um identificador de visita aleatório — e citados
+  na política de privacidade. A tabela de eventos cresce rápido: guardar
+  o detalhe por alguns meses e o resumo por dia depois.
 - **"Meus horários" de todas as barbearias** — com a marca Átrio, o cliente
   que usa duas barbearias vê os horários das duas num lugar só.
 - **Marca própria (premium)** — app e endereço com o nome da barbearia, para
