@@ -148,8 +148,8 @@ before(async () => {
   // e uma conta sem nome/telefone (como as criadas pelo painel do Supabase).
   await db.query(
     `insert into auth.users (id, email, raw_user_meta_data) values
-       ($1, 'ana@exemplo.com',  '{"name":"Ana Souza","phone":"(11) 91111-1111"}'),
-       ($2, 'beto@exemplo.com', '{"name":"Beto Lima","phone":"(11) 92222-2222"}'),
+       ($1, 'ana@exemplo.com',  '{"name":"Ana Souza","phone":"(11) 91111-1111","terms_version":"2026-10-21"}'),
+       ($2, 'beto@exemplo.com', '{"name":"Beto Lima","phone":"(11) 92222-2222","terms_version":"2026-10-21"}'),
        ($3, 'equipe@navalha.com', '{}'),
        ($4, 'equipe@outra.com', '{}'),
        ($5, 'semdados@exemplo.com', '{}'),
@@ -219,6 +219,58 @@ describe('conta nova', () => {
       await fails(as(ANA, `update public.profiles set phone = '123' where id = $1`, [ANA])),
       /check constraint/,
     );
+  });
+});
+
+describe('aceite dos termos (LGPD)', () => {
+  const SEM_ACEITE = '00000000-0000-4000-8000-0000000000e1';
+
+  test('o perfil nasce com a versão aceita e a hora do banco', async () => {
+    const { rows } = await db.query(
+      `select terms_version, terms_accepted_at > now() - interval '1 hour' as recente
+         from public.profiles where id = $1`,
+      [ANA],
+    );
+    assert.deepEqual(rows, [{ terms_version: '2026-10-21', recente: true }]);
+  });
+
+  test('cadastro de cliente sem aceite é recusado', async () => {
+    assert.equal(
+      await fails(
+        db.query(
+          `insert into auth.users (id, email, raw_user_meta_data)
+           values ($1, 'semaceite@exemplo.com', '{"name":"Sem Aceite","phone":"(11) 95555-5555"}')`,
+          [SEM_ACEITE],
+        ),
+      ),
+      'termos_nao_aceitos',
+    );
+    const { rows } = await db.query(`select 1 from auth.users where id = $1`, [SEM_ACEITE]);
+    assert.equal(rows.length, 0);
+  });
+
+  test('o cliente não forja versão nem data por update', async () => {
+    assert.match(
+      await fails(as(ANA, `update public.profiles set terms_accepted_at = '2020-01-01' where id = $1`, [ANA])),
+      /permission denied/,
+    );
+    assert.match(
+      await fails(as(ANA, `update public.profiles set terms_version = '2099-01-01' where id = $1`, [ANA])),
+      /permission denied/,
+    );
+  });
+
+  test('accept_terms registra uma versão nova com a hora do banco', async () => {
+    const [{ accept_terms: at }] = await as(ANA, `select public.accept_terms('2027-01-15')`);
+    const { rows } = await db.query(`select terms_version, terms_accepted_at from public.profiles where id = $1`, [ANA]);
+    assert.equal(rows[0].terms_version, '2027-01-15');
+    assert.equal(rows[0].terms_accepted_at.getTime(), at.getTime());
+
+    assert.equal(await fails(as(ANA, `select public.accept_terms('qualquer')`)), 'versao_invalida');
+    assert.equal(await fails(as(STAFF, `select public.accept_terms('2027-01-15')`)), 'sem_perfil');
+    assert.match(await fails(as(null, `select public.accept_terms('2027-01-15')`)), /permission denied/);
+
+    await db.query(`update public.profiles set terms_version = '2026-10-21' where id = $1`, [ANA]);
   });
 });
 
@@ -793,7 +845,7 @@ describe('histórico do balcão ligado à conta', () => {
     const IMPOSTOR = '10000000-0000-4000-8000-000000000008';
     await db.query(
       `insert into auth.users (id, email, raw_user_meta_data)
-       values ($1, 'impostor@exemplo.com', '{"name":"Impostor","phone":"(11) 92222-2222"}')`,
+       values ($1, 'impostor@exemplo.com', '{"name":"Impostor","phone":"(11) 92222-2222","terms_version":"2026-10-21"}')`,
       [IMPOSTOR],
     );
     await book(IMPOSTOR, RAFAEL, BARBA, await nextWeek(5, '16:00'));

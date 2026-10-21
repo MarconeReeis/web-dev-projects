@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { TenantContext } from '@atrio/core';
-import { AtrIcon } from '@atrio/ui';
+import { TERMS_VERSION } from '@atrio/data';
 import { PageHeader } from '../../shared/page-header';
+import { LegalSection, privacyPolicy, termsOfUse } from './legal-texts';
 
 export type LegalDocument = 'privacidade' | 'termos';
 
@@ -12,37 +13,38 @@ const TITLE: Readonly<Record<LegalDocument, string>> = {
 };
 
 /**
- * Política de privacidade e Termos de uso.
+ * Política de privacidade e Termos de uso — os mesmos que a pessoa aceita
+ * ao criar a conta, na versão em vigor (TERMS_VERSION).
  *
- * Os textos ainda não existem — são o item de LGPD do roadmap. Até lá a
- * página diz isso com todas as letras e aponta quem responde dúvidas: um
- * botão que abrisse uma página vazia pareceria app quebrado. Quando os
- * textos chegarem, entram aqui, no lugar do aviso.
+ * Abre do Perfil e, numa aba nova, do cadastro. Na aba nova não há para
+ * onde voltar, então o "voltar" leva à página da barbearia.
  */
 @Component({
   selector: 'bkg-legal-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, AtrIcon],
+  imports: [PageHeader],
   host: { class: 'flex min-h-dvh flex-col bg-background' },
   template: `
     <bkg-page-header [heading]="title()" (back)="back()" />
 
     <main class="mx-auto w-full max-w-2xl flex-1 px-5 pt-4 pb-10">
-      <section class="surface flex flex-col items-center border-transparent px-6 py-8 text-center">
-        <span
-          class="flex size-14 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground"
-          aria-hidden="true"
-        >
-          <atr-icon name="file-text" [size]="26" />
-        </span>
-        <h2 class="mt-4 text-xl font-semibold">Documento em preparação</h2>
-        <p class="mt-2 text-sm text-balance text-muted-foreground">
-          Este documento está sendo finalizado e logo estará disponível aqui.
-          @if (tenant.tenant()?.phone; as phone) {
-            Dúvidas sobre os seus dados? Fale com a {{ tenant.name() }} pelo {{ phone }}.
+      <p class="text-sm text-muted-foreground">Versão de {{ version }}</p>
+
+      @for (section of sections(); track section.title) {
+        <section class="mt-6">
+          <h2 class="text-base font-bold">{{ section.title }}</h2>
+          @for (paragraph of section.paragraphs; track $index) {
+            <p class="mt-2 text-sm leading-relaxed text-muted-foreground">{{ paragraph }}</p>
           }
-        </p>
-      </section>
+          @if (section.items; as items) {
+            <ul class="mt-2 flex list-disc flex-col gap-1.5 pl-5 text-sm leading-relaxed text-muted-foreground">
+              @for (item of items; track $index) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          }
+        </section>
+      }
     </main>
   `,
 })
@@ -51,12 +53,23 @@ export class LegalPage {
   readonly document = input.required<LegalDocument>();
   readonly slug = input<string>('');
 
-  protected readonly tenant = inject(TenantContext);
+  private readonly tenant = inject(TenantContext);
   private readonly router = inject(Router);
 
   protected readonly title = computed(() => TITLE[this.document()]);
 
+  /** 2026-10-21 → 21/10/2026. */
+  protected readonly version = TERMS_VERSION.split('-').reverse().join('/');
+
+  protected readonly sections = computed<readonly LegalSection[]>(() => {
+    const shop = this.tenant.name() || 'barbearia';
+    return this.document() === 'privacidade' ? privacyPolicy(shop) : termsOfUse(shop);
+  });
+
   protected back(): void {
-    void this.router.navigate(['/', this.slug(), 'perfil']);
+    // Veio do Perfil: volta para ele. Abriu sozinha (aba nova do cadastro):
+    // vai para a página da barbearia.
+    const cameFromApp = !!this.router.lastSuccessfulNavigation()?.previousNavigation;
+    void this.router.navigate(cameFromApp ? ['/', this.slug(), 'perfil'] : ['/', this.slug()]);
   }
 }

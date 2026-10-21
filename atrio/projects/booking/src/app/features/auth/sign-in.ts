@@ -8,8 +8,14 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { ATRIO_CONFIG } from '@atrio/core';
-import { ClientAuth, ClientAuthError, DEMO_CLIENT_CREDENTIALS, maskPhoneInput } from '@atrio/data';
+import { ATRIO_CONFIG, TenantContext } from '@atrio/core';
+import {
+  ClientAuth,
+  ClientAuthError,
+  DEMO_CLIENT_CREDENTIALS,
+  TERMS_VERSION,
+  maskPhoneInput,
+} from '@atrio/data';
 import { AtrButton, AtrField, AtrIcon, AtrInput, AtrPasswordInput } from '@atrio/ui';
 
 export type SignInMode = 'entrar' | 'cadastro' | 'recuperar';
@@ -154,6 +160,45 @@ const MIN_PASSWORD = 6;
           />
         }
 
+        <!-- Aceite dos termos (LGPD). Os links abrem em outra aba: sair
+             daqui descartaria as escolhas do agendamento em andamento. -->
+        @if (mode() === 'cadastro') {
+          <div>
+            <label class="flex cursor-pointer items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                class="peer sr-only"
+                [checked]="acceptedTerms()"
+                (change)="acceptedTerms.set($any($event.target).checked)"
+              />
+              <span
+                class="mt-px flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-ring"
+                [class]="
+                  acceptedTerms()
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : showErrors() && termsError()
+                      ? 'border-destructive'
+                      : 'border-input'
+                "
+                aria-hidden="true"
+              >
+                @if (acceptedTerms()) {
+                  <atr-icon name="check" [size]="12" [strokeWidth]="3" />
+                }
+              </span>
+              <span class="text-muted-foreground">
+                Li e aceito os
+                <a class="font-semibold text-primary underline underline-offset-4" [href]="legalUrl('termos')" target="_blank" rel="noopener">Termos de uso</a>
+                e a
+                <a class="font-semibold text-primary underline underline-offset-4" [href]="legalUrl('privacidade')" target="_blank" rel="noopener">Política de privacidade</a>.
+              </span>
+            </label>
+            @if (showErrors() && termsError(); as message) {
+              <p class="mt-1.5 text-sm font-medium text-destructive" role="alert">{{ message }}</p>
+            }
+          </div>
+        }
+
         @if (mode() === 'entrar') {
           <button
             type="button"
@@ -271,6 +316,7 @@ export class SignIn implements OnInit {
   readonly lead = input('Com uma conta você acompanha, reagenda e cancela seus horários.');
 
   protected readonly demoMode = inject(ATRIO_CONFIG).demoMode;
+  private readonly tenant = inject(TenantContext);
 
   protected readonly mode = signal<Mode>('entrar');
 
@@ -292,6 +338,7 @@ export class SignIn implements OnInit {
   }
   protected readonly email = signal('');
   protected readonly password = signal('');
+  protected readonly acceptedTerms = signal(false);
 
   protected readonly busy = signal(false);
   protected readonly showErrors = signal(false);
@@ -369,16 +416,31 @@ export class SignIn implements OnInit {
     return null;
   });
 
+  protected readonly termsError = computed(() =>
+    this.acceptedTerms() ? null : 'Para criar a conta, aceite os termos.',
+  );
+
   private readonly invalid = computed(() => {
     switch (this.mode()) {
       case 'cadastro':
-        return !!(this.nameError() || this.phoneError() || this.emailError() || this.passwordError());
+        return !!(
+          this.nameError() ||
+          this.phoneError() ||
+          this.emailError() ||
+          this.passwordError() ||
+          this.termsError()
+        );
       case 'recuperar':
         return !!this.emailError();
       default:
         return !!(this.emailError() || this.passwordError());
     }
   });
+
+  /** Termos e política da barbearia em que a pessoa está. */
+  protected legalUrl(document: 'termos' | 'privacidade'): string {
+    return `/${this.tenant.tenant()?.slug ?? ''}/${document}`;
+  }
 
   // ─── ações ────────────────────────────────────────────────────────────
 
@@ -411,6 +473,7 @@ export class SignIn implements OnInit {
               phone: this.phone(),
               email: this.email(),
               password: this.password(),
+              termsVersion: TERMS_VERSION,
             });
           } catch (cause) {
             // Com "Confirm email" ligado, a conta nasce sem sessão: não é

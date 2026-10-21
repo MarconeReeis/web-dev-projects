@@ -90,6 +90,8 @@ export class SupabaseClientAuth extends ClientAuth {
         data: {
           name: input.name.trim(),
           phone: formatPhone(input.phone),
+          // Sem ela o banco recusa o cadastro: é a prova do aceite.
+          terms_version: input.termsVersion,
           ...(tenant ? { barbearia: tenant.name } : {}),
         },
         // O link de confirmação volta para esta barbearia, já logado.

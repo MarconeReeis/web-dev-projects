@@ -137,19 +137,25 @@ e recebe.
 ## Fase 2 — Segurança, LGPD e confiabilidade
 
 - [ ] **LGPD** — M + revisão jurídica. Feito em 19/10/2026: **excluir minha
-      conta** no app. Falta: política de privacidade e termos de uso,
-      consentimento no cadastro e o papel do Átrio como operador no contrato
-      com a barbearia.
+      conta** no app. Feito em 21/10/2026: **aceite no cadastro** (caixa
+      obrigatória; o banco recusa conta de cliente sem aceite e guarda versão
+      e data) e **rascunho da Política de privacidade e dos Termos de uso**
+      no app. Falta: revisão por advogado, preencher razão social, CNPJ e o
+      e-mail do encarregado (`legal-texts.ts`), pedir novo aceite quando a
+      versão mudar (`accept_terms` já existe no banco) e o papel do Átrio
+      como operador no contrato com a barbearia.
 - [x] **PIN no balcão** — feito em 19/10/2026. PIN de 4 números por conta
       da equipe, conferido no servidor (5 erros travam por 5 minutos), pedido
       para abrir o Financeiro e para cancelar atendimento, marcar falta,
       remover bloqueio, excluir despesa e desativar profissional ou serviço
       com horários futuros. Vale 5 minutos depois de digitado.
-- [ ] **Proteção contra abuso** — P. Captcha no cadastro (o Supabase aceita
-      Cloudflare Turnstile e hCaptcha) — sem ele, um robô cria mil contas e
-      enche a agenda.
-- [ ] **Monitoramento de erros** — P. Sentry (ou similar) nos dois apps: o
-      erro que a barbearia não relata é o que faz ela cancelar a assinatura.
+- [ ] **Proteção contra abuso** — P. Feito em 21/10/2026 no código:
+      Cloudflare Turnstile invisível em entrar, criar conta, senha e PIN, com
+      a chave de teste. Falta: widget na Cloudflare, ligar o captcha no
+      Supabase e trocar a site key nos environments.
+- [x] **Monitoramento de erros** — feito em 21/10/2026. Sentry nos dois
+      apps (projeto `atrio`, tag `app`), só erros, sem dados pessoais e sem
+      tokens nos endereços; o SDK só carrega com DSN.
 - [ ] **Plano Pro do Supabase** — P. Backup diário e projeto sem pausa por
       inatividade.
 - [ ] **Advisors do Supabase** — P. Rodar os avisos de segurança e

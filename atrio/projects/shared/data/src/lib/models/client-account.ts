@@ -24,11 +24,20 @@ export interface ClientProfileChanges {
   readonly phone: string;
 }
 
+/**
+ * Versão em vigor dos Termos de uso e da Política de privacidade: a data em
+ * que o texto mudou pela última vez. Mudou o texto, muda a data — o banco
+ * guarda qual versão cada conta aceitou (LGPD).
+ */
+export const TERMS_VERSION = '2026-10-21';
+
 export interface NewClientAccount {
   readonly name: string;
   readonly email: string;
   readonly phone: string;
   readonly password: string;
+  /** A versão dos termos que a pessoa aceitou ao marcar a caixa. */
+  readonly termsVersion: string;
 }
 
 /**
