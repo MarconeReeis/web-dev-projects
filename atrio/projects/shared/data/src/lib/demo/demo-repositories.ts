@@ -12,7 +12,7 @@ import {
 import { LinkSuggestion } from '../models/client';
 import { Cents, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
-import { ShopNotification } from '../models/notification';
+import { RequestAnswer, ShopNotification } from '../models/notification';
 import { Professional } from '../models/professional';
 import { BusyInterval, TimeBlock } from '../models/schedule';
 import { Service } from '../models/service';
@@ -26,6 +26,7 @@ import {
   FinanceQuery,
   FinanceRepository,
   NotificationRepository,
+  RequestResponder,
   ProfessionalRepository,
   ServiceRepository,
   StaffAuth,
@@ -114,13 +115,23 @@ export class DemoAppointmentRepository extends AppointmentRepository {
     const account = await firstValueFrom(this.auth.watchSession());
     if (!account) throw new Error('Entre na sua conta para agendar.');
 
-    return this.create({
+    const created = await this.create({
       professionalId: input.professionalId,
       serviceId: input.serviceId,
       startsAt: input.startsAt,
       notes: input.notes,
       client: { clientId: null, name: account.name, phone: account.phone },
     });
+
+    // Barbearia que confirma cada agendamento: pelo app, nasce pedido —
+    // como no banco (private.pend_if_manual), com o mesmo prazo.
+    if (this.store.snapshot().tenant.confirmationMode !== 'manual') return created;
+    const start = new Date(created.startsAt).getTime();
+    const respondBy = new Date(
+      Math.max(start - 2 * 3_600_000, Math.min(start, Date.now() + 30 * 60_000)),
+    ).toISOString();
+    this.store.patchAppointment(created.id, { status: 'pendente', respondBy });
+    return { ...created, status: 'pendente', respondBy };
   }
 
   async create(input: NewAppointment): Promise<Appointment> {
@@ -198,6 +209,20 @@ export class DemoAppointmentRepository extends AppointmentRepository {
 
   async linkCounterHistory(): Promise<number> {
     return 0;
+  }
+
+  async confirm(id: Id): Promise<void> {
+    await this.answer(id, 'agendado');
+  }
+
+  async decline(id: Id): Promise<void> {
+    await this.answer(id, 'cancelado');
+  }
+
+  private async answer(id: Id, status: 'agendado' | 'cancelado'): Promise<void> {
+    const current = this.store.snapshot().appointments.find((a) => a.id === id);
+    if (current?.status !== 'pendente') throw new Error('Este pedido já foi respondido.');
+    this.store.patchAppointment(id, { status, respondBy: null });
   }
 
   async changeStatus(id: Id, status: AppointmentStatus): Promise<void> {
@@ -499,6 +524,25 @@ export class DemoNotificationRepository extends NotificationRepository {
 }
 
 /**
+ * Na demonstração não há e-mail nem token: o link de resposta não existe, e
+ * a página /responder diz que ele é inválido.
+ */
+@Injectable()
+export class DemoRequestResponder extends RequestResponder {
+  async respond(): Promise<RequestAnswer> {
+    return {
+      result: 'invalido',
+      tenantName: null,
+      clientName: null,
+      serviceName: null,
+      professionalName: null,
+      startsAt: null,
+      timeZone: null,
+    };
+  }
+}
+
+/**
  * Liga os repositórios à implementação de demonstração.
  *
  * Trocar por `provideFirebaseData()` depois é mudar esta linha no app.config
@@ -511,6 +555,7 @@ export function provideDemoData(): Provider[] {
     { provide: ServiceRepository, useClass: DemoServiceRepository },
     { provide: FinanceRepository, useClass: DemoFinanceRepository },
     { provide: NotificationRepository, useClass: DemoNotificationRepository },
+    { provide: RequestResponder, useClass: DemoRequestResponder },
     { provide: TimeBlockRepository, useClass: DemoTimeBlockRepository },
     { provide: TenantRepository, useClass: DemoTenantRepository },
     { provide: AvailabilityRepository, useClass: DemoAvailabilityRepository },

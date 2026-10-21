@@ -321,7 +321,9 @@ export class HomePage {
     return (
       this.myAppointments().find(
         (appointment) =>
-          (appointment.status === 'agendado' || appointment.status === 'em_atendimento') &&
+          (appointment.status === 'pendente' ||
+            appointment.status === 'agendado' ||
+            appointment.status === 'em_atendimento') &&
           new Date(appointment.endsAt).getTime() > now,
       ) ?? null
     );

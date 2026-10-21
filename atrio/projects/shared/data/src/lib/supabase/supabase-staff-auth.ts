@@ -14,6 +14,7 @@ import {
   CounterPin,
   FinanceRepository,
   NotificationRepository,
+  RequestResponder,
   ProfessionalRepository,
   ServiceRepository,
   StaffAuth,
@@ -32,6 +33,7 @@ import {
   SupabaseAvailabilityRepository,
   SupabaseFinanceRepository,
   SupabaseNotificationRepository,
+  SupabaseRequestResponder,
   SupabaseProfessionalRepository,
   SupabaseRealtime,
   SupabaseServiceRepository,
@@ -211,6 +213,7 @@ export function provideSupabaseAdminData(
     { provide: TimeBlockRepository, useClass: SupabaseTimeBlockRepository },
     { provide: FinanceRepository, useClass: SupabaseFinanceRepository },
     { provide: NotificationRepository, useClass: SupabaseNotificationRepository },
+    { provide: RequestResponder, useClass: SupabaseRequestResponder },
     { provide: CounterPin, useClass: SupabaseCounterPin },
     SupabaseRealtime,
     // Instancia o tempo real na partida: ninguém o injeta, ele só escuta.

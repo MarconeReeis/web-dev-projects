@@ -26,6 +26,7 @@ import {
   maskPhone,
   maskPhoneInput,
   PLAN_LABEL,
+  ConfirmationMode,
 } from '@atrio/data';
 import {
   AtrAvatar,
@@ -283,6 +284,29 @@ const EMPTY_ADDRESS: Address = {
       </div>
     </atr-card>
 
+    <!-- Confirmação: como o horário pedido pelo app vira agendado. -->
+    <atr-card
+      heading="Confirmação de agendamentos"
+      subheading="O que acontece quando um cliente marca pelo app."
+      class="mt-4"
+    >
+      <div class="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Confirmação de agendamentos">
+        @for (option of confirmationOptions; track option.value) {
+          <button
+            type="button"
+            role="radio"
+            class="rounded-2xl border p-4 text-left transition-colors"
+            [class]="confirmationMode() === option.value ? 'border-primary bg-primary-soft ring-1 ring-primary' : 'border-border bg-card hover:border-primary'"
+            [attr.aria-checked]="confirmationMode() === option.value"
+            (click)="confirmationMode.set(option.value)"
+          >
+            <span class="block text-sm font-bold">{{ option.label }}</span>
+            <span class="mt-1 block text-sm text-muted-foreground">{{ option.description }}</span>
+          </button>
+        }
+      </div>
+    </atr-card>
+
     <!-- Avisos: separado do administrador — quem recebe a agenda nem sempre
          é quem responde pela conta. -->
     <atr-card
@@ -463,6 +487,25 @@ export class SettingsPage {
   protected readonly adminName = signal('');
   protected readonly adminEmail = signal('');
   protected readonly noticeEmail = signal('');
+  protected readonly confirmationMode = signal<ConfirmationMode>('automatica');
+
+  protected readonly confirmationOptions: readonly {
+    value: ConfirmationMode;
+    label: string;
+    description: string;
+  }[] = [
+    {
+      value: 'automatica',
+      label: 'Confirmar na hora',
+      description: 'O cliente marca e o horário já está confirmado.',
+    },
+    {
+      value: 'manual',
+      label: 'Eu confirmo cada agendamento',
+      description:
+        'O horário fica reservado como pedido, e você confirma ou recusa pelo painel ou pelo e-mail. Sem resposta até 2 horas antes, o pedido é recusado sozinho.',
+    },
+  ];
 
   protected readonly highlightTitle = signal('');
   protected readonly highlightSubtitle = signal('');
@@ -504,6 +547,7 @@ export class SettingsPage {
         this.adminName.set(current.admin.name);
         this.adminEmail.set(current.admin.email);
         this.noticeEmail.set(current.admin.noticeEmail ?? '');
+        this.confirmationMode.set(current.confirmationMode);
         this.highlightTitle.set(current.highlight?.title ?? '');
         this.highlightSubtitle.set(current.highlight?.subtitle ?? '');
         this.highlightCta.set(current.highlight?.ctaLabel ?? '');
@@ -651,6 +695,7 @@ export class SettingsPage {
         email: this.adminEmail().trim(),
         noticeEmail: this.noticeEmail().trim().toLowerCase() || null,
       },
+      confirmationMode: this.confirmationMode(),
       highlight,
     };
 
@@ -691,6 +736,7 @@ export class SettingsPage {
       this.adminName(),
       this.adminEmail(),
       this.noticeEmail(),
+      this.confirmationMode(),
       this.highlightTitle(),
       this.highlightSubtitle(),
       this.highlightCta(),

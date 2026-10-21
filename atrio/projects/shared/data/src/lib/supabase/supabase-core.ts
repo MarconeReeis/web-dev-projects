@@ -246,6 +246,7 @@ export interface TenantRow {
   branding: { logoUrl?: string | null; primaryColor?: string | null } | null;
   highlight: { title: string; subtitle: string | null; ctaLabel: string | null; active: boolean } | null;
   time_zone: string;
+  confirmation_mode?: 'automatica' | 'manual';
   created_at: string;
   /** Só no painel: a equipe pode ler; o app do cliente, não. */
   tenant_accounts?: {
@@ -297,7 +298,8 @@ export interface AppointmentRow {
   client_phone: string | null;
   starts_at: string;
   ends_at: string;
-  status: 'agendado' | 'em_atendimento' | 'concluido' | 'cancelado' | 'nao_compareceu';
+  status: 'pendente' | 'agendado' | 'em_atendimento' | 'concluido' | 'cancelado' | 'nao_compareceu';
+  respond_by?: string | null;
   payment_status: 'pendente' | 'pago';
   payment_method: 'pix' | 'dinheiro' | 'cartao' | null;
   paid_at: string | null;

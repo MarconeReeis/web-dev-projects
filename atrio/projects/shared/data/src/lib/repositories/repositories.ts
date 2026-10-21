@@ -8,7 +8,7 @@ import {
 } from '../models/appointment';
 import { LinkSuggestion } from '../models/client';
 import { ClientAccount, ClientProfileChanges, NewClientAccount } from '../models/client-account';
-import { ShopNotification } from '../models/notification';
+import { RequestAction, RequestAnswer, ShopNotification } from '../models/notification';
 import { PinCheck, PinStatus, StaffSession } from '../models/staff';
 import { Cents, DateRange, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
@@ -83,6 +83,12 @@ export abstract class AppointmentRepository {
   /** Cancelamento — pelo cliente, com a regra das 2h; pela equipe, sem. */
   abstract cancel(id: Id): Promise<void>;
 
+  /** A barbearia confirma um pedido: vira agendado e o cliente é avisado. */
+  abstract confirm(id: Id): Promise<void>;
+
+  /** A barbearia recusa um pedido: o horário fica livre e o cliente é avisado. */
+  abstract decline(id: Id): Promise<void>;
+
   /**
    * Registra o pagamento e lança o recebimento no financeiro.
    *
@@ -143,6 +149,14 @@ export abstract class ServiceRepository {
 export interface FinanceQuery {
   readonly range: DateRange;
   readonly professionalId?: Id | null;
+}
+
+/**
+ * Responde um pedido pelo link do e-mail, sem login: a prova é o token do
+ * pedido, de uso único.
+ */
+export abstract class RequestResponder {
+  abstract respond(token: string, action: RequestAction): Promise<RequestAnswer>;
 }
 
 /** Avisos do sino do painel: o que o cliente fez pelo app. */

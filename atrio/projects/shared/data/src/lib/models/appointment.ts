@@ -2,6 +2,8 @@ import { Audited, Cents, Id, IsoDateTime, TenantScoped } from './common';
 import { AppointmentClient } from './client';
 
 export type AppointmentStatus =
+  /** Pedido feito pelo app, esperando a barbearia confirmar (modo manual). */
+  | 'pendente'
   | 'agendado'
   | 'em_atendimento'
   | 'concluido'
@@ -9,6 +11,7 @@ export type AppointmentStatus =
   | 'nao_compareceu';
 
 export const APPOINTMENT_STATUS_LABEL: Readonly<Record<AppointmentStatus, string>> = {
+  pendente: 'Aguardando confirmação',
   agendado: 'Agendado',
   em_atendimento: 'Em atendimento',
   concluido: 'Concluído',
@@ -18,6 +21,9 @@ export const APPOINTMENT_STATUS_LABEL: Readonly<Record<AppointmentStatus, string
 
 /** Status que ainda ocupam o horário na agenda. */
 export const BLOCKING_STATUSES: readonly AppointmentStatus[] = [
+  // O pedido já reserva o horário: ninguém mais pede o mesmo enquanto a
+  // barbearia não responde.
+  'pendente',
   'agendado',
   'em_atendimento',
   'concluido',
@@ -63,6 +69,8 @@ export interface Appointment extends TenantScoped, Audited {
   readonly price: Cents;
 
   readonly status: AppointmentStatus;
+  /** Pedido: até quando a barbearia responde; depois, é recusado sozinho. */
+  readonly respondBy?: IsoDateTime | null;
   readonly payment: AppointmentPayment;
   readonly notes: string | null;
 }

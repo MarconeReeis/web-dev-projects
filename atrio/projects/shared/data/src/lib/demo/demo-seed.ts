@@ -336,6 +336,7 @@ export function buildDemoDataset(now: Date): DemoDataset {
     branding: { logoUrl: null, primaryColor: null },
     subscription: 'trial',
     plan: 'barbearia',
+    confirmationMode: 'automatica',
     timeZone: 'America/Sao_Paulo',
     createdAt: stamp,
   };

@@ -13,12 +13,16 @@ const TITLE: Readonly<Record<ShopNotification['kind'], string>> = {
   novo_horario: 'Novo horário',
   cancelado: 'Cancelou',
   reagendado: 'Remarcou',
+  pedido: 'Pedido para confirmar',
+  sem_resposta: 'Pedido expirou',
 };
 
 const ICON: Readonly<Record<ShopNotification['kind'], AtrioIconName>> = {
   novo_horario: 'calendar-check',
   cancelado: 'calendar-x',
   reagendado: 'calendar-days',
+  pedido: 'clock',
+  sem_resposta: 'calendar-off',
 };
 
 /**

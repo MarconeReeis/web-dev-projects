@@ -21,6 +21,13 @@ export type SubscriptionStatus = 'trial' | 'ativa' | 'inadimplente' | 'cancelada
  */
 export type TenantPlan = 'solo' | 'barbearia';
 
+/**
+ * Como o horário pedido pelo app vira agendado:
+ * - automatica: na hora (o padrão);
+ * - manual: nasce pendente, e a barbearia confirma ou recusa.
+ */
+export type ConfirmationMode = 'automatica' | 'manual';
+
 export const PLAN_LABEL: Readonly<Record<TenantPlan, string>> = {
   solo: 'Solo',
   barbearia: 'Barbearia',
@@ -128,6 +135,7 @@ export interface Tenant {
   readonly branding: Branding;
   readonly subscription: SubscriptionStatus;
   readonly plan: TenantPlan;
+  readonly confirmationMode: ConfirmationMode;
   /** IANA, ex.: "America/Sao_Paulo". O Brasil tem mais de um fuso. */
   readonly timeZone: string;
   readonly createdAt: IsoDateTime;

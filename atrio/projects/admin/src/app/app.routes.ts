@@ -31,6 +31,13 @@ export const routes: Routes = [
       import('./features/auth/new-password-page').then((m) => m.NewPasswordPage),
   },
   {
+    // Botões "Confirmar" e "Recusar" do e-mail de pedido. Sem login: o
+    // barbeiro responde de qualquer aparelho; a prova é o token do pedido.
+    path: 'responder',
+    title: 'Responder pedido · Átrio',
+    loadComponent: () => import('./features/respond/respond-page').then((m) => m.RespondPage),
+  },
+  {
     path: '',
     component: Shell,
     canActivate: [staffOnly],

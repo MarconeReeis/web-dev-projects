@@ -7,6 +7,7 @@ import {
 import { AtrBadge, AtrBadgeTone } from '@atrio/ui';
 
 const STATUS_TONE: Readonly<Record<AppointmentStatus, AtrBadgeTone>> = {
+  pendente: 'warning',
   agendado: 'neutral',
   em_atendimento: 'primary',
   concluido: 'success',

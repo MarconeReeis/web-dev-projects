@@ -217,6 +217,7 @@ export function nextStatusIsAllowed(
   to: AppointmentStatus,
 ): boolean {
   const allowed: Record<AppointmentStatus, readonly AppointmentStatus[]> = {
+    pendente: ['agendado', 'cancelado'],
     agendado: ['em_atendimento', 'cancelado', 'nao_compareceu', 'concluido'],
     em_atendimento: ['concluido', 'cancelado'],
     concluido: [],

@@ -110,7 +110,7 @@ e recebe.
       (`notifications`, mesmas regras dos e-mails à barbearia), chega em
       tempo real, lido é da barbearia; com mais de 60 dias, sai. O "pedido
       para confirmar" entra com a confirmação pelo barbeiro.
-- [ ] **Confirmação pelo barbeiro** — M. Opção da barbearia em
+- [x] **Confirmação pelo barbeiro** — feito em 21/10/2026. Opção da barbearia em
       Configurações: "confirmação automática" (como hoje, o padrão) ou "eu
       confirmo cada agendamento". Na segunda, o horário marcado pelo app
       nasce **pendente** — já reservado, para ninguém mais pegar — e o
@@ -118,7 +118,9 @@ e recebe.
       painel, pelo sino ou **pelos botões do próprio e-mail** (link seguro,
       sem abrir o painel); o cliente recebe a resposta. Sem resposta até um
       prazo (ex.: 2 horas antes), o pedido é recusado sozinho e o cliente,
-      avisado. Lembrete da véspera só para confirmado. Depende do sino.
+      avisado. Lembrete da véspera só para confirmado. Os botões do e-mail
+      levam à página `/responder` do painel (sem login, com um segundo
+      toque: leitores de e-mail abrem links sozinhos).
 - [x] **Fotos no Storage** — feito em 19/10/2026. Foto de profissional e
       logo vão para o bucket `midia`, com envio só pela equipe da barbearia
       e na pasta dela; no banco fica o link.
@@ -244,8 +246,8 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
 3. ~~E-mails de conta, nova senha e cadastro de barbearia~~ — feito.
 4. ~~Decidir a cor e a regra de concorrentes → URL nova e marca Átrio~~ —
    feito.
-5. ~~E-mails do agendamento → planos no banco → sino de notificações~~ →
-   confirmação pelo barbeiro → painel enxuto do Solo.
+5. ~~E-mails do agendamento → planos no banco → sino de notificações →
+   confirmação pelo barbeiro~~ → painel enxuto do Solo.
 6. LGPD, captcha, monitoramento, plano Pro.
 7. Banco de produção, hospedagem, PWA.
 8. Estudo de preços → piloto → cobrança → lançamento.

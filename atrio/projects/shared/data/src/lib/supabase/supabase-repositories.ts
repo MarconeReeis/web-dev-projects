@@ -12,7 +12,7 @@ import {
 import { LinkSuggestion } from '../models/client';
 import { Cents, ClockTime, DateRange, Id, IsoDateTime } from '../models/common';
 import { FinanceEntry, NewExpense } from '../models/finance';
-import { ShopNotification } from '../models/notification';
+import { RequestAction, RequestAnswer, ShopNotification } from '../models/notification';
 import { Professional } from '../models/professional';
 import {
   BusyInterval,
@@ -32,6 +32,7 @@ import {
   FinanceQuery,
   FinanceRepository,
   NotificationRepository,
+  RequestResponder,
   ProfessionalRepository,
   ServiceRepository,
   StaffAuth,
@@ -93,6 +94,7 @@ export class SupabaseTenantRepository extends TenantRepository {
       p_admin_name: tenant.admin.name,
       p_admin_email: tenant.admin.email,
       p_notification_email: tenant.admin.noticeEmail,
+      p_confirmation_mode: tenant.confirmationMode,
     });
     if (error) throw toAppError(error);
     await discardImage(this.client, previous, logoUrl);
@@ -382,6 +384,18 @@ export class SupabaseAppointmentRepository extends AppointmentRepository {
     this.sync.changed();
   }
 
+  async confirm(id: Id): Promise<void> {
+    const { error } = await this.client.rpc('confirm_appointment', { p_id: id });
+    if (error) throw toAppError(error);
+    this.sync.changed();
+  }
+
+  async decline(id: Id): Promise<void> {
+    const { error } = await this.client.rpc('decline_appointment', { p_id: id });
+    if (error) throw toAppError(error);
+    this.sync.changed();
+  }
+
   /** Pela tabela: a RLS exige ser da equipe, e o gatilho barra transição inválida. */
   async changeStatus(id: Id, status: AppointmentStatus): Promise<void> {
     const { data, error } = await this.client
@@ -607,6 +621,40 @@ function toNotification(row: NotificationRow): ShopNotification {
 }
 
 /**
+ * Resposta ao pedido pelo link do e-mail: a Edge Function
+ * responder-agendamento, que confere o token no banco. Funciona sem login.
+ */
+@Injectable()
+export class SupabaseRequestResponder extends RequestResponder {
+  private readonly client = inject(SUPABASE_CLIENT);
+
+  async respond(token: string, action: RequestAction): Promise<RequestAnswer> {
+    const { data, error } = await this.client.functions.invoke('responder-agendamento', {
+      body: { token, acao: action },
+    });
+    if (error) throw new Error('Não foi possível responder agora. Tente de novo em instantes.');
+    const row = data as {
+      result: RequestAnswer['result'];
+      tenant_name?: string | null;
+      client_name?: string | null;
+      service_name?: string | null;
+      professional_name?: string | null;
+      starts_at?: string | null;
+      time_zone?: string | null;
+    };
+    return {
+      result: row.result,
+      tenantName: row.tenant_name ?? null,
+      clientName: row.client_name ?? null,
+      serviceName: row.service_name ?? null,
+      professionalName: row.professional_name ?? null,
+      startsAt: row.starts_at ? iso(row.starts_at) : null,
+      timeZone: row.time_zone ?? null,
+    };
+  }
+}
+
+/**
  * Tempo real do painel: uma mudança em agendamentos, bloqueios ou caixa da
  * barbearia — feita no celular de um cliente, em outro tablet — reconsulta as
  * telas abertas. É o que faz o horário marcado pelo cliente aparecer na
@@ -681,6 +729,7 @@ function toTenant(row: TenantRow): Tenant {
     },
     subscription: account?.subscription ?? 'ativa',
     plan: account?.plan ?? 'barbearia',
+    confirmationMode: row.confirmation_mode ?? 'automatica',
     timeZone: row.time_zone,
     createdAt: iso(row.created_at),
   };
@@ -770,6 +819,7 @@ function toAppointment(row: AppointmentRow): Appointment {
     durationMinutes: row.duration_minutes,
     price: row.price_cents,
     status: row.status,
+    respondBy: row.respond_by ? iso(row.respond_by) : null,
     payment: { status: row.payment_status, method: row.payment_method, paidAt: iso(row.paid_at) },
     notes: row.notes,
     createdAt: iso(row.created_at),

@@ -19,6 +19,7 @@ import {
   formatAddress,
   formatLongDate,
   formatMoney,
+  formatShortDay,
   formatTime,
 } from '@atrio/data';
 import {
@@ -33,7 +34,7 @@ import {
 import { ClientSession } from '../../shared/client-session';
 import { PageHeader } from '../../shared/page-header';
 import { SignIn } from '../auth/sign-in';
-import { CHANGE_LIMIT_HOURS, STATUS_TONE, canChange } from './appointment-rules';
+import { CHANGE_LIMIT_HOURS, STATUS_TONE, canChange, canWithdraw } from './appointment-rules';
 import { ownAppointment } from './own-appointment';
 
 /** Quanto tempo o aviso fica na tela. */
@@ -139,6 +140,34 @@ const TOAST_MS = 3000;
           </dl>
         </div>
 
+        <!-- Pedido: a barbearia ainda vai confirmar. Dá para desistir. -->
+        @if (item.status === 'pendente') {
+          <div
+            class="mt-5 flex items-start gap-3 rounded-2xl bg-warning-soft px-4 py-3.5 text-sm text-warning-soft-foreground"
+            role="status"
+          >
+            <atr-icon name="clock" [size]="18" class="mt-px shrink-0" />
+            <span>
+              A barbearia ainda vai confirmar este horário — você recebe a resposta por e-mail.
+              @if (item.respondBy; as deadline) {
+                Sem resposta até {{ deadlineLabel(deadline) }}, o pedido é cancelado.
+              }
+            </span>
+          </div>
+          @if (withdrawable()) {
+            <button
+              type="button"
+              atrButton="destructive-outline"
+              size="lg"
+              class="mt-3 w-full"
+              [disabled]="busy()"
+              (click)="cancel(item)"
+            >
+              Desistir do pedido
+            </button>
+          }
+        }
+
         @if (item.status === 'agendado') {
           @if (changeable()) {
             <div class="mt-5 flex flex-col gap-2.5">
@@ -237,6 +266,11 @@ export class AppointmentPage {
     return item ? canChange(item) : false;
   });
 
+  protected readonly withdrawable = computed(() => {
+    const item = this.appointment();
+    return item ? canWithdraw(item) : false;
+  });
+
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly toast = signal<string | null>(null);
@@ -263,6 +297,11 @@ export class AppointmentPage {
 
   protected statusLabel(item: Appointment): string {
     return APPOINTMENT_STATUS_LABEL[item.status];
+  }
+
+  /** "qua, 22/10 às 08:00" */
+  protected deadlineLabel(instant: string): string {
+    return `${formatShortDay(instant).toLowerCase()} às ${formatTime(instant)}`;
   }
 
   protected digits(phone: string): string {

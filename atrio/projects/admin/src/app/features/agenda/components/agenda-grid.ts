@@ -58,6 +58,7 @@ export interface GridColumn {
  * "pago".
  *
  * Aqui a intensidade segue a necessidade de atenção:
+ *   pedido          amarelo tracejado, esperando a barbearia confirmar
  *   em atendimento  roxo, o que está acontecendo agora
  *   agendado        branco com borda, o que ainda vai acontecer
  *   concluído       cinza discreto, já resolvido
@@ -65,6 +66,7 @@ export interface GridColumn {
  *   não compareceu  laranja suave
  */
 const BLOCK_STYLE: Readonly<Record<AppointmentStatus, string>> = {
+  pendente: 'border-dashed border-warning bg-warning-soft hover:border-primary',
   agendado: 'border-border bg-card hover:border-primary',
   em_atendimento: 'border-primary bg-primary-soft ring-1 ring-primary',
   concluido: 'border-border bg-secondary',
@@ -73,6 +75,7 @@ const BLOCK_STYLE: Readonly<Record<AppointmentStatus, string>> = {
 };
 
 const TEXT_STYLE: Readonly<Record<AppointmentStatus, string>> = {
+  pendente: 'text-warning-soft-foreground',
   agendado: 'text-foreground',
   em_atendimento: 'text-primary-soft-foreground',
   concluido: 'text-muted-foreground',
@@ -81,6 +84,7 @@ const TEXT_STYLE: Readonly<Record<AppointmentStatus, string>> = {
 };
 
 const STATUS_LABEL: Readonly<Record<AppointmentStatus, string>> = {
+  pendente: 'Pedido',
   agendado: 'Agendado',
   em_atendimento: 'Em atendimento',
   concluido: 'Concluído',

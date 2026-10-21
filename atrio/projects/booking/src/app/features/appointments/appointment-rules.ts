@@ -22,12 +22,19 @@ const AHEAD_DAYS = 120;
 export const CHANGE_LIMIT_HOURS = 2;
 
 export const STATUS_TONE: Readonly<Record<Appointment['status'], AtrBadgeTone>> = {
+  pendente: 'warning',
   agendado: 'primary',
   em_atendimento: 'primary',
   concluido: 'success',
   cancelado: 'destructive',
   nao_compareceu: 'warning',
 };
+
+/** Ainda dá para desistir de um pedido pelo app? Mesma antecedência. */
+export function canWithdraw(appointment: Appointment, now = Date.now()): boolean {
+  if (appointment.status !== 'pendente') return false;
+  return new Date(appointment.startsAt).getTime() > now + CHANGE_LIMIT_HOURS * 3_600_000;
+}
 
 /** Ainda dá para cancelar ou reagendar pelo app? */
 export function canChange(appointment: Appointment, now = Date.now()): boolean {

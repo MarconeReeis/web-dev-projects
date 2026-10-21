@@ -507,15 +507,29 @@ type ProfessionalChoice = Id | typeof ANY | null;
         @case ('pronto') {
           @if (confirmed(); as done) {
             <div class="flex flex-col items-center text-center">
-              <span
-                class="flex size-16 items-center justify-center rounded-full bg-success-soft text-success-soft-foreground"
-              >
-                <atr-icon name="circle-check-big" [size]="30" />
-              </span>
-              <h2 class="mt-5 text-3xl font-extrabold tracking-tight text-balance">
-                Seu horário está marcado!
-              </h2>
-              <p class="mt-2 text-sm text-muted-foreground">{{ waitingLine() }}</p>
+              @if (done.status === 'pendente') {
+                <!-- A barbearia confirma cada agendamento: é um pedido. -->
+                <span
+                  class="flex size-16 items-center justify-center rounded-full bg-warning-soft text-warning-soft-foreground"
+                >
+                  <atr-icon name="clock" [size]="30" />
+                </span>
+                <h2 class="mt-5 text-3xl font-extrabold tracking-tight text-balance">Pedido enviado!</h2>
+                <p class="mt-2 text-sm text-balance text-muted-foreground">
+                  O horário já está reservado para você. A barbearia vai confirmar, e a resposta chega
+                  por e-mail.
+                </p>
+              } @else {
+                <span
+                  class="flex size-16 items-center justify-center rounded-full bg-success-soft text-success-soft-foreground"
+                >
+                  <atr-icon name="circle-check-big" [size]="30" />
+                </span>
+                <h2 class="mt-5 text-3xl font-extrabold tracking-tight text-balance">
+                  Seu horário está marcado!
+                </h2>
+                <p class="mt-2 text-sm text-muted-foreground">{{ waitingLine() }}</p>
+              }
             </div>
 
             <div class="surface mt-8 p-5">

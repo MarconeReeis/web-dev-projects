@@ -17,6 +17,7 @@ import {
   TimeBlockRepository,
   formatLongDate,
   formatMoney,
+  formatShortDay,
   formatTime,
   nextStatusIsAllowed,
   dayOf,
@@ -255,10 +256,35 @@ export interface AppointmentPanelData {
           </div>
         }
 
+        <!-- Pedido: a barbearia confirma cada agendamento feito pelo app. -->
+        @if (appointment.status === 'pendente' && mode() === 'detalhes') {
+          <p
+            class="mt-4 flex items-start gap-3 rounded-2xl bg-warning-soft px-4 py-3.5 text-sm text-warning-soft-foreground"
+            role="status"
+          >
+            <atr-icon name="clock" [size]="18" class="mt-px shrink-0" />
+            <span>
+              Pedido feito pelo app, esperando a sua confirmação.
+              @if (appointment.respondBy; as deadline) {
+                Responda até {{ deadlineLabel(deadline) }} — depois, o pedido é recusado sozinho.
+              }
+            </span>
+          </p>
+        }
+
         <!-- Ações -->
         <div shell-footer class="flex w-full flex-wrap justify-end gap-2">
           @switch (mode()) {
             @case ('detalhes') {
+              @if (appointment.status === 'pendente') {
+                <button type="button" atrButton="destructive-outline" [disabled]="busy()" (click)="decline()">
+                  Recusar
+                </button>
+                <button type="button" atrButton [disabled]="busy()" (click)="confirm()">
+                  <atr-icon name="check" [size]="16" />
+                  Confirmar horário
+                </button>
+              } @else {
               @if (can('cancelado')) {
                 <button type="button" atrButton="ghost" (click)="mode.set('cancelar')">
                   Cancelar
@@ -290,6 +316,7 @@ export interface AppointmentPanelData {
                   <atr-icon name="check" [size]="16" />
                   Finalizar atendimento
                 </button>
+              }
               }
             }
             @case ('reagendar') {
@@ -481,6 +508,22 @@ export class AppointmentPanel {
       if (!(await this.pinGate.ensure(reason))) return;
     }
     await this.run(() => this.appointmentsRepo.changeStatus(this.data.appointmentId, status));
+  }
+
+  /** Confirmar o pedido: vira agendado e o cliente recebe a confirmação. */
+  protected async confirm(): Promise<void> {
+    await this.run(() => this.appointmentsRepo.confirm(this.data.appointmentId));
+  }
+
+  /** Recusar libera o horário — como cancelar, pede o PIN do balcão. */
+  protected async decline(): Promise<void> {
+    if (!(await this.pinGate.ensure('recusar o pedido'))) return;
+    await this.run(() => this.appointmentsRepo.decline(this.data.appointmentId));
+  }
+
+  /** "qua, 22/10 às 08:00" */
+  protected deadlineLabel(instant: string): string {
+    return `${formatShortDay(instant).toLowerCase()} às ${formatTime(instant)}`;
   }
 
   protected async registerPayment(method: PaymentMethod): Promise<void> {
