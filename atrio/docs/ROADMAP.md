@@ -97,9 +97,11 @@ e recebe.
       moldura, a barbearia (logo, nome, saudação) no topo do Início, o app
       instalado como "Átrio Agenda" e a cor do Átrio para todas. Falta a
       foto de capa da barbearia, que ainda não tem onde cadastrar.
-- [ ] **Planos no banco** — M. Plano na assinatura (`tenant_accounts`) e o
-      que cada um libera: o painel completo só no plano Barbearia. A regra
-      vale no banco, não só na tela.
+- [x] **Planos no banco** — feito em 20/10/2026. Plano na conta
+      (`tenant_accounts.plan`), Barbearia por padrão. Solo: 1 profissional
+      ativo, só o dono, caixa sem despesas — recusado no banco. O painel
+      mostra o plano em Configurações e avisa onde o Solo esbarra
+      (Profissionais, Financeiro). Troca: `npm run barbearia:plano`.
 - [ ] **Painel enxuto do plano Solo** — M/G. A agenda do dia no celular,
       folgas e horários de trabalho; reaproveita o painel atual.
 - [x] **Fotos no Storage** — feito em 19/10/2026. Foto de profissional e
@@ -213,7 +215,7 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
 3. ~~E-mails de conta, nova senha e cadastro de barbearia~~ — feito.
 4. ~~Decidir a cor e a regra de concorrentes → URL nova e marca Átrio~~ —
    feito.
-5. ~~E-mails do agendamento~~ → planos no banco → painel enxuto do Solo.
+5. ~~E-mails do agendamento → planos no banco~~ → painel enxuto do Solo.
 6. LGPD, captcha, monitoramento, plano Pro.
 7. Banco de produção, hospedagem, PWA.
 8. Estudo de preços → piloto → cobrança → lançamento.

@@ -25,6 +25,12 @@ export class TenantContext {
   readonly branding = computed(() => this.tenant()?.branding ?? null);
 
   /**
+   * Plano Solo: 1 profissional ativo, sem atendentes, caixa sem despesas.
+   * Antes de a barbearia carregar, falso — nada some da tela por engano.
+   */
+  readonly isSolo = computed(() => this.tenant()?.plan === 'solo');
+
+  /**
    * Assinatura em dia. Quando falso, o app deve degradar para somente
    * leitura — a trava de verdade fica nas regras de segurança do backend,
    * esta é só a camada de interface.

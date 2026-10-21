@@ -37,6 +37,8 @@ import {
   MovementsTable,
 } from './components/movements-table';
 import { PinGate } from '../../shared/pin/pin-gate';
+import { TenantContext } from '@atrio/core';
+import { PlanNotice } from '../../shared/plan-notice';
 
 /**
  * Financeiro.
@@ -64,6 +66,7 @@ import { PinGate } from '../../shared/pin/pin-gate';
     PeriodFilter,
     ProfessionalFilter,
     MovementsTable,
+    PlanNotice,
   ],
   host: { class: 'mx-auto block w-full max-w-[1600px]' },
   template: `
@@ -71,10 +74,12 @@ import { PinGate } from '../../shared/pin/pin-gate';
       heading="Financeiro"
       description="Recebimentos contam pela data do pagamento."
     >
-      <button type="button" atrButton (click)="openExpense(null)">
-        <atr-icon name="plus" [size]="16" />
-        Nova despesa
-      </button>
+      @if (!tenant.isSolo()) {
+        <button type="button" atrButton (click)="openExpense(null)">
+          <atr-icon name="plus" [size]="16" />
+          Nova despesa
+        </button>
+      }
     </atr-page-heading>
 
     <div class="mt-6 flex flex-wrap items-center gap-3">
@@ -84,11 +89,13 @@ import { PinGate } from '../../shared/pin/pin-gate';
         (selectedChange)="period.select($event)"
         (customRequested)="openCustomPeriod()"
       />
-      <adm-professional-filter
-        [professionals]="professionals()"
-        [selected]="professionalId()"
-        (selectedChange)="professionalId.set($event)"
-      />
+      @if (!tenant.isSolo()) {
+        <adm-professional-filter
+          [professionals]="professionals()"
+          [selected]="professionalId()"
+          (selectedChange)="professionalId.set($event)"
+        />
+      }
     </div>
 
     <!-- Indicadores -->
@@ -105,7 +112,7 @@ import { PinGate } from '../../shared/pin/pin-gate';
         icon="clock"
         [hint]="pendingHint()"
       />
-      @if (!professionalId()) {
+      @if (showsShop()) {
         <adm-kpi-card label="Despesas" [value]="money(expenses())" icon="receipt" />
         <adm-kpi-card
           label="Saldo de caixa"
@@ -120,7 +127,7 @@ import { PinGate } from '../../shared/pin/pin-gate';
     <!-- Movimentações -->
     <atr-card class="mt-4" heading="Movimentações" [subheading]="movementsHint()">
       <div card-action class="flex flex-wrap gap-2" role="group" aria-label="Filtrar lançamentos">
-        @for (option of tabs; track option.id) {
+        @for (option of tabs(); track option.id) {
           <button
             type="button"
             class="pill"
@@ -144,6 +151,12 @@ import { PinGate } from '../../shared/pin/pin-gate';
         (expenseRemoved)="removeExpense($event)"
       />
     </atr-card>
+
+    @if (tenant.isSolo()) {
+      <adm-plan-notice class="mt-4">
+        Despesas, saldo de caixa e o caixa por profissional ficam no plano Barbearia.
+      </adm-plan-notice>
+    }
   `,
 })
 export class FinancePage {
@@ -154,7 +167,19 @@ export class FinancePage {
   private readonly pinGate = inject(PinGate);
 
   protected money = formatMoney;
-  protected readonly tabs = MOVEMENT_TABS;
+  protected readonly tenant = inject(TenantContext);
+
+  /**
+   * Plano Solo: o caixa é só o que entrou — sem despesas, sem saldo e sem
+   * filtro por profissional (há um só). O resto é do plano Barbearia, e o
+   * banco recusa despesa nova no Solo.
+   */
+  protected readonly tabs = computed(() =>
+    this.tenant.isSolo() ? MOVEMENT_TABS.filter((tab) => tab.id !== 'despesas') : MOVEMENT_TABS,
+  );
+
+  /** Despesas e saldo: só na visão da loja inteira, e só no plano Barbearia. */
+  protected readonly showsShop = computed(() => !this.professionalId() && !this.tenant.isSolo());
 
   /** O Financeiro abre no mês; a Dashboard, no dia. */
   protected readonly period = new PeriodSelection('mes');
@@ -226,7 +251,7 @@ export class FinancePage {
 
   /** Três colunas quando despesas e saldo somem, quatro na visão da loja. */
   protected readonly gridClass = computed(() =>
-    this.professionalId() ? 'xl:grid-cols-2' : 'xl:grid-cols-4',
+    this.showsShop() ? 'xl:grid-cols-4' : 'xl:grid-cols-2',
   );
 
   // ─── lista ────────────────────────────────────────────────────────────

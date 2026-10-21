@@ -9,6 +9,23 @@ import { Id, IsoDateTime } from './common';
  */
 export type SubscriptionStatus = 'trial' | 'ativa' | 'inadimplente' | 'cancelada';
 
+/**
+ * Plano da assinatura (docs/ROADMAP.md, "Direção do produto").
+ *
+ * - solo: 1 profissional ativo, só a conta do dono, caixa só com o que
+ *   entrou (sem despesas);
+ * - barbearia: sem esses limites.
+ *
+ * Quem impõe os limites é o banco (20261020000500_plans.sql); o painel só
+ * os mostra.
+ */
+export type TenantPlan = 'solo' | 'barbearia';
+
+export const PLAN_LABEL: Readonly<Record<TenantPlan, string>> = {
+  solo: 'Solo',
+  barbearia: 'Barbearia',
+};
+
 export interface Address {
   readonly street: string;
   readonly number: string;
@@ -110,6 +127,7 @@ export interface Tenant {
   readonly highlight: Highlight | null;
   readonly branding: Branding;
   readonly subscription: SubscriptionStatus;
+  readonly plan: TenantPlan;
   /** IANA, ex.: "America/Sao_Paulo". O Brasil tem mais de um fuso. */
   readonly timeZone: string;
   readonly createdAt: IsoDateTime;

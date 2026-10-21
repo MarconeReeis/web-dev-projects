@@ -608,6 +608,7 @@ function toTenant(row: TenantRow): Tenant {
       primaryColor: row.branding?.primaryColor ?? null,
     },
     subscription: account?.subscription ?? 'ativa',
+    plan: account?.plan ?? 'barbearia',
     timeZone: row.time_zone,
     createdAt: iso(row.created_at),
   };

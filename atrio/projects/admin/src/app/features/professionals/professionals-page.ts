@@ -28,6 +28,8 @@ import {
   ProfessionalDialogData,
 } from './components/professional-dialog';
 import { PinGate } from '../../shared/pin/pin-gate';
+import { TenantContext } from '@atrio/core';
+import { PlanNotice } from '../../shared/plan-notice';
 
 /** Janela usada para "o que ainda está por vir". */
 const HORIZON_DAYS = 365;
@@ -54,6 +56,7 @@ const STANDING: readonly Appointment['status'][] = ['agendado', 'em_atendimento'
     AtrCard,
     AtrEmptyState,
     ProfessionalCard,
+    PlanNotice,
   ],
   host: { class: 'mx-auto block w-full max-w-[1600px]' },
   template: `
@@ -61,11 +64,21 @@ const STANDING: readonly Appointment['status'][] = ['agendado', 'em_atendimento'
       heading="Profissionais"
       description="Equipe, serviços realizados e disponibilidade."
     >
-      <button type="button" atrButton (click)="openDialog(null)">
-        <atr-icon name="plus" [size]="16" />
-        Novo profissional
-      </button>
+      @if (!atPlanLimit()) {
+        <button type="button" atrButton (click)="openDialog(null)">
+          <atr-icon name="plus" [size]="16" />
+          Novo profissional
+        </button>
+      }
     </atr-page-heading>
+
+    <!-- Plano Solo com o profissional ativo: o banco recusaria o segundo. -->
+    @if (atPlanLimit()) {
+      <adm-plan-notice class="mt-6">
+        No plano Solo, a barbearia tem 1 profissional ativo. Equipe com vários profissionais e
+        atendentes fica no plano Barbearia.
+      </adm-plan-notice>
+    }
 
     @if (professionals().length === 0) {
       <atr-card class="mt-6">
@@ -112,6 +125,13 @@ export class ProfessionalsPage {
   protected readonly professionals = toSignal(this.professionalsRepo.watchAll(true), {
     initialValue: [] as readonly Professional[],
   });
+
+  private readonly tenant = inject(TenantContext);
+
+  /** Plano Solo e já há um profissional ativo: não cabe outro. */
+  protected readonly atPlanLimit = computed(
+    () => this.tenant.isSolo() && this.professionals().some((p) => p.active),
+  );
 
   protected readonly services = toSignal(this.servicesRepo.watchAll(true), {
     initialValue: [] as readonly Service[],

@@ -25,6 +25,7 @@ import {
   minutesToClock,
   maskPhone,
   maskPhoneInput,
+  PLAN_LABEL,
 } from '@atrio/data';
 import {
   AtrAvatar,
@@ -231,6 +232,29 @@ const EMPTY_ADDRESS: Address = {
       }
     </atr-card>
 
+    <!-- Plano: só leitura. Quem troca é o Átrio (npm run barbearia:plano). -->
+    @if (tenant.tenant(); as current) {
+      <atr-card heading="Plano" class="mt-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-lg font-bold">{{ planLabel[current.plan] }}</span>
+          @if (current.subscription === 'trial') {
+            <span class="rounded-full bg-warning-soft px-2.5 py-0.5 text-xs font-semibold text-warning-soft-foreground">
+              Em teste
+            </span>
+          }
+        </div>
+        <p class="mt-1 text-sm text-muted-foreground">
+          @if (current.plan === 'solo') {
+            1 profissional, painel só do dono e caixa com o que entrou. Equipe, atendentes,
+            despesas e saldo ficam no plano Barbearia.
+          } @else {
+            Profissionais e atendentes sem limite, financeiro completo com despesas e saldo.
+          }
+          Para mudar de plano, fale com o Átrio.
+        </p>
+      </atr-card>
+    }
+
     <!-- Administrador -->
     <atr-card
       heading="Administrador"
@@ -427,6 +451,7 @@ export class SettingsPage {
   }
 
   protected readonly tenant = inject(TenantContext);
+  protected readonly planLabel = PLAN_LABEL;
   protected readonly config = inject(ATRIO_CONFIG);
   protected readonly install = inject(InstallPrompt);
 
