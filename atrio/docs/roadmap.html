@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap do Átrio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F5F9; --surface: #FFFFFF; --ink: #20212B; --muted: #5C5F6E; --border: #E4E4EC;
+    --brand: #6C4DF6; --brand-soft: #EEEAFE; --brand-deep: #4A2BD4;
+    --done: #15803D; --done-soft: #DCFCE7; --doing: #B45309; --doing-soft: #FEF0D7; --todo: #C9CAD6;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15161D; --surface: #20212B; --ink: #F1F1F6; --muted: #9094A6; --border: #2F3140;
+      --brand: #8B73FF; --brand-soft: #2B2550; --brand-deep: #C7BBFF;
+      --done: #4ADE80; --done-soft: #143222; --doing: #FBBF24; --doing-soft: #3A2A0E; --todo: #4A4C5C;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15161D; --surface: #20212B; --ink: #F1F1F6; --muted: #9094A6; --border: #2F3140;
+    --brand: #8B73FF; --brand-soft: #2B2550; --brand-deep: #C7BBFF;
+    --done: #4ADE80; --done-soft: #143222; --doing: #FBBF24; --doing-soft: #3A2A0E; --todo: #4A4C5C;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 Manrope, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .page { max-width: 1080px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1, h2, h3 { font-family: Sora, Manrope, system-ui, sans-serif; letter-spacing: -0.01em; margin: 0; }
+  h1 { font-size: clamp(26px, 4vw, 34px); }
+  h2 { font-size: 20px; }
+  h3 { font-size: 16px; }
+  p { margin: 0; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .eyebrow { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--brand); }
+  code { font: 13px ui-monospace, Consolas, monospace; background: var(--brand-soft); color: var(--brand-deep); padding: 1px 5px; border-radius: 6px; }
+  a { color: inherit; text-decoration: none; }
+
+  .top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-weight: 800; }
+  .logo { width: 32px; height: 32px; border-radius: 10px; background: var(--brand); color: #fff; display: grid; place-items: center; font-family: Sora, sans-serif; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 24px; }
+  .hero { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; }
+  .ring { position: relative; width: 132px; height: 132px; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring-label { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .ring-label strong { font: 700 30px Sora, sans-serif; }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .stat { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; }
+  .stat-feito { background: var(--done-soft); color: var(--done); }
+  .stat-andamento { background: var(--doing-soft); color: var(--doing); }
+  .stat-afazer { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .focus h2 { font-size: 16px; margin-bottom: 12px; }
+  .focus ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .focus a { display: flex; gap: 12px; align-items: flex-start; padding: 10px; border-radius: 14px; }
+  .focus a:hover { background: var(--bg); }
+  .focus strong { display: block; }
+
+  .overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; }
+  .overview a { display: block; padding: 14px 16px; }
+  .overview a:hover { border-color: var(--brand); }
+  .overview .mini { height: 6px; border-radius: 99px; background: var(--border); overflow: hidden; margin-top: 10px; display: flex; }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 32px 0 12px; }
+  .filters button {
+    font: inherit; font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink); cursor: pointer;
+  }
+  .filters button[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+  .phase { margin-top: 16px; }
+  .phase-head { display: flex; justify-content: space-between; gap: 16px; }
+  .phase-head .muted { margin-top: 4px; font-size: 14px; }
+  .phase-score { text-align: right; flex-shrink: 0; }
+  .phase-score strong { display: block; font: 700 24px Sora, sans-serif; }
+  .phase-score span { font-size: 13px; }
+  .bar { display: flex; height: 8px; border-radius: 99px; background: var(--border); overflow: hidden; margin: 16px 0 8px; }
+  .bar-done, .mini .bar-done { background: var(--done); }
+  .bar-doing, .mini .bar-doing { background: var(--doing); }
+
+  .items { list-style: none; margin: 0; padding: 0; }
+  .item { border-top: 1px solid var(--border); }
+  .item:first-child { border-top: 0; }
+  summary { display: flex; align-items: center; gap: 12px; padding: 12px 4px; cursor: pointer; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  .item-title { flex: 1; font-weight: 600; }
+  .item[data-status="feito"] .item-title { color: var(--muted); }
+  .item-details { padding: 0 4px 14px 36px; color: var(--muted); font-size: 14px; }
+  .chips { display: flex; gap: 6px; flex-shrink: 0; }
+  .chip { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--brand-soft); color: var(--brand-deep); }
+  .chip-note { background: var(--doing-soft); color: var(--doing); }
+  .chip-date { background: var(--bg); color: var(--muted); border: 1px solid var(--border); font-weight: 600; }
+
+  .dot { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; }
+  .dot svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .dot-feito { background: var(--done); }
+  .dot-andamento { background: var(--doing-soft); border: 2px solid var(--doing); }
+  .dot-andamento svg { fill: var(--doing); stroke: none; }
+  .dot-afazer { border: 2px solid var(--todo); }
+
+  .hidden { display: none; }
+
+  .section-title { margin: 40px 0 4px; }
+  .timeline { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 0; }
+  .timeline li { display: flex; gap: 14px; position: relative; padding-bottom: 18px; }
+  .timeline li::before { content: ""; position: absolute; left: 10px; top: 24px; bottom: 0; width: 2px; background: var(--border); }
+  .timeline li:last-child::before { display: none; }
+  .timeline li[data-status="feito"] span:last-child { color: var(--muted); }
+
+  .later { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 16px; }
+  .later .card { padding: 18px; border-radius: 20px; }
+  .later p { margin-top: 6px; font-size: 13px; color: var(--muted); }
+
+  footer { margin-top: 40px; font-size: 13px; color: var(--muted); text-align: center; }
+
+  @media (max-width: 720px) {
+    .page { padding-top: 20px; }
+    .card { padding: 18px; border-radius: 20px; }
+    .hero { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+    .stats { justify-content: center; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .phase-head { flex-direction: column; }
+    .phase-score { text-align: left; }
+    .chips .chip-date { display: none; }
+    .item-details { padding-left: 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top">
+    <div>
+      <div class="brand"><span class="logo">Á</span> Átrio</div>
+      <h1>Roadmap até o lançamento</h1>
+    </div>
+    <p class="muted small">Gerado em 22/10/2026, 22:45 a partir de <code>docs/ROADMAP.md</code></p>
+  </div>
+
+  <section class="card hero">
+    <div class="ring">
+      <svg width="132" height="132" viewBox="0 0 132 132" aria-hidden="true">
+        <circle cx="66" cy="66" r="52" fill="none" stroke="var(--border)" stroke-width="14"/>
+        <circle cx="66" cy="66" r="52" fill="none" stroke="var(--brand)" stroke-width="14" stroke-linecap="round"
+          stroke-dasharray="326.7" stroke-dashoffset="124.2"/>
+      </svg>
+      <div class="ring-label"><strong>62%</strong><span class="muted small">concluído</span></div>
+    </div>
+    <div>
+      <p class="eyebrow">Onde estamos</p>
+      <p style="margin-top:6px">O produto está fechado: o cliente marca pelo <code>atrioagenda.com.br/&lt;barbearia&gt;</code>, a barbearia vê em tempo real (tablet ou celular), confirma, atende e recebe, e os dois lados recebem e-mail. A segurança está no código — captcha, monitoramento de erros (Sentry) e aceite dos termos no cadastro. Falta ligar o captcha, a revisão jurídica dos textos e os Advisors; depois, publicar (banco de produção, hospedagem) e a parte comercial.</p>
+      <div class="stats">
+        <span class="stat stat-feito">20 feitos</span>
+        <span class="stat stat-andamento">2 em andamento</span>
+        <span class="stat stat-afazer">12 a fazer</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="overview">
+    <a class="card" href="#fase-0">
+      <p class="eyebrow">Início</p>
+      <h3>Antes de tudo</h3>
+      <p class="muted small">100% · 2/2</p>
+      <div class="mini"><span class="bar-done" style="width:100%"></span><span class="bar-doing" style="width:0%"></span></div>
+    </a>
+    <a class="card" href="#fase-1">
+      <p class="eyebrow">Fase 1</p>
+      <h3>Fechar o produto</h3>
+      <p class="muted small">100% · 14/14</p>
+      <div class="mini"><span class="bar-done" style="width:100%"></span><span class="bar-doing" style="width:0%"></span></div>
+    </a>
+    <a class="card" href="#fase-2">
+      <p class="eyebrow">Fase 2</p>
+      <h3>Segurança, LGPD e confiabilidade</h3>
+      <p class="muted small">60% · 2/5</p>
+      <div class="mini"><span class="bar-done" style="width:40%"></span><span class="bar-doing" style="width:40%"></span></div>
+    </a>
+    <a class="card" href="#fase-3">
+      <p class="eyebrow">Fase 3</p>
+      <h3>Publicação</h3>
+      <p class="muted small">29% · 2/7</p>
+      <div class="mini"><span class="bar-done" style="width:28.57142857142857%"></span><span class="bar-doing" style="width:0%"></span></div>
+    </a>
+    <a class="card" href="#fase-4">
+      <p class="eyebrow">Fase 4</p>
+      <h3>Comercial</h3>
+      <p class="muted small">0% · 0/6</p>
+      <div class="mini"><span class="bar-done" style="width:0%"></span><span class="bar-doing" style="width:0%"></span></div>
+    </a>
+  </div>
+
+  <div class="grid-2">
+    <section class="card focus">
+      <h2>Em andamento</h2>
+      <ul>
+          <li>
+            <a href="#fase-2">
+              <span class="dot dot-andamento" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/></svg></span>
+              <span>
+                <strong>LGPD</strong>
+                <span class="muted small">Fase 2 · Segurança, LGPD e confiabilidade · Médio</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a href="#fase-2">
+              <span class="dot dot-andamento" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/></svg></span>
+              <span>
+                <strong>Proteção contra abuso</strong>
+                <span class="muted small">Fase 2 · Segurança, LGPD e confiabilidade · Pequeno</span>
+              </span>
+            </a>
+          </li>
+        </ul>
+    </section>
+    <section class="card focus">
+      <h2>A seguir</h2>
+      <ul>
+          <li>
+            <a href="#fase-2">
+              <span class="dot dot-afazer" aria-hidden="true"></span>
+              <span>
+                <strong>Advisors do Supabase</strong>
+                <span class="muted small">Fase 2 · Segurança, LGPD e confiabilidade · Pequeno</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a href="#fase-3">
+              <span class="dot dot-afazer" aria-hidden="true"></span>
+              <span>
+                <strong>Banco de produção</strong>
+                <span class="muted small">Fase 3 · Publicação · Pequeno</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a href="#fase-3">
+              <span class="dot dot-afazer" aria-hidden="true"></span>
+              <span>
+                <strong>Plano Pro do Supabase</strong>
+                <span class="muted small">Fase 3 · Publicação · Pequeno</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a href="#fase-3">
+              <span class="dot dot-afazer" aria-hidden="true"></span>
+              <span>
+                <strong>Hospedagem e domínio</strong>
+                <span class="muted small">Fase 3 · Publicação · Médio</span>
+              </span>
+            </a>
+          </li>
+        </ul>
+    </section>
+  </div>
+
+  <div class="filters" role="group" aria-label="Filtrar itens">
+    <button type="button" data-filter="todos" aria-pressed="true">Todos</button>
+    <button type="button" data-filter="andamento" aria-pressed="false">Em andamento</button>
+    <button type="button" data-filter="afazer" aria-pressed="false">A fazer</button>
+    <button type="button" data-filter="feito" aria-pressed="false">Feitos</button>
+  </div>
+
+    <section class="card phase" id="fase-0">
+      <header class="phase-head">
+        <div>
+          <p class="eyebrow">Início</p>
+          <h2>Antes de tudo</h2>
+          
+        </div>
+        <div class="phase-score">
+          <strong>100%</strong>
+          <span class="muted">2 de 2 feitos</span>
+        </div>
+      </header>
+      <div class="bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da Início">
+        <span class="bar-done" style="width:100%"></span>
+        <span class="bar-doing" style="width:0%"></span>
+      </div>
+      <ul class="items">
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Enviar o código para o GitHub</span>
+              <span class="chips"><span class="chip chip-date">19/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 19/10/2026.</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Região e ambientes</span>
+              <span class="chips"><span class="chip chip-date">19/10/2026</span></span>
+            </summary>
+            <p class="item-details">decidido em 19/10/2026. O projeto atual, na Virgínia, vira o de <strong>desenvolvimento</strong>: dados fictícios, pode quebrar, latência não importa. O de <strong>produção</strong> nasce em <strong>São Paulo</strong>, vazio, na hora de publicar (fase 3) — sem migração nenhuma. As migrações vão sempre para os dois; o seed, só para o de desenvolvimento.</p>
+          </details>
+        </li>
+      </ul>
+    </section>
+
+    <section class="card phase" id="fase-1">
+      <header class="phase-head">
+        <div>
+          <p class="eyebrow">Fase 1</p>
+          <h2>Fechar o produto</h2>
+          <p class="muted">O que impede o fluxo de ponta a ponta: cliente marca → barbearia vê, atende e recebe.</p>
+        </div>
+        <div class="phase-score">
+          <strong>100%</strong>
+          <span class="muted">14 de 14 feitos</span>
+        </div>
+      </header>
+      <div class="bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da Fase 1">
+        <span class="bar-done" style="width:100%"></span>
+        <span class="bar-doing" style="width:0%"></span>
+      </div>
+      <ul class="items">
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Login da equipe</span>
+              <span class="chips"><span class="chip chip-date">19/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 19/10/2026. Tela de entrar, sessão no tablet, &quot;Sair&quot;, rotas protegidas e a barbearia vinda do vínculo em <code>tenant_members</code>. Falta só a tela de equipe (convidar e remover pessoas): por enquanto a conta é criada no Supabase — ver <code>supabase/README.md</code>.</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Painel no banco</span>
+              <span class="chips"><span class="chip chip-date">19/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 19/10/2026. Agenda em tempo real, marcar no balcão, status, pagamento, profissionais, serviços, bloqueios, financeiro e configurações. As escritas que tocam várias tabelas viraram funções do banco (uma transação cada).</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Cadastrar uma barbearia sem SQL</span>
+              <span class="chips"><span class="chip chip-date">19/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 19/10/2026: <code>npm run barbearia:nova</code> (ver <code>supabase/README.md</code>). Cadastro self-service, pela própria barbearia, fica para depois.</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Tela de nova senha</span>
+              <span class="chips"><span class="chip chip-date">19/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 19/10/2026, nos dois apps. O link do e-mail leva a &quot;Crie uma senha nova&quot;; link vencido oferece pedir outro. Depende das Redirect URLs no Supabase (<code>supabase/README.md</code>).</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">E-mails de conta</span>
+              <span class="chips"><span class="chip chip-date">20/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 20/10/2026 no banco de desenvolvimento. Domínio <code>atrioagenda.com.br</code> na Cloudflare, envio pelo Resend (verificado), SMTP no Supabase, modelos em português com o nome da barbearia e &quot;Confirm email&quot; ligado; o cadastro mostra &quot;Confirme seu e-mail&quot; com reenviar. No banco de produção, repetir SMTP e modelos — passo a passo em <code>supabase/README.md</code>, &quot;E-mails&quot;.</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">E-mails do agendamento</span>
+              <span class="chips"><span class="chip chip-date">20/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 20/10/2026: confirmação para o cliente, aviso de novo horário, cancelamento e remarcação para o outro lado, e lembrete na véspera. Fila no banco (gatilho), envio por Edge Function + Resend a cada minuto (pg_cron). Configurar chave e segredo em cada projeto — <code>supabase/README.md</code>, &quot;E-mails do agendamento&quot;.</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">URL <code>atrioagenda.com.br/&lt;barbearia&gt;</code></span>
+              <span class="chips"><span class="chip chip-date">20/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 20/10/2026. Sem o <code>/b/</code>; endereços reservados pelo Átrio recusados no banco; links antigos redirecionam com o resto do caminho.</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Marca Átrio no topo</span>
+              <span class="chips"><span class="chip chip-date">20/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 20/10/2026. &quot;Átrio Agenda&quot; na moldura, a barbearia (logo, nome, saudação) no topo do Início, o app instalado como &quot;Átrio Agenda&quot; e a cor do Átrio para todas. Falta a foto de capa da barbearia, que ainda não tem onde cadastrar.</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Planos no banco</span>
+              <span class="chips"><span class="chip chip-date">20/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 20/10/2026. Plano na conta (<code>tenant_accounts.plan</code>), Barbearia por padrão. Solo: 1 profissional ativo, só o dono, caixa sem despesas — recusado no banco. O painel mostra o plano em Configurações e avisa onde o Solo esbarra (Profissionais, Financeiro). Troca: <code>npm run barbearia:plano</code>.</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Painel de celular</span>
+              <span class="chips"><span class="chip chip-date">21/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 21/10/2026, para os dois planos em tela de celular (o tablet continua igual). Barra inferior com quatro abas: <strong>Hoje</strong> (pedidos para confirmar no topo e o dia em lista), <strong>Agenda</strong> (um dia de cada vez), <strong>Horários</strong> (jornada, folgas e bloqueios) e <strong>Mais</strong> (serviços, caixa, resumo, configurações e o link da página da barbearia). Tocar num atendimento abre o mesmo painel de detalhes do tablet.</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Notificações no painel (sino)</span>
+              <span class="chips"><span class="chip chip-date">21/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 21/10/2026. Sino no topo com o número de não lidas; cada aviso (novo horário, cancelou, remarcou) abre o atendimento na agenda e fica lido. Nasce no banco (<code>notifications</code>, mesmas regras dos e-mails à barbearia), chega em tempo real, lido é da barbearia; com mais de 60 dias, sai. O &quot;pedido para confirmar&quot; entra com a confirmação pelo barbeiro.</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Confirmação pelo barbeiro</span>
+              <span class="chips"><span class="chip chip-date">21/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 21/10/2026. Opção da barbearia em Configurações: &quot;confirmação automática&quot; (como hoje, o padrão) ou &quot;eu confirmo cada agendamento&quot;. Na segunda, o horário marcado pelo app nasce <strong>pendente</strong> — já reservado, para ninguém mais pegar — e o cliente recebe &quot;pedido recebido&quot;. O barbeiro confirma ou recusa pelo painel, pelo sino ou <strong>pelos botões do próprio e-mail</strong> (link seguro, sem abrir o painel); o cliente recebe a resposta. Sem resposta até um prazo (ex.: 2 horas antes), o pedido é recusado sozinho e o cliente, avisado. Lembrete da véspera só para confirmado. Os botões do e-mail levam à página <code>/responder</code> do painel (sem login, com um segundo toque: leitores de e-mail abrem links sozinhos).</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Fotos no Storage</span>
+              <span class="chips"><span class="chip chip-date">19/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 19/10/2026. Foto de profissional e logo vão para o bucket <code>midia</code>, com envio só pela equipe da barbearia e na pasta dela; no banco fica o link.</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Ligar a ficha do balcão à conta do cliente</span>
+              <span class="chips"><span class="chip chip-date">19/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 19/10/2026. No painel do atendimento, a equipe confirma &quot;é a mesma pessoa&quot;; o histórico do balcão passa a aparecer no app e os próximos já nascem ligados.</p>
+          </details>
+        </li>
+      </ul>
+    </section>
+
+    <section class="card phase" id="fase-2">
+      <header class="phase-head">
+        <div>
+          <p class="eyebrow">Fase 2</p>
+          <h2>Segurança, LGPD e confiabilidade</h2>
+          
+        </div>
+        <div class="phase-score">
+          <strong>60%</strong>
+          <span class="muted">2 de 5 feitos</span>
+        </div>
+      </header>
+      <div class="bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da Fase 2">
+        <span class="bar-done" style="width:40%"></span>
+        <span class="bar-doing" style="width:40%"></span>
+      </div>
+      <ul class="items">
+        <li class="item" data-status="andamento">
+          <details open>
+            <summary>
+              <span class="dot dot-andamento" role="img" aria-label="Em andamento"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/></svg></span>
+              <span class="item-title">LGPD</span>
+              <span class="chips"><span class="chip" title="Médio">M</span><span class="chip chip-note">+ revisão jurídica</span></span>
+            </summary>
+            <p class="item-details">Feito em 19/10/2026: <strong>excluir minha conta</strong> no app. Feito em 21/10/2026: <strong>aceite no cadastro</strong> (caixa obrigatória; o banco recusa conta de cliente sem aceite e guarda versão e data) e <strong>rascunho da Política de privacidade e dos Termos de uso</strong> no app. Falta: revisão por advogado, preencher razão social, CNPJ e o e-mail do encarregado (<code>legal-texts.ts</code>), pedir novo aceite quando a versão mudar (<code>accept_terms</code> já existe no banco) e o papel do Átrio como operador no contrato com a barbearia.</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">PIN no balcão</span>
+              <span class="chips"><span class="chip chip-date">19/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 19/10/2026. PIN de 4 números por conta da equipe, conferido no servidor (5 erros travam por 5 minutos), pedido para abrir o Financeiro e para cancelar atendimento, marcar falta, remover bloqueio, excluir despesa e desativar profissional ou serviço com horários futuros. Vale 5 minutos depois de digitado.</p>
+          </details>
+        </li>
+        <li class="item" data-status="andamento">
+          <details open>
+            <summary>
+              <span class="dot dot-andamento" role="img" aria-label="Em andamento"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/></svg></span>
+              <span class="item-title">Proteção contra abuso</span>
+              <span class="chips"><span class="chip" title="Pequeno">P</span></span>
+            </summary>
+            <p class="item-details">Feito em 21/10/2026 no código: Cloudflare Turnstile invisível em entrar, criar conta, senha e PIN, com a chave de teste. Falta: widget na Cloudflare, ligar o captcha no Supabase e trocar a site key nos environments.</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Monitoramento de erros</span>
+              <span class="chips"><span class="chip chip-date">21/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 21/10/2026. Sentry nos dois apps (projeto <code>atrio</code>, tag <code>app</code>), só erros, sem dados pessoais e sem tokens nos endereços; o SDK só carrega com DSN.</p>
+          </details>
+        </li>
+        <li class="item" data-status="afazer">
+          <details>
+            <summary>
+              <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+              <span class="item-title">Advisors do Supabase</span>
+              <span class="chips"><span class="chip" title="Pequeno">P</span></span>
+            </summary>
+            <p class="item-details">Rodar os avisos de segurança e desempenho do painel e corrigir o que aparecer.</p>
+          </details>
+        </li>
+      </ul>
+    </section>
+
+    <section class="card phase" id="fase-3">
+      <header class="phase-head">
+        <div>
+          <p class="eyebrow">Fase 3</p>
+          <h2>Publicação</h2>
+          
+        </div>
+        <div class="phase-score">
+          <strong>29%</strong>
+          <span class="muted">2 de 7 feitos</span>
+        </div>
+      </header>
+      <div class="bar" role="progressbar" aria-valuenow="29" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da Fase 3">
+        <span class="bar-done" style="width:28.57142857142857%"></span>
+        <span class="bar-doing" style="width:0%"></span>
+      </div>
+      <ul class="items">
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Integração contínua</span>
+              <span class="chips"><span class="chip chip-date">19/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 19/10/2026: GitHub Actions roda os testes do banco, da camada de dados e os builds de produção a cada push que toca <code>atrio/</code>. Falta, com o banco de produção: aplicar migrações a partir da <code>main</code>.</p>
+          </details>
+        </li>
+        <li class="item" data-status="afazer">
+          <details>
+            <summary>
+              <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+              <span class="item-title">Banco de produção</span>
+              <span class="chips"><span class="chip" title="Pequeno">P</span></span>
+            </summary>
+            <p class="item-details">Criar o projeto em São Paulo, aplicar as migrações (sem o seed) e um <code>environment.prod.ts</code> em cada app apontando para ele.</p>
+          </details>
+        </li>
+        <li class="item" data-status="afazer">
+          <details>
+            <summary>
+              <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+              <span class="item-title">Plano Pro do Supabase</span>
+              <span class="chips"><span class="chip" title="Pequeno">P</span></span>
+            </summary>
+            <p class="item-details">No projeto de produção: backup diário e projeto sem pausa por inatividade.</p>
+          </details>
+        </li>
+        <li class="item" data-status="afazer">
+          <details>
+            <summary>
+              <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+              <span class="item-title">Hospedagem e domínio</span>
+              <span class="chips"><span class="chip" title="Médio">M</span></span>
+            </summary>
+            <p class="item-details">Os dois apps publicados com HTTPS (Cloudflare Pages, já com o domínio lá), o app do cliente em <code>atrioagenda.com.br/&lt;barbearia&gt;</code> e o painel num endereço próprio.</p>
+          </details>
+        </li>
+        <li class="item" data-status="afazer">
+          <details>
+            <summary>
+              <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+              <span class="item-title">PWA de verdade</span>
+              <span class="chips"><span class="chip" title="Pequeno">P</span></span>
+            </summary>
+            <p class="item-details">Testar a instalação em Android e iPhone com o app publicado (HTTPS).</p>
+          </details>
+        </li>
+        <li class="item" data-status="feito">
+          <details>
+            <summary>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="item-title">Fuso da barbearia</span>
+              <span class="chips"><span class="chip chip-date">19/10/2026</span></span>
+            </summary>
+            <p class="item-details">feito em 19/10/2026. O app calcula e mostra tudo no fuso da barbearia (<code>tenants.time_zone</code>), como o banco: horários livres, agenda, &quot;hoje&quot;, períodos do Financeiro e da Dashboard. Um cliente com o celular em outro fuso vê os horários da barbearia.</p>
+          </details>
+        </li>
+        <li class="item" data-status="afazer">
+          <details>
+            <summary>
+              <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+              <span class="item-title">Agenda sem internet no tablet</span>
+              <span class="chips"><span class="chip" title="Médio">M</span></span>
+            </summary>
+            <p class="item-details">Guardar a última agenda carregada para consulta quando a internet cair (confirmar continua exigindo conexão).</p>
+          </details>
+        </li>
+      </ul>
+    </section>
+
+    <section class="card phase" id="fase-4">
+      <header class="phase-head">
+        <div>
+          <p class="eyebrow">Fase 4</p>
+          <h2>Comercial</h2>
+          
+        </div>
+        <div class="phase-score">
+          <strong>0%</strong>
+          <span class="muted">0 de 6 feitos</span>
+        </div>
+      </header>
+      <div class="bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da Fase 4">
+        <span class="bar-done" style="width:0%"></span>
+        <span class="bar-doing" style="width:0%"></span>
+      </div>
+      <ul class="items">
+        <li class="item" data-status="afazer">
+          <details>
+            <summary>
+              <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+              <span class="item-title">Piloto</span>
+              <span class="chips"></span>
+            </summary>
+            <p class="item-details">2 a 4 semanas com uma barbearia real, antes de vender para a segunda. É onde aparece o que nenhum teste mostra.</p>
+          </details>
+        </li>
+        <li class="item" data-status="afazer">
+          <details>
+            <summary>
+              <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+              <span class="item-title">Cobrança da assinatura</span>
+              <span class="chips"><span class="chip" title="Grande">G</span></span>
+            </summary>
+            <p class="item-details">(automática) ou P (manual no piloto). Provedor (Asaas, Mercado Pago, Stripe…), status da assinatura no banco e o painel em modo leitura para inadimplente — o campo já existe.</p>
+          </details>
+        </li>
+        <li class="item" data-status="afazer">
+          <details>
+            <summary>
+              <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+              <span class="item-title">Kit da barbearia</span>
+              <span class="chips"><span class="chip" title="Pequeno">P</span></span>
+            </summary>
+            <p class="item-details">Link e QR code para divulgar o agendamento no balcão, no Instagram e no WhatsApp.</p>
+          </details>
+        </li>
+        <li class="item" data-status="afazer">
+          <details>
+            <summary>
+              <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+              <span class="item-title">Estudo de preços</span>
+              <span class="chips"><span class="chip" title="Pequeno">P</span></span>
+            </summary>
+            <p class="item-details">Valores dos planos Solo e Barbearia e do adicional de WhatsApp, olhando o mercado e o custo de cada um (o WhatsApp oficial cobra por mensagem). Validar no piloto: mostrar os planos a barbearias pequenas e grandes e ver qual escolhem e quanto aceitam pagar.</p>
+          </details>
+        </li>
+        <li class="item" data-status="afazer">
+          <details>
+            <summary>
+              <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+              <span class="item-title">Página do Átrio e preço</span>
+              <span class="chips"><span class="chip" title="Médio">M</span></span>
+            </summary>
+            <p class="item-details">Onde a barbearia conhece o produto e assina.</p>
+          </details>
+        </li>
+        <li class="item" data-status="afazer">
+          <details>
+            <summary>
+              <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+              <span class="item-title">Canal de suporte</span>
+              <span class="chips"><span class="chip" title="Pequeno">P</span></span>
+            </summary>
+            <p class="item-details">WhatsApp ou e-mail, com quem responde e em quanto tempo.</p>
+          </details>
+        </li>
+      </ul>
+    </section>
+
+  <h2 class="section-title">Ordem sugerida</h2>
+  <ol class="timeline">
+    <li data-status="feito">
+      <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <span>Código no GitHub, região e ambientes</span>
+    </li>
+    <li data-status="feito">
+      <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <span>Login da equipe → painel no banco</span>
+    </li>
+    <li data-status="feito">
+      <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <span>E-mails de conta, nova senha e cadastro de barbearia</span>
+    </li>
+    <li data-status="feito">
+      <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <span>Decidir a cor e a regra de concorrentes → URL nova e marca Átrio</span>
+    </li>
+    <li data-status="feito">
+      <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <span>E-mails do agendamento → planos no banco → sino de notificações → confirmação pelo barbeiro → painel de celular</span>
+    </li>
+    <li data-status="andamento">
+      <span class="dot dot-andamento" role="img" aria-label="Em andamento"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/></svg></span>
+      <span>Segurança: <s>monitoramento</s> feito; LGPD e captcha prontos no código (faltam revisão jurídica e as chaves); Advisors.</span>
+    </li>
+    <li data-status="afazer">
+      <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+      <span>Banco de produção (com o plano Pro), hospedagem, PWA.</span>
+    </li>
+    <li data-status="afazer">
+      <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+      <span>Estudo de preços → piloto → cobrança → lançamento.</span>
+    </li>
+  </ol>
+
+  <h2 class="section-title">Depois do lançamento</h2>
+  <p class="muted">Pedidos previsíveis, já considerados no modelo.</p>
+  <div class="later">
+    <article class="card">
+      <h3>Notificação no celular (push)</h3>
+      <p>avisos do sino mesmo com o app fechado, para o barbeiro que não fica olhando o painel (plano Solo). No iPhone, só com o app instalado na tela inicial. Mesmo problema que o WhatsApp resolve por outro canal.</p>
+    </article>
+    <article class="card">
+      <h3>WhatsApp oficial (adicional)</h3>
+      <p>confirmação e lembrete pela API oficial da Meta (WhatsApp Business Platform). Só a oficial: as bibliotecas &quot;não oficiais&quot; violam os termos e derrubam o número. Exige verificar a empresa na Meta e aprovar cada modelo de mensagem; cada lembrete é cobrado por mensagem. É o que mais reduz falta.</p>
+    </article>
+    <article class="card">
+      <h3>Agendamento pelo WhatsApp, por menu</h3>
+      <p>o cliente escolhe por opções, sem texto livre: &quot;1 — Agendar com um profissional&quot;, depois a lista de profissionais, de serviços, de dias e de horários. O WhatsApp tem mensagens interativas para isso (botões de resposta e listas de opções), e menu não precisa entender frase: é mais simples de fazer, não erra e evita mensagens desnecessárias. As respostas a quem escreveu primeiro costumam não ser cobradas pela Meta (conferir a tabela na hora). Por baixo, as mesmas regras de horário do app.</p>
+    </article>
+    <article class="card">
+      <h3>Métricas (plano Barbearia)</h3>
+      <p>tela nova no painel com o funil do app do cliente: quantos visitaram a página, começaram a agendar, escolheram horário, entraram ou se cadastraram e confirmaram — e em que passo desistem. Com a origem de cada visita (<code>?origem=instagram</code>, <code>whatsapp</code>, <code>qrcode</code> nos links do kit da barbearia), mostra qual canal traz mais agendamento. Gráficos de funil e de evolução no período. Eventos no nosso banco, sem rastreador de terceiros: anônimos, sem nome, e-mail ou telefone, com um identificador de visita aleatório — e citados na política de privacidade. A tabela de eventos cresce rápido: guardar o detalhe por alguns meses e o resumo por dia depois.</p>
+    </article>
+    <article class="card">
+      <h3>&quot;Meus horários&quot; de todas as barbearias</h3>
+      <p>com a marca Átrio, o cliente que usa duas barbearias vê os horários das duas num lugar só.</p>
+    </article>
+    <article class="card">
+      <h3>Marca própria (premium)</h3>
+      <p>app e endereço com o nome da barbearia, para quem quiser: o antigo &quot;app instalado com o nome da barbearia&quot; e o subdomínio por barbearia viram esta oferta.</p>
+    </article>
+    <article class="card">
+      <h3>Login com Google</h3>
+      <p>o botão já está na tela. Falta o cliente OAuth no Google Cloud, o provedor no Supabase e guardar as escolhas do agendamento durante o redirecionamento.</p>
+    </article>
+    <article class="card">
+      <h3>Tela de equipe</h3>
+      <p>convidar e remover pessoas pelo painel (hoje a conta da equipe é criada no Supabase).</p>
+    </article>
+    <article class="card">
+      <h3>Foto de capa da barbearia</h3>
+      <p>no topo do Início; falta onde cadastrar.</p>
+    </article>
+    <article class="card">
+      <h3>Comissão por profissional</h3>
+      <p>vai ser pedida no primeiro mês; o atendimento já guarda profissional e preço.</p>
+    </article>
+    <article class="card">
+      <h3>Fechamento de caixa</h3>
+      <p>do dia.</p>
+    </article>
+    <article class="card">
+      <h3>Código do agendamento</h3>
+      <p>com busca no painel.</p>
+    </article>
+    <article class="card">
+      <h3>Relatórios</h3>
+      <p>além do Financeiro atual.</p>
+    </article>
+  </div>
+
+  <footer>Para atualizar: edite <code>docs/ROADMAP.md</code> e rode <code>npm run roadmap</code>.</footer>
+</div>
+<script>
+  // Filtro: esconde os itens de outro estado e as fases que ficam vazias.
+  const buttons = document.querySelectorAll('[data-filter]');
+  buttons.forEach((button) =>
+    button.addEventListener('click', () => {
+      const filter = button.dataset.filter;
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
+      document.querySelectorAll('.item').forEach((item) => {
+        item.classList.toggle('hidden', filter !== 'todos' && item.dataset.status !== filter);
+      });
+      document.querySelectorAll('.phase').forEach((phase) => {
+        phase.classList.toggle('hidden', !phase.querySelector('.item:not(.hidden)'));
+      });
+    }),
+  );
+</script>
+</body>
+</html>

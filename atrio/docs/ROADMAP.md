@@ -3,17 +3,22 @@
 O que falta para uma barbearia de verdade usar o Átrio no dia a dia — e para
 vender a assinatura.
 
-**Onde estamos (20/10/2026).** Painel e app do cliente rodam no banco
-(Supabase), com as regras de agenda, acesso e caixa testadas
-(`npm run test:db`), e o fluxo de ponta a ponta funciona: o cliente marca, a
-barbearia vê em tempo real, atende e recebe. Os e-mails de conta saem pelo
-domínio `atrioagenda.com.br`. O app do cliente está no layout novo (Início e
-Perfil). Falta o que está abaixo — com a **direção do produto** decidida em
-20/10/2026 (seção a seguir) mudando parte do que vem antes do lançamento.
+**Onde estamos (22/10/2026).** O produto está fechado: o cliente marca pelo
+`atrioagenda.com.br/<barbearia>`, a barbearia vê em tempo real (tablet ou
+celular), confirma, atende e recebe, e os dois lados recebem e-mail. A
+segurança está no código — captcha, monitoramento de erros (Sentry) e aceite
+dos termos no cadastro. Falta ligar o captcha, a revisão jurídica dos textos
+e os Advisors; depois, publicar (banco de produção, hospedagem) e a parte
+comercial.
 
-**Como ler.** Cada item tem um tamanho relativo — **P** (pequeno, cabe numa
-sessão), **M** (médio, uma ou duas sessões), **G** (grande, várias). As fases
-1 a 4 **bloqueiam o lançamento**; o resto vem depois.
+**Como ler.** `[x]` feito, `[~]` em andamento, `[ ]` a fazer. Cada item
+tem um tamanho relativo — **P** (pequeno, cabe numa sessão), **M** (médio,
+uma ou duas sessões), **G** (grande, várias). As fases 1 a 4 **bloqueiam o
+lançamento**; o resto vem depois.
+
+**Versão visual.** `npm run roadmap` gera `docs/roadmap.html` a partir deste
+arquivo — progresso por fase, o que está em andamento e o que vem a seguir.
+Este arquivo é a fonte: edite aqui e gere de novo.
 
 ---
 
@@ -136,7 +141,7 @@ e recebe.
 
 ## Fase 2 — Segurança, LGPD e confiabilidade
 
-- [ ] **LGPD** — M + revisão jurídica. Feito em 19/10/2026: **excluir minha
+- [~] **LGPD** — M + revisão jurídica. Feito em 19/10/2026: **excluir minha
       conta** no app. Feito em 21/10/2026: **aceite no cadastro** (caixa
       obrigatória; o banco recusa conta de cliente sem aceite e guarda versão
       e data) e **rascunho da Política de privacidade e dos Termos de uso**
@@ -149,15 +154,13 @@ e recebe.
       para abrir o Financeiro e para cancelar atendimento, marcar falta,
       remover bloqueio, excluir despesa e desativar profissional ou serviço
       com horários futuros. Vale 5 minutos depois de digitado.
-- [ ] **Proteção contra abuso** — P. Feito em 21/10/2026 no código:
+- [~] **Proteção contra abuso** — P. Feito em 21/10/2026 no código:
       Cloudflare Turnstile invisível em entrar, criar conta, senha e PIN, com
       a chave de teste. Falta: widget na Cloudflare, ligar o captcha no
       Supabase e trocar a site key nos environments.
 - [x] **Monitoramento de erros** — feito em 21/10/2026. Sentry nos dois
       apps (projeto `atrio`, tag `app`), só erros, sem dados pessoais e sem
       tokens nos endereços; o SDK só carrega com DSN.
-- [ ] **Plano Pro do Supabase** — P. Backup diário e projeto sem pausa por
-      inatividade.
 - [ ] **Advisors do Supabase** — P. Rodar os avisos de segurança e
       desempenho do painel e corrigir o que aparecer.
 
@@ -170,6 +173,8 @@ e recebe.
 - [ ] **Banco de produção** — P. Criar o projeto em São Paulo, aplicar as
       migrações (sem o seed) e um `environment.prod.ts` em cada app apontando
       para ele.
+- [ ] **Plano Pro do Supabase** — P. No projeto de produção: backup diário
+      e projeto sem pausa por inatividade.
 - [ ] **Hospedagem e domínio** — M. Os dois apps publicados com HTTPS
       (Cloudflare Pages, já com o domínio lá), o app do cliente em
       `atrioagenda.com.br/<barbearia>` e o painel num endereço próprio.
@@ -243,7 +248,9 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
 - **Login com Google** — o botão já está na tela. Falta o cliente OAuth no
   Google Cloud, o provedor no Supabase e guardar as escolhas do agendamento
   durante o redirecionamento.
-- **Lembretes por WhatsApp** — o que mais reduz falta.
+- **Tela de equipe** — convidar e remover pessoas pelo painel (hoje a
+  conta da equipe é criada no Supabase).
+- **Foto de capa da barbearia** — no topo do Início; falta onde cadastrar.
 - **Comissão por profissional** — vai ser pedida no primeiro mês; o
   atendimento já guarda profissional e preço.
 - **Fechamento de caixa** do dia.
@@ -259,6 +266,7 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
    feito.
 5. ~~E-mails do agendamento → planos no banco → sino de notificações →
    confirmação pelo barbeiro → painel de celular~~ — feito.
-6. LGPD, captcha, monitoramento, plano Pro.
-7. Banco de produção, hospedagem, PWA.
+6. Segurança: ~~monitoramento~~ feito; LGPD e captcha prontos no código
+   (faltam revisão jurídica e as chaves); Advisors.
+7. Banco de produção (com o plano Pro), hospedagem, PWA.
 8. Estudo de preços → piloto → cobrança → lançamento.

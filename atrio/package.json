@@ -12,6 +12,7 @@
     "test:db": "node --test supabase/tests/schema.test.mjs",
     "test:emails": "node --test supabase/functions/enviar-emails/render.test.ts",
     "icons": "node tools/generate-icons.mjs",
+    "roadmap": "node tools/roadmap-html.mjs",
     "barbearia:nova": "node --env-file-if-exists=.env.local tools/nova-barbearia.mjs",
     "barbearia:plano": "node --env-file-if-exists=.env.local tools/plano-barbearia.mjs"
   },
