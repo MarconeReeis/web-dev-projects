@@ -3,13 +3,13 @@
 O que falta para uma barbearia de verdade usar o Átrio no dia a dia — e para
 vender a assinatura.
 
-**Onde estamos (22/10/2026).** O produto está fechado: o cliente marca pelo
+**Onde estamos (24/10/2026).** O produto está fechado: o cliente marca pelo
 `atrioagenda.com.br/<barbearia>`, a barbearia vê em tempo real (tablet ou
 celular), confirma, atende e recebe, e os dois lados recebem e-mail. A
 segurança está no código — captcha, monitoramento de erros (Sentry) e aceite
-dos termos no cadastro. Falta ligar o captcha, a revisão jurídica dos textos
-e os Advisors; depois, publicar (banco de produção, hospedagem) e a parte
-comercial.
+dos termos no cadastro — e os avisos dos Advisors do Supabase, corrigidos.
+Falta ligar o captcha e a revisão jurídica dos textos; depois, publicar
+(banco de produção, hospedagem) e a parte comercial.
 
 **Como ler.** `[x]` feito, `[~]` em andamento, `[ ]` a fazer. Cada item
 tem um tamanho relativo — **P** (pequeno, cabe numa sessão), **M** (médio,
@@ -161,8 +161,11 @@ e recebe.
 - [x] **Monitoramento de erros** — feito em 21/10/2026. Sentry nos dois
       apps (projeto `atrio`, tag `app`), só erros, sem dados pessoais e sem
       tokens nos endereços; o SDK só carrega com DSN.
-- [ ] **Advisors do Supabase** — P. Rodar os avisos de segurança e
-      desempenho do painel e corrigir o que aparecer.
+- [x] **Advisors do Supabase** — feito em 24/10/2026. Os 10 avisos de
+      desempenho e as 12 chaves sem índice corrigidos sem mudar quem pode o
+      quê (`20261024000100_advisors.sql`), com testes que impedem a volta.
+      Ficam, de propósito: as funções que os apps chamam, as tabelas só de
+      uso interno e "índice sem uso". Repetir no banco de produção.
 
 ## Fase 3 — Publicação
 
@@ -266,7 +269,7 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
    feito.
 5. ~~E-mails do agendamento → planos no banco → sino de notificações →
    confirmação pelo barbeiro → painel de celular~~ — feito.
-6. Segurança: ~~monitoramento~~ feito; LGPD e captcha prontos no código
-   (faltam revisão jurídica e as chaves); Advisors.
+6. Segurança: ~~monitoramento~~ e ~~Advisors~~ feitos; LGPD e captcha
+   prontos no código (faltam revisão jurídica e as chaves).
 7. Banco de produção (com o plano Pro), hospedagem, PWA.
 8. Estudo de preços → piloto → cobrança → lançamento.

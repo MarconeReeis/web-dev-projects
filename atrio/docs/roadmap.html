@@ -145,7 +145,7 @@
       <div class="brand"><span class="logo">Á</span> Átrio</div>
       <h1>Roadmap até o lançamento</h1>
     </div>
-    <p class="muted small">Gerado em 22/10/2026, 22:45 a partir de <code>docs/ROADMAP.md</code></p>
+    <p class="muted small">Gerado em 24/10/2026, 11:28 a partir de <code>docs/ROADMAP.md</code></p>
   </div>
 
   <section class="card hero">
@@ -153,17 +153,17 @@
       <svg width="132" height="132" viewBox="0 0 132 132" aria-hidden="true">
         <circle cx="66" cy="66" r="52" fill="none" stroke="var(--border)" stroke-width="14"/>
         <circle cx="66" cy="66" r="52" fill="none" stroke="var(--brand)" stroke-width="14" stroke-linecap="round"
-          stroke-dasharray="326.7" stroke-dashoffset="124.2"/>
+          stroke-dasharray="326.7" stroke-dashoffset="114.4"/>
       </svg>
-      <div class="ring-label"><strong>62%</strong><span class="muted small">concluído</span></div>
+      <div class="ring-label"><strong>65%</strong><span class="muted small">concluído</span></div>
     </div>
     <div>
       <p class="eyebrow">Onde estamos</p>
-      <p style="margin-top:6px">O produto está fechado: o cliente marca pelo <code>atrioagenda.com.br/&lt;barbearia&gt;</code>, a barbearia vê em tempo real (tablet ou celular), confirma, atende e recebe, e os dois lados recebem e-mail. A segurança está no código — captcha, monitoramento de erros (Sentry) e aceite dos termos no cadastro. Falta ligar o captcha, a revisão jurídica dos textos e os Advisors; depois, publicar (banco de produção, hospedagem) e a parte comercial.</p>
+      <p style="margin-top:6px">O produto está fechado: o cliente marca pelo <code>atrioagenda.com.br/&lt;barbearia&gt;</code>, a barbearia vê em tempo real (tablet ou celular), confirma, atende e recebe, e os dois lados recebem e-mail. A segurança está no código — captcha, monitoramento de erros (Sentry) e aceite dos termos no cadastro — e os avisos dos Advisors do Supabase, corrigidos. Falta ligar o captcha e a revisão jurídica dos textos; depois, publicar (banco de produção, hospedagem) e a parte comercial.</p>
       <div class="stats">
-        <span class="stat stat-feito">20 feitos</span>
+        <span class="stat stat-feito">21 feitos</span>
         <span class="stat stat-andamento">2 em andamento</span>
-        <span class="stat stat-afazer">12 a fazer</span>
+        <span class="stat stat-afazer">11 a fazer</span>
       </div>
     </div>
   </section>
@@ -184,8 +184,8 @@
     <a class="card" href="#fase-2">
       <p class="eyebrow">Fase 2</p>
       <h3>Segurança, LGPD e confiabilidade</h3>
-      <p class="muted small">60% · 2/5</p>
-      <div class="mini"><span class="bar-done" style="width:40%"></span><span class="bar-doing" style="width:40%"></span></div>
+      <p class="muted small">80% · 3/5</p>
+      <div class="mini"><span class="bar-done" style="width:60%"></span><span class="bar-doing" style="width:40%"></span></div>
     </a>
     <a class="card" href="#fase-3">
       <p class="eyebrow">Fase 3</p>
@@ -229,15 +229,6 @@
       <h2>A seguir</h2>
       <ul>
           <li>
-            <a href="#fase-2">
-              <span class="dot dot-afazer" aria-hidden="true"></span>
-              <span>
-                <strong>Advisors do Supabase</strong>
-                <span class="muted small">Fase 2 · Segurança, LGPD e confiabilidade · Pequeno</span>
-              </span>
-            </a>
-          </li>
-          <li>
             <a href="#fase-3">
               <span class="dot dot-afazer" aria-hidden="true"></span>
               <span>
@@ -261,6 +252,15 @@
               <span>
                 <strong>Hospedagem e domínio</strong>
                 <span class="muted small">Fase 3 · Publicação · Médio</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a href="#fase-3">
+              <span class="dot dot-afazer" aria-hidden="true"></span>
+              <span>
+                <strong>PWA de verdade</strong>
+                <span class="muted small">Fase 3 · Publicação · Pequeno</span>
               </span>
             </a>
           </li>
@@ -483,12 +483,12 @@
           
         </div>
         <div class="phase-score">
-          <strong>60%</strong>
-          <span class="muted">2 de 5 feitos</span>
+          <strong>80%</strong>
+          <span class="muted">3 de 5 feitos</span>
         </div>
       </header>
-      <div class="bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da Fase 2">
-        <span class="bar-done" style="width:40%"></span>
+      <div class="bar" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da Fase 2">
+        <span class="bar-done" style="width:60%"></span>
         <span class="bar-doing" style="width:40%"></span>
       </div>
       <ul class="items">
@@ -532,14 +532,14 @@
             <p class="item-details">feito em 21/10/2026. Sentry nos dois apps (projeto <code>atrio</code>, tag <code>app</code>), só erros, sem dados pessoais e sem tokens nos endereços; o SDK só carrega com DSN.</p>
           </details>
         </li>
-        <li class="item" data-status="afazer">
+        <li class="item" data-status="feito">
           <details>
             <summary>
-              <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>
+              <span class="dot dot-feito" role="img" aria-label="Feito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
               <span class="item-title">Advisors do Supabase</span>
-              <span class="chips"><span class="chip" title="Pequeno">P</span></span>
+              <span class="chips"><span class="chip chip-date">24/10/2026</span></span>
             </summary>
-            <p class="item-details">Rodar os avisos de segurança e desempenho do painel e corrigir o que aparecer.</p>
+            <p class="item-details">feito em 24/10/2026. Os 10 avisos de desempenho e as 12 chaves sem índice corrigidos sem mudar quem pode o quê (<code>20261024000100_advisors.sql</code>), com testes que impedem a volta. Ficam, de propósito: as funções que os apps chamam, as tabelas só de uso interno e &quot;índice sem uso&quot;. Repetir no banco de produção.</p>
           </details>
         </li>
       </ul>
@@ -739,7 +739,7 @@
     </li>
     <li data-status="andamento">
       <span class="dot dot-andamento" role="img" aria-label="Em andamento"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/></svg></span>
-      <span>Segurança: <s>monitoramento</s> feito; LGPD e captcha prontos no código (faltam revisão jurídica e as chaves); Advisors.</span>
+      <span>Segurança: <s>monitoramento</s> e <s>Advisors</s> feitos; LGPD e captcha prontos no código (faltam revisão jurídica e as chaves).</span>
     </li>
     <li data-status="afazer">
       <span class="dot dot-afazer" role="img" aria-label="A fazer"></span>

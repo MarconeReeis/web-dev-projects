@@ -1516,3 +1516,41 @@ describe('confirmação pelo barbeiro', () => {
     assert.ok(stale.length === 2 && stale.every((r) => r.status === 'descartado'));
   });
 });
+
+// O que os Advisors do Supabase cobram, travado aqui para não voltar numa
+// migração nova (ver 20261024000100_advisors.sql).
+describe('avisos dos Advisors', () => {
+  test('política chama auth.uid() dentro de select (uma vez por consulta)', async () => {
+    const { rows } = await db.query(`
+      select tablename, policyname
+        from pg_policies
+       where schemaname = 'public'
+         and regexp_replace(coalesce(qual, '') || ' ' || coalesce(with_check, ''),
+                            'SELECT auth\.uid\(\)', '', 'gi') ~ 'auth\.uid\(\)'`);
+    assert.deepEqual(rows, []);
+  });
+
+  test('uma política permissiva por tabela, papel e ação', async () => {
+    const { rows } = await db.query(`
+      select tablename, role, action, array_agg(policyname) as policies
+        from pg_policies
+       cross join lateral unnest(roles) as role
+       cross join lateral unnest(
+         case when cmd = 'ALL' then array['SELECT', 'INSERT', 'UPDATE', 'DELETE'] else array[cmd] end
+       ) as action
+       where schemaname = 'public' and permissive = 'PERMISSIVE'
+       group by tablename, role, action
+      having count(*) > 1`);
+    assert.deepEqual(rows, []);
+  });
+
+  test('toda função do app tem search_path fixo', async () => {
+    const { rows } = await db.query(`
+      select n.nspname || '.' || p.proname as fn
+        from pg_proc p
+        join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname in ('public', 'private')
+         and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%')`);
+    assert.deepEqual(rows, []);
+  });
+});
