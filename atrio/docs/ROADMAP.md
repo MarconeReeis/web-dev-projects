@@ -8,8 +8,8 @@ vender a assinatura.
 celular), confirma, atende e recebe, e os dois lados recebem e-mail. A
 segurança está no código — captcha, monitoramento de erros (Sentry) e aceite
 dos termos no cadastro — e os avisos dos Advisors do Supabase, corrigidos.
-Falta ligar o captcha e a revisão jurídica dos textos; depois, publicar
-(banco de produção, hospedagem) e a parte comercial.
+Falta a revisão jurídica dos textos; depois, publicar (banco de produção,
+hospedagem) e a parte comercial.
 
 **Como ler.** `[x]` feito, `[~]` em andamento, `[ ]` a fazer. Cada item
 tem um tamanho relativo — **P** (pequeno, cabe numa sessão), **M** (médio,
@@ -154,10 +154,12 @@ e recebe.
       para abrir o Financeiro e para cancelar atendimento, marcar falta,
       remover bloqueio, excluir despesa e desativar profissional ou serviço
       com horários futuros. Vale 5 minutos depois de digitado.
-- [~] **Proteção contra abuso** — P. Feito em 21/10/2026 no código:
-      Cloudflare Turnstile invisível em entrar, criar conta, senha e PIN, com
-      a chave de teste. Falta: widget na Cloudflare, ligar o captcha no
-      Supabase e trocar a site key nos environments.
+- [x] **Proteção contra abuso** — feito em 24/10/2026. Cloudflare Turnstile
+      invisível em entrar, criar conta, senha e PIN. Widget "Átrio Agenda"
+      criado (atrioagenda.com.br e painel.) e a site key nos apps; no
+      computador, a chave de teste. Captcha ligado no Supabase de
+      desenvolvimento com a secret de teste. No de produção, colar a secret
+      de verdade (Authentication → Attack Protection).
 - [x] **Monitoramento de erros** — feito em 21/10/2026. Sentry nos dois
       apps (projeto `atrio`, tag `app`), só erros, sem dados pessoais e sem
       tokens nos endereços; o SDK só carrega com DSN.
@@ -269,7 +271,7 @@ Pedidos previsíveis, já considerados no modelo — nenhum exige migração:
    feito.
 5. ~~E-mails do agendamento → planos no banco → sino de notificações →
    confirmação pelo barbeiro → painel de celular~~ — feito.
-6. Segurança: ~~monitoramento~~ e ~~Advisors~~ feitos; LGPD e captcha
-   prontos no código (faltam revisão jurídica e as chaves).
+6. Segurança: ~~monitoramento~~, ~~Advisors~~ e ~~captcha~~ feitos; LGPD
+   pronta no código (falta a revisão jurídica).
 7. Banco de produção (com o plano Pro), hospedagem, PWA.
 8. Estudo de preços → piloto → cobrança → lançamento.
