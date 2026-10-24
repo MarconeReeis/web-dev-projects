@@ -15,11 +15,12 @@ export const environment = {
   /** Barbearia de quem abre o app sem caminho (/). */
   defaultTenantSlug: 'navalha-e-co',
   /**
-   * Chave pública do Turnstile (captcha da Cloudflare). Esta é a de TESTE da
-   * Cloudflare, que sempre aprova — troque pela do widget de verdade em
-   * produção. Nula: sem captcha.
+   * Chave pública do Turnstile (captcha da Cloudflare), do widget "Átrio
+   * Agenda" (atrioagenda.com.br e painel.atrioagenda.com.br). No
+   * computador (localhost) o app usa a chave de TESTE da Cloudflare no lugar
+   * dela — ver provideTurnstile. Nula: sem captcha.
    */
-  turnstileSiteKey: '1x00000000000000000000AA' as string | null,
+  turnstileSiteKey: '0x4AAAAAAFj_wfmPtEOp8eGW' as string | null,
   /** DSN do Sentry (público), para receber os erros. Nulo: desligado. */
   sentryDsn: 'https://f01973c003fe7a8e0156bcc7dcbd3687@o4512295610220544.ingest.us.sentry.io/4512295677919232' as string | null,
 };

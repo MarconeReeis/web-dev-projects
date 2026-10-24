@@ -5,6 +5,10 @@ import { CAPTCHA_TOKEN } from '@atrio/data';
 export const TURNSTILE_SITE_KEY = new InjectionToken<string | null>('TURNSTILE_SITE_KEY');
 
 const SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+
+/** Chave de teste da Cloudflare: sempre aprova, em qualquer endereço. */
+const TEST_SITE_KEY = '1x00000000000000000000AA';
+const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
 const TIMEOUT_MS = 20_000;
 
 interface TurnstileApi {
@@ -104,10 +108,16 @@ export class TurnstileCaptcha {
 /**
  * Liga o captcha nos pedidos de conta da camada de dados. Sem chave (nula),
  * nada muda: os pedidos seguem sem token.
+ *
+ * No computador (localhost), troca a chave pela de teste: a de verdade só
+ * vale nos endereços do widget, e a Cloudflare recomenda não liberar
+ * localhost nela. O par é a secret de teste no Supabase de desenvolvimento;
+ * a secret de verdade fica só no de produção.
  */
 export function provideTurnstile(siteKey: string | null): Provider[] {
+  const local = LOCAL_HOSTS.includes(globalThis.location?.hostname ?? '');
   return [
-    { provide: TURNSTILE_SITE_KEY, useValue: siteKey },
+    { provide: TURNSTILE_SITE_KEY, useValue: siteKey && local ? TEST_SITE_KEY : siteKey },
     {
       provide: CAPTCHA_TOKEN,
       useFactory: () => {
